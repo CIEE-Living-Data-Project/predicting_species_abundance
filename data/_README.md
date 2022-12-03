@@ -1,1 +1,1 @@
-We'll use this folder to store raw data used in the working group. Later on, we should update this read to include metadata of what's stored here, file structure, etc.
+We'll use this folder to store raw data used in the working group. Later on, we should update this README to include metadata of what's stored here, file structure and type, etc.
