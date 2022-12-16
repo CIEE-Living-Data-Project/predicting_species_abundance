@@ -7,8 +7,6 @@
 # Date created: 28 Nov 2022
 # Date updated: 2 Dec 2022
 
-# TO DO: create species & meta files for 1km and 10km -> GitHub
-
 
 # # LIBRARIES # #
 library(tidyverse)
@@ -30,9 +28,9 @@ biotimeMeta <- read.csv('BioTIMEMetadata_24_06_2021.csv')
   
 
 # # OUTPUT FILES # #
-setwd(raw_dat)
-load('bio_pairs.RData') #unique geographic-overlap years-taxa pairs (explore_biotime.R)
-
+setwd(tidy_dat)
+load('bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
+load('bio_pairs_1km.RData') #unique 1 km geographic-overlap years-taxa pairs (explore_biotime.R)
 
 
 
@@ -264,6 +262,60 @@ setwd(tidy_dat)
 # write.csv(bio.pairs %>% arrange(overlap.years), file = 'bio_pairs_1km.csv', row.names = F)
 save(bio.pairs, file = 'bio_pairs_10km.RData')
 write.csv(bio.pairs %>% arrange(overlap.years), file = 'bio_pairs_10km.csv', row.names = F)
+
+
+
+
+####################################################################################################
+
+# # GENERATE METADATA FILE FOR LIT REVIEW # # 
+
+####################################################################################################
+
+# Data
+
+setwd(tidy_dat)
+load('bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
+
+setwd(raw_dat)
+biotimeMeta <- read.csv('BioTIMEMetadata_24_06_2021.csv')
+
+
+# Select matched studies from metadata
+
+ii <- unique(c(bio.pairs$ID.1, bio.pairs$ID.2)) #unique study IDs for 10 km pairs
+
+meta.pairs <- biotimeMeta %>% 
+  filter(STUDY_ID %in% ii) #filter our study IDs from identified pairs
+
+
+# Add additional columns for lit review
+
+meta.pairs <-  meta.pairs %>% 
+  mutate(reviewed_by = NA, .after = STUDY_ID)
+
+meta.pairs <-  meta.pairs %>% 
+  mutate(eco_footprint = NA, .after = SUMMARY_METHODS)
+
+meta.pairs <-  meta.pairs %>% 
+  mutate(detectability = NA, .after = eco_footprint)
+
+
+# Check license on datasets
+
+unique(meta.pairs$LICENSE)
+
+# https://biotime.st-andrews.ac.uk/usageGuidelines.php => all open access
+# CC-by - attribution and credit
+# ODbl - attribution and share alike
+# ODC-by - attribution and outline where changes were made
+# PDDL - no restrictions
+
+
+# Save
+setwd(tidy_dat)
+save(meta.pairs, file = 'meta_pairs_10km.RData')
+write.csv(meta.pairs, file = 'meta_pairs_10km.csv', row.names = F)
 
 
 
