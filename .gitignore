@@ -6,3 +6,6 @@
 .Rproj.user/
 *.Rproj
 .Rproj
+
+#full raw data file 
+data/prep_biotime/BioTIMEQuery_24_06_2021.csv
