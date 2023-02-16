@@ -328,6 +328,9 @@ write.csv(meta.pairs, file = 'meta_pairs_10km.csv', row.names = F)
 
 ####################################################################################################
 
+# # Nathalie double checking studies----
+# Exclude 492 because data is only biomass
+
 # Data
 biotime.raw <- read.csv('BioTIMEQuery_24_06_2021.csv')
 head(biotime.raw)
@@ -335,16 +338,16 @@ head(biotime.raw)
 # Look at one pair from bio.pairs
 head(bio.pairs)
 
-sp1 <- filter(biotime.raw, STUDY_ID == 54)
+sp1 <- filter(biotime.raw, STUDY_ID == 492)
 sp2 <- filter(biotime.raw, STUDY_ID == 58)
 
-summary(sp1)
+summary(sp1$sum.allrawdata.BIOMASS)
+summary(sp1$sum.allrawdata.ABUNDANCE)
+
 table(sp1$GENUS_SPECIES) #different species
 
 summary(sp2)
 table(sp2$GENUS_SPECIES)
-
-# Check sampling design, need to standardize abundance
 
 
 # Fungi data = from sequencing studies?
@@ -352,7 +355,7 @@ fung.pairs <- filter(bio.pairs, taxa.pairs )
 fungi <- filter(biotime.raw, STUDY_ID == 461)
 
 
-#Courtney double checking studies----
+# # Courtney double checking studies----
 biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv')
 #studies reviewed by CC
 #334 is all zeroes (biomass only) so removed 
