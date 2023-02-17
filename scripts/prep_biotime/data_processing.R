@@ -16,22 +16,14 @@ library(dplyr)
 rm(list=ls()) 
 
 
-# # WORKING DIRECTORIES # #
-raw_dat <- '~/Desktop/Code/predicting_species_abundance_offline/' #WD for NC (biotime query 1.2 GB)
-figs <- '~/Desktop/Code/predicting_species_abundance/figures/explore_biotime_Dec2022/'
-tidy_dat <- '~/Desktop/Code/predicting_species_abundance/data/prep_biotime/'
-
 # # INPUT FILES # #
-setwd(raw_dat)
-biotime.raw <- read.csv('BioTIMEQuery_24_06_2021.csv')
+biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv')
 
-setwd(tidy_dat)
 # load('bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
-load('meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
+load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
 
 
 # # OUTPUT FILES # #
-
 
 
 
@@ -95,31 +87,32 @@ summary(collated.pairs$sum.allrawdata.BIOMASS) #n = 27141 NAs
 
 # Set up data to be used in for loop
 
-mm <- unique(meta.pairs$STUDY_ID) #unique study IDs from metadata
+#mm <- unique(meta.pairs$STUDY_ID) #unique study IDs from metadata
 
 
 # Loop through each metadata row, identify if either abundance or biomass was reported as NA, 
 # change to NA if listed as 0 in collated data
 
-for (i in 1:length(mm)) { #loop through each metadata row
+#for (i in 1:length(mm)) { #loop through each metadata row
 
-  if (is.na(meta.pairs$ABUNDANCE_TYPE[i])) { #if abundance type is listed as 'NA' in meta.pairs... 
-    
+#  if (is.na(meta.pairs$ABUNDANCE_TYPE[i])) { #if abundance type is listed as 'NA' in meta.pairs... 
+#    
     # ... turn all abundance values in collated.pairs to NA
-    collated.pairs[which (collated.pairs$STUDY_ID == mm[i]) , ]$sum.allrawdata.ABUNDANCE <- NA
-  }
+##    collated.pairs[which (collated.pairs$STUDY_ID == mm[i]) , ]$sum.allrawdata.ABUNDANCE <- NA
+#  }
   
-  if (is.na(meta.pairs$BIOMASS_TYPE[i])) { #if biomass type is listed as 'NA' in meta.pairs... 
+#  if (is.na(meta.pairs$BIOMASS_TYPE[i])) { #if biomass type is listed as 'NA' in meta.pairs... 
     
     # ... turn all biomass values in collated.pairs to NA
-    collated.pairs[which (collated.pairs$STUDY_ID == mm[i]) , ]$sum.allrawdata.BIOMASS <- NA
-  }
-}
+ #   collated.pairs[which (collated.pairs$STUDY_ID == mm[i]) , ]$sum.allrawdata.BIOMASS <- NA
+#  }
+#}
 
+x<-select(meta.pairs, STUDY_ID, ABUNDANCE_TYPE, BIOMASS_TYPE)
+collated.pairsx<-left_join(collated.pairs, x)
 
-
-
-
-
-
+collated.pairs<-mutate(collated.pairsx, 
+                       sum.allrawdata.ABUNDANCE= if_else(is.na(ABUNDANCE_TYPE), NA_real_, sum.allrawdata.ABUNDANCE))%>%
+                     mutate(sum.allrawdata.BIOMASS= if_else(is.na(BIOMASS_TYPE), NA_real_, sum.allrawdata.BIOMASS))
+                         
 
