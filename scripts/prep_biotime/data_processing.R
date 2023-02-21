@@ -54,7 +54,7 @@ length(unique(collated.pairs$STUDY_ID)) == length(unique(meta.pairs$STUDY_ID)) #
 
 # Create an exclusion dataframe
 
-ee <- c(492, 334, 274) ##IN PROGRESS: need to add any studies to exclude from HB & RL (?)
+ee <- c(492, 334) ##IN PROGRESS: need to add any studies to exclude from HB
 
 exclude <-  collated.pairs %>% 
   filter(STUDY_ID %in% ee) #filter for studies to exclude
@@ -85,34 +85,16 @@ summary(collated.pairs$sum.allrawdata.ABUNDANCE) #n = 0 NAs
 summary(collated.pairs$sum.allrawdata.BIOMASS) #n = 27141 NAs
 
 
-# Set up data to be used in for loop
+# Add relevant metadata to collated pairs
 
-#mm <- unique(meta.pairs$STUDY_ID) #unique study IDs from metadata
+x <- select(meta.pairs, STUDY_ID, ABUNDANCE_TYPE, BIOMASS_TYPE) #retain only relevant metadata 
+collated.pairsx <- left_join(collated.pairs, x) #add to collated pairs
 
-
-# Loop through each metadata row, identify if either abundance or biomass was reported as NA, 
-# change to NA if listed as 0 in collated data
-
-#for (i in 1:length(mm)) { #loop through each metadata row
-
-#  if (is.na(meta.pairs$ABUNDANCE_TYPE[i])) { #if abundance type is listed as 'NA' in meta.pairs... 
-#    
-    # ... turn all abundance values in collated.pairs to NA
-##    collated.pairs[which (collated.pairs$STUDY_ID == mm[i]) , ]$sum.allrawdata.ABUNDANCE <- NA
-#  }
-  
-#  if (is.na(meta.pairs$BIOMASS_TYPE[i])) { #if biomass type is listed as 'NA' in meta.pairs... 
-    
-    # ... turn all biomass values in collated.pairs to NA
- #   collated.pairs[which (collated.pairs$STUDY_ID == mm[i]) , ]$sum.allrawdata.BIOMASS <- NA
-#  }
-#}
-
-x<-select(meta.pairs, STUDY_ID, ABUNDANCE_TYPE, BIOMASS_TYPE)
-collated.pairsx<-left_join(collated.pairs, x)
-
+# Make abundance and biomass = NA if listed as NA in methods
 collated.pairs<-mutate(collated.pairsx, 
-                       sum.allrawdata.ABUNDANCE= if_else(is.na(ABUNDANCE_TYPE), NA_real_, sum.allrawdata.ABUNDANCE))%>%
-                     mutate(sum.allrawdata.BIOMASS= if_else(is.na(BIOMASS_TYPE), NA_real_, sum.allrawdata.BIOMASS))
+                       sum.allrawdata.ABUNDANCE = 
+                         if_else(is.na(ABUNDANCE_TYPE), NA_real_, sum.allrawdata.ABUNDANCE)) %>%
+                     mutate(sum.allrawdata.BIOMASS = 
+                              if_else(is.na(BIOMASS_TYPE), NA_real_, sum.allrawdata.BIOMASS))
                          
 
