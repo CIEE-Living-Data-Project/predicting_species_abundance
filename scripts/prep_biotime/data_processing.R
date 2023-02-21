@@ -24,6 +24,8 @@ load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pair
 
 
 # # OUTPUT FILES # #
+load('data/tidy/collated_pairs.RData') #collated data filtered for 10km & overlapping pairs with fixed NAs (data_processing.R)
+
 
 
 
@@ -90,11 +92,17 @@ summary(collated.pairs$sum.allrawdata.BIOMASS) #n = 27141 NAs
 x <- select(meta.pairs, STUDY_ID, ABUNDANCE_TYPE, BIOMASS_TYPE) #retain only relevant metadata 
 collated.pairsx <- left_join(collated.pairs, x) #add to collated pairs
 
+
 # Make abundance and biomass = NA if listed as NA in methods
-collated.pairs<-mutate(collated.pairsx, 
-                       sum.allrawdata.ABUNDANCE = 
+
+collated.pairs <- mutate(collated.pairsx, sum.allrawdata.ABUNDANCE = #change abundance column
                          if_else(is.na(ABUNDANCE_TYPE), NA_real_, sum.allrawdata.ABUNDANCE)) %>%
-                     mutate(sum.allrawdata.BIOMASS = 
+                     mutate(sum.allrawdata.BIOMASS = #change biomass column
                               if_else(is.na(BIOMASS_TYPE), NA_real_, sum.allrawdata.BIOMASS))
-                         
+                
+         
+# Save updated dataframe
+save(collated.pairs, file = 'data/tidy/collated_pairs.RData')
+
+
 
