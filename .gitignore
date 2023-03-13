@@ -1,5 +1,11 @@
-.Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+
+# RStudio files
+.Rproj.user/
+*.Rproj
+.Rproj
+
+# Mac file
 .DS_Store

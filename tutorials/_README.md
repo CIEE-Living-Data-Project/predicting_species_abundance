@@ -1,1 +1,9 @@
-We'll use this folder to store tutorials that we'll run during the working group to teach some of the skills necessary to clean and analyze the data, e.g. github, running specific model types, etc. Later, we should update this README with info on what teaching materials (and their filenames/types) are included.
+### Tutorials
+
+This folder houses educational material and tutorials to teach the necessary skills for this working group.
+
+[![CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](http://creativecommons.org/licenses/by/4.0/)
+
+This work is licensed under a [Creative Commons Attribution 4.0 International License](http://creativecommons.org/licenses/by/4.0/).
+
+[![CC BY 4.0](https://i.creativecommons.org/l/by/4.0/88x31.png)](http://creativecommons.org/licenses/by/4.0/)

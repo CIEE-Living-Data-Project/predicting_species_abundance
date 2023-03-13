@@ -17,14 +17,14 @@ rm(list=ls())
 
 
 # # WORKING DIRECTORIES # #
-raw_dat <- '~/Desktop/Code/predicting_species_abundance_offline/' #WD for NC (biotime query 1.2 GB)
-figs <- '~/Desktop/Code/predicting_species_abundance/figures/explore_biotime_Dec2022/'
-tidy_dat <- '~/Desktop/Code/predicting_species_abundance/data/prep_biotime/'
+#raw_dat <- '~/Desktop/Code/predicting_species_abundance_offline/' #WD for NC (biotime query 1.2 GB)
+#figs <- '~/Desktop/Code/predicting_species_abundance/figures/explore_biotime_Dec2022/'
+#tidy_dat <- '~/Desktop/Code/predicting_species_abundance/data/prep_biotime/'
 
 # # INPUT FILES # #
-setwd(raw_dat)
+#setwd(raw_dat)
 # biotime.raw <- read.csv('BioTIMEQuery_24_06_2021.csv')
-biotimeMeta <- read.csv('BioTIMEMetadata_24_06_2021.csv')
+biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv') #saved in data folder of github repo on local machine 
   
 
 # # OUTPUT FILES # #
@@ -328,6 +328,9 @@ write.csv(meta.pairs, file = 'meta_pairs_10km.csv', row.names = F)
 
 ####################################################################################################
 
+# # Nathalie double checking studies----
+# Exclude 492 because data is only biomass
+
 # Data
 biotime.raw <- read.csv('BioTIMEQuery_24_06_2021.csv')
 head(biotime.raw)
@@ -335,21 +338,47 @@ head(biotime.raw)
 # Look at one pair from bio.pairs
 head(bio.pairs)
 
-sp1 <- filter(biotime.raw, STUDY_ID == 54)
+sp1 <- filter(biotime.raw, STUDY_ID == 492)
 sp2 <- filter(biotime.raw, STUDY_ID == 58)
 
-summary(sp1)
+summary(sp1$sum.allrawdata.BIOMASS)
+summary(sp1$sum.allrawdata.ABUNDANCE)
+
 table(sp1$GENUS_SPECIES) #different species
 
 summary(sp2)
 table(sp2$GENUS_SPECIES)
-
-# Check sampling design, need to standardize abundance
 
 
 # Fungi data = from sequencing studies?
 fung.pairs <- filter(bio.pairs, taxa.pairs )
 fungi <- filter(biotime.raw, STUDY_ID == 461)
 
+
+# # Courtney double checking studies----
+biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv')
+#studies reviewed by CC
+#334 is all zeroes (biomass only) so removed 
+IDs=c(295, 296, 300, 301, 305, 307, 311, 313, 332, 333, 458, 459, 460, 461,462,463,464,465) 
+check<-filter(biotime.raw, STUDY_ID %in% IDs)
+
+#add in taxa info 
+biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv') 
+names(biotimeMeta)
+meta<-select(biotimeMeta, STUDY_ID, REALM, CLIMATE, TAXA, HABITAT)
+
+check<-left_join(check, meta)
+
+#plot abundances @ taxa level over time for each study  
+ggplot(data=check, aes(y=sum.allrawdata.ABUNDANCE, x=as.factor(YEAR)))+
+   geom_point(aes(color=TAXA)) + facet_wrap(~as.factor(STUDY_ID), scales='free_y')+ theme_bw() +
+  ggtitle("ABUNDANCE") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+#look at set pairs 
+load("data/prep_biotime/bio_pairs_10km.RData")
+checkpairs<-filter(bio.pairs, ID.1 %in% IDs)%>%filter(ID.2 %in% IDs)
+
+checkpairs$ID.1
+checkpairs$ID.2
 
 
