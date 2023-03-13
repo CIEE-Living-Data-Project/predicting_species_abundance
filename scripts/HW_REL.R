@@ -1,6 +1,5 @@
 ## Primary Working Directory
-pwd <- "/Users/ryan/Windows/Documents/Post UCB/Research/CIEE_Workshop_TrophicInteractionsPredictAbundances/predicting_species_abundance"
-# pwd <- "/home/ryan/predicting_species_abundance"
+pwd <- "/home/ryan/predicting_species_abundance"
 
 ## Packages
 library("dplyr")
@@ -10,7 +9,7 @@ library("ggplot2")
 library("magrittr")
 
 ## Data
-data_raw <- readr::read_csv(paste0(pwd, "/data/BioTIMEQuery_24_06_2021.csv"))
+load(paste0(pwd, "/data/tidy/collated_pairs.RData"))
 bio_pairs_10km <- readr::read_csv(paste0(pwd, "/data/prep_biotime/bio_pairs_10km.csv"))
 
 ## Unique ID (1 second resolution) so every run of this script will output without overwriting previous runs
@@ -24,8 +23,8 @@ habitat_pair <- bio_pairs_10km$habitat.1[pair]
 pair_1_ID <- bio_pairs_10km$ID.1[pair]
 pair_2_ID <- bio_pairs_10km$ID.2[pair]
 
-study_1 <- data_raw %>% dplyr::filter(STUDY_ID == pair_1_ID)
-study_2 <- data_raw %>% dplyr::filter(STUDY_ID == pair_2_ID)
+study_1 <- collated.pairs %>% dplyr::filter(STUDY_ID == pair_1_ID)
+study_2 <- collated.pairs %>% dplyr::filter(STUDY_ID == pair_2_ID)
 
 years_overlap <- unique(study_1$YEAR)[unique(study_1$YEAR) %in% unique(study_2$YEAR)] %>% sort()
 
@@ -66,7 +65,8 @@ sp1_data <- study_1 %>%
     dplyr::summarize(
         Abundance = sum( ## This assumes there will only ever be either abundance or biomass data
             mean(sum.allrawdata.ABUNDANCE, na.rm = TRUE),
-            mean(sum.allrawdata.BIOMASS, na.rm = TRUE)
+            mean(sum.allrawdata.BIOMASS, na.rm = TRUE),
+            na.rm = TRUE
         )
     ) %>%
     dplyr::ungroup() %>%
@@ -81,7 +81,8 @@ sp2_data <- study_2 %>%
     dplyr::summarize(
         Abundance = sum( ## This assumes there will only ever be either abundance or biomass data
             mean(sum.allrawdata.ABUNDANCE, na.rm = TRUE),
-            mean(sum.allrawdata.BIOMASS, na.rm = TRUE)
+            mean(sum.allrawdata.BIOMASS, na.rm = TRUE),
+            na.rm = TRUE
         )
     ) %>%
     dplyr::ungroup() %>%

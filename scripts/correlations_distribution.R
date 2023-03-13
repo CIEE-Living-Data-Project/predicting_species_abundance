@@ -7,7 +7,7 @@ library("foreach")
 library("doParallel")
 
 ## Data
-data_raw <- readr::read_csv(paste0(pwd, "/data/BioTIMEQuery_24_06_2021.csv"))
+load(paste0(pwd, "/data/tidy/collated_pairs.RData"))
 bio_pairs_10km <- readr::read_csv(paste0(pwd, "/data/prep_biotime/bio_pairs_10km.csv"))
 
 ## Unique ID (1 second resolution) so every run of this script will output without overwriting previous runs
@@ -25,8 +25,8 @@ cor_analysis <- foreach (pair = 1:nrow(bio_pairs_10km), .combine = "rbind", .pac
     pair_1_ID <- bio_pairs_10km$ID.1[pair]
     pair_2_ID <- bio_pairs_10km$ID.2[pair]
 
-    study_1 <- data_raw %>% dplyr::filter(STUDY_ID == pair_1_ID)
-    study_2 <- data_raw %>% dplyr::filter(STUDY_ID == pair_2_ID)
+    study_1 <- collated.pairs %>% dplyr::filter(STUDY_ID == pair_1_ID)
+    study_2 <- collated.pairs %>% dplyr::filter(STUDY_ID == pair_2_ID)
 
     years_overlap <- unique(study_1$YEAR)[unique(study_1$YEAR) %in% unique(study_2$YEAR)] %>% sort()
 
