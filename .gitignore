@@ -9,3 +9,6 @@
 
 # Mac file
 .DS_Store
+
+#full bioTime query 
+data/prep_biotime/BioTIMEQuery_24_06_2021.csv
