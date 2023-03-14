@@ -24,7 +24,7 @@ load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pair
 
 
 # # OUTPUT FILES # #
-load('data/tidy/collated_pairs.RData') #collated data filtered for 10km & overlapping pairs with fixed NAs (data_processing.R)
+#load('data/tidy/collated_pairs.RData') #collated data filtered for 10km & overlapping pairs with fixed NAs (data_processing.R)
 
 
 
@@ -102,6 +102,9 @@ collated.pairs <- mutate(collated.pairsx, sum.allrawdata.ABUNDANCE = #change abu
                 
          
 # Save updated dataframe
+collated.pairs<-rename(collated.pairs, ID=STUDY_ID) #rename for clarity CGC
+head(collated.pairs)
+
 save(collated.pairs, file = 'data/tidy/collated_pairs.RData')
 
 
