@@ -29,10 +29,10 @@ biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv') #sav
 
 # # OUTPUT FILES # #
 setwd(tidy_dat)
-load('bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
-load('bio_pairs_1km.RData') #unique 1 km geographic-overlap years-taxa pairs (explore_biotime.R)
+load('data/prep_biotime/bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
+load('data/prep_biotime/bio_pairs_1km.RData') #unique 1 km geographic-overlap years-taxa pairs (explore_biotime.R)
 
-load('meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
+load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
 
 
 
