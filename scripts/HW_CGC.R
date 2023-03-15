@@ -5,7 +5,7 @@ library("readr")
 library("ggplot2")
 library("magrittr")
 
-## Data
+## Load Data
 #these are the datasets in bioTime that overlap both in time (>=1 year) and space (within a 10km distance) 
 load("data/tidy/collated_pairs.RData")
 bio_pairs_10km <- read.csv("data/prep_biotime/bio_pairs_10km.csv") 
@@ -20,7 +20,7 @@ head(bio_pairs_10km)
 #if we look closer at the organisms.1 columns we see these are all tropical algae
 #You will also notice that some IDs are in more than one pair, e.g. ID 459 (Birds) is in 4 of the 6 pairs shown here 
 
-
+###PLOT SPP PAIRS----
 ## So let's explore a particular pair of time series with lots of overlapping data
 pair=164
 
@@ -30,10 +30,11 @@ pair_2_ID <- bio_pairs_10km$ID.2[pair]
 timeseries_1 <- collated.pairs %>% dplyr::filter(ID == pair_1_ID)
 timeseries_2 <- collated.pairs %>% dplyr::filter(ID == pair_2_ID)
 
+
 years_overlap <- unique(timeseries_1$YEAR)[unique(timeseries_1$YEAR) %in% unique(timeseries_2$YEAR)] %>% sort()
 
-years_overlap
-#so these timeseries have overlapping data for 30 years!
+years_overlap #so these timeseries have overlapping data for 30 years!
+
 
 ## Let's make a list of the species in these two timeseries
 timeseries_1_species <- timeseries_1$SPECIES %>% unique()
@@ -77,7 +78,7 @@ head(sp1_data)
 #of all spatial replicates within each year for each species. 
 
 #There are many reasons why this might not be the most accurate approach, try to think of some different ideas for 
-#how we can best approach this issue and bring them to the working group 
+#how we can best approach this issue and bring them to the working group (TASK 1)
 
 sp1_data <- timeseries_1 %>%
     dplyr::filter(
@@ -158,6 +159,33 @@ timeseries_2%>%filter(grepl(sp2, SPECIES))%>%select(GENUS_SPECIES)%>%distinct(.)
 
 
 
+###TREATMENTS----
+#Now let's consider the broader stud(ies) and experiments in which these data were collected 
+#We can read in a dataframe with additional metadata for each study from BioTime 
+load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
 
+#filter for our unique IDs   
+meta.pairs<-filter(meta.pairs, STUDY_ID==pair_1_ID|STUDY_ID==pair_2_ID)
 
+#let's look at the columns that describe the methods of these studies 
+head(meta.pairs$METHODS)
 
+head(meta.pairs$GENERAL_TREAT)
+
+#We can see for ID 311 that there were seven fire and grazing treatments with 2 trap-lines per treatment
+#however we have not accounted for these different treatments in any way when plotting the species correlations above
+
+##This could potentially cause issues in our interpretations of the different time series
+#Try to think of some different ideas for how we might account for this and bring them to the working group (TASK 3)
+
+#now let's see where these studies were located 
+head(meta.pairs$CENT_LAT)
+head(meta.pairs$CENT_LONG)
+
+#So it appears these studies were in the exact same location, and upon further investigation 
+head(meta.pairs$DATA_SOURCE)
+#we see that they are both from the Konza Prairie LTER, but they don't both report the same treatments. 
+#So we might need to do some more digging to sort out these inconsistencies... 
+
+#See if you can find any other inconsistencies in the meta-data for these 2 studies, or look through the entire 
+#meta.pairs dataframe to see if anything else looks concerning! 
