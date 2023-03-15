@@ -5,7 +5,7 @@
 
 # Author: Nathalie Chardon
 # Date created: 16 Feb 2023
-# Date updated: 16 Feb 2023 (NC)
+# Date updated: 15 Mar 2023 (NC)
 
 
 # # LIBRARIES # #
@@ -18,8 +18,6 @@ rm(list=ls())
 
 # # INPUT FILES # #
 biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv')
-
-# load('bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
 load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
 
 
@@ -56,7 +54,7 @@ length(unique(collated.pairs$STUDY_ID)) == length(unique(meta.pairs$STUDY_ID)) #
 
 # Create an exclusion dataframe
 
-ee <- c(492, 334) ##IN PROGRESS: need to add any studies to exclude from HB
+ee <- c(492, 334) 
 
 exclude <-  collated.pairs %>% 
   filter(STUDY_ID %in% ee) #filter for studies to exclude

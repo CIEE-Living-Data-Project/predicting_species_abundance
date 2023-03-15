@@ -1,37 +1,34 @@
 # Aims:
-# 1. Import raw BioTIME data
+# 1. Import BioTIME collated data and metadata
 # 2. Identify proximal pairs
 # 3. Map pairs
 
 # Author: Nathalie Chardon
 # Date created: 28 Nov 2022
-# Date updated: 15 Dec 2022 (NC)
+# Date updated: 15 Mar 2023 (NC)
 
 
 # # LIBRARIES # #
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
+library(fossil) 
+library(data.table)
+library(DescTools)
 
 
 rm(list=ls()) 
 
 
-# # WORKING DIRECTORIES # #
-#raw_dat <- '~/Desktop/Code/predicting_species_abundance_offline/' #WD for NC (biotime query 1.2 GB)
-#figs <- '~/Desktop/Code/predicting_species_abundance/figures/explore_biotime_Dec2022/'
-#tidy_dat <- '~/Desktop/Code/predicting_species_abundance/data/prep_biotime/'
-
 # # INPUT FILES # #
-#setwd(raw_dat)
-# biotime.raw <- read.csv('BioTIMEQuery_24_06_2021.csv')
-biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv') #saved in data folder of github repo on local machine 
+biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv') #in gitignore - must have saved locally
+biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv') 
   
 
 # # OUTPUT FILES # #
-setwd(tidy_dat)
-#load('data/prep_biotime/bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
-#load('data/prep_biotime/bio_pairs_1km.RData') #unique 1 km geographic-overlap years-taxa pairs (explore_biotime.R)
-#load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
+load('data/prep_biotime/bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
+load('data/prep_biotime/bio_pairs_1km.RData') #unique 1 km geographic-overlap years-taxa pairs (explore_biotime.R)
+load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use in lit review (explore_biotime.R)
 
 
 
@@ -42,9 +39,11 @@ setwd(tidy_dat)
 
 ####################################################################################################
 
-library(ggplot2)
+# Data
+biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv') #in gitignore - must have saved locally
+biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv') 
 
-# Download date: 28 Nov 2022
+# Download date: 15 Mar 2023
 # Download URL: https://biotime.st-andrews.ac.uk/getFullDownload.php
 # R walkthrough: https://biotime.st-andrews.ac.uk/downloads/interactBioTIME.html#using-the-csv-file-from-the-query
 
@@ -92,10 +91,6 @@ points
 
 ####################################################################################################
 
-library(fossil)                                     # for earth.dist(...)
-library(data.table)
-
-
 # Set up lat, long data
 df <- data.frame(long = biotimeMeta$CENT_LONG, lat = biotimeMeta$CENT_LAT) #only lat, long
 df.id <- data.frame(long = biotimeMeta$CENT_LONG, lat = biotimeMeta$CENT_LA, #with ID information
@@ -122,7 +117,7 @@ coloc[observations,c("long.1","lat.1"):=list(long,lat)]
 setkey(coloc,Obs.2)
 coloc[observations,c("long.2","lat.2"):=list(long,lat)]
 
-dim(coloc) #127 study pairs are within 1 km of each other
+# dim(coloc) #127 study pairs are within 1 km of each other
 dim(coloc) #367 study pairs are within 10 km of each other
 
 # Plot pairs
@@ -197,9 +192,6 @@ head(bio.pairs)
 
 ####################################################################################################
 
-library(DescTools)
-
-
 # Dataframes with only year info
 df1 <- bio.pairs %>% select(start_year.1, end_year.1)
 df2 <- bio.pairs %>% select(start_year.2, end_year.2)
@@ -242,27 +234,25 @@ bio.pairs$taxa.pairs <- paste(bio.pairs$taxa.1, bio.pairs$taxa.2, sep = '-')
 
 
 # Plot matching pairs (colored by taxa.pairs and sized by overlap.years)
-setwd(figs)
 points<-drawWorld("y") + 
   geom_point(data=bio.pairs, aes(x=long.1, y=lat.1, colour = taxa.pairs, size = overlap.years), alpha=I(0.7))
 points
 # ggsave('overlap_1km.pdf', points)
-ggsave('overlap_10km.pdf', points)
+ggsave('figures/explore_biotime_Dec2022/overlap_10km.pdf', points)
 
 # Barplot of taxa pairs
-# pdf('barplot_overlap_1km.pdf')
-pdf('barplot_overlap_10km.pdf')
+# pdf('figures/explore_biotime_Dec2022/barplot_overlap_1km.pdf')
+pdf('figures/explore_biotime_Dec2022/barplot_overlap_10km.pdf')
 par(mai = c(.5,3.5,.1,.1)) #create space under x-axis
 barplot(table(bio.pairs$taxa.pairs), las = 2, horiz = T)
 dev.off()
 
 
 # Save dataframe
-setwd(tidy_dat)
-# save(bio.pairs, file = 'bio_pairs_1km.RData')
+# save(bio.pairs, file = 'data/prep_biotime/bio_pairs_1km.RData')
 # write.csv(bio.pairs %>% arrange(overlap.years), file = 'bio_pairs_1km.csv', row.names = F)
-save(bio.pairs, file = 'bio_pairs_10km.RData')
-write.csv(bio.pairs %>% arrange(overlap.years), file = 'bio_pairs_10km.csv', row.names = F)
+save(bio.pairs, file = 'data/prep_biotime/bio_pairs_10km.RData')
+write.csv(bio.pairs %>% arrange(overlap.years), file = 'data/prep_biotime/bio_pairs_10km.csv', row.names = F)
 
 
 
@@ -274,12 +264,8 @@ write.csv(bio.pairs %>% arrange(overlap.years), file = 'bio_pairs_10km.csv', row
 ####################################################################################################
 
 # Data
-
-setwd(tidy_dat)
-load('bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
-
-setwd(raw_dat)
-biotimeMeta <- read.csv('BioTIMEMetadata_24_06_2021.csv')
+load('data/prep_biotime/bio_pairs_10km.RData') #unique 10 km geographic-overlap years-taxa pairs (explore_biotime.R)
+biotimeMeta <- read.csv('data/prep_biotime/BioTIMEMetadata_24_06_2021.csv')
 
 
 # Select matched studies from metadata
@@ -314,9 +300,8 @@ unique(meta.pairs$LICENSE)
 
 
 # Save
-setwd(tidy_dat)
-save(meta.pairs, file = 'meta_pairs_10km.RData')
-write.csv(meta.pairs, file = 'meta_pairs_10km.csv', row.names = F)
+save(meta.pairs, file = 'data/prep_biotime/meta_pairs_10km.RData')
+write.csv(meta.pairs, file = 'data/prep_biotime/meta_pairs_10km.csv', row.names = F)
 
 
 
@@ -331,7 +316,7 @@ write.csv(meta.pairs, file = 'meta_pairs_10km.csv', row.names = F)
 # Exclude 492 because data is only biomass
 
 # Data
-biotime.raw <- read.csv('BioTIMEQuery_24_06_2021.csv')
+biotime.raw <- read.csv('data/prep_biotime/BioTIMEQuery_24_06_2021.csv')
 head(biotime.raw)
 
 # Look at one pair from bio.pairs
