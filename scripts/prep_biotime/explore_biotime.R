@@ -251,8 +251,11 @@ dev.off()
 # Save dataframe
 # save(bio.pairs, file = 'data/prep_biotime/bio_pairs_1km.RData')
 # write.csv(bio.pairs %>% arrange(overlap.years), file = 'bio_pairs_1km.csv', row.names = F)
+
+bio.pairs <- bio.pairs %>% arrange(overlap.years) #arrange by overlapping years
+
 save(bio.pairs, file = 'data/prep_biotime/bio_pairs_10km.RData')
-write.csv(bio.pairs %>% arrange(overlap.years), file = 'data/prep_biotime/bio_pairs_10km.csv', row.names = F)
+write.csv(bio.pairs, file = 'data/prep_biotime/bio_pairs_10km.csv', row.names = F)
 
 
 

@@ -1,17 +1,46 @@
-## Load Packages
+# Aims:
+# 1. Visualize BioTIME data in space
+# 2. TASK 1: Calculate correlations and visualize time series of species pairs
+# 3. TASK 2: Identify study pairs that have no data in their overlapping time series
+# 4. TASK 3: Explore the effect of treatments on time series data
+# 5. Ensure that R and GitHub are running smoothly through these exercises
+
+# Authors: Ryan Langendorf, Courtney Collins, Nathalie Chardon
+# Date created: 13 Mar 2023
+# Date updated: 15 Mar 2023 (NC)
+
+# # LIBRARIES # #
+library(tidyverse)
 library("dplyr")
 library("tibble")
 library("readr")
 library("ggplot2")
 library("magrittr")
 
+rm(list=ls()) 
+
+
+# # INPUT FILES # #
+load("data/tidy/collated_pairs.RData") #collated pairs of overlapping studies
+load('data/prep_biotime/bio_pairs_10km.RData') #metadata of overlapping studies
+
+
+
+
+####################################################################################################
+
+# # VISUALIZE DATA # # 
+
+####################################################################################################
+
 ## Load Data
 #these are the datasets in bioTime that overlap both in time (>=1 year) and space (within a 10km distance) 
 load("data/tidy/collated_pairs.RData")
-bio_pairs_10km <- read.csv("data/prep_biotime/bio_pairs_10km.csv") 
+load('data/prep_biotime/bio_pairs_10km.RData') #metadata of overlapping studies
+
 
 #let's look at the data to get a sense of their structure 
-head(bio_pairs_10km)
+head(bio.pairs)
 
 #each row reflects a pair of 2 time series that overlap (1D.1 and 1D.2) 
 #Each time series in a pair is defined by a unique taxon in a unique location 
@@ -20,12 +49,55 @@ head(bio_pairs_10km)
 #if we look closer at the organisms.1 columns we see these are all tropical algae
 #You will also notice that some IDs are in more than one pair, e.g. ID 459 (Birds) is in 4 of the 6 pairs shown here 
 
+
+# Let's look at how these studies are distributed across the globe
+
+# First draw a basic world map, add "y" or "n" for display of tropics and polar latitudes
+
+drawWorld<-function(lats) {
+  world_map<-map_data("world")
+  
+  g1<-ggplot()+coord_fixed()+xlab("")+ylab("")
+  g1<-g1+geom_polygon(data=world_map, aes(x=long, y=lat, group=group), colour="gray60", fill="gray60")
+  g1<-g1+theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank(), 
+               panel.background=element_rect(fill="white", colour="white"), axis.line=element_line(colour="white"),
+               legend.position="none",axis.ticks=element_blank(), axis.text.x=element_blank(), axis.text.y=element_blank())
+  
+  if(lats=="y") {
+    g1<-g1+geom_hline(yintercept=23.5, colour="red")+geom_hline(yintercept =-23.5, colour="red")
+    g1<-g1+geom_hline(yintercept=66.5, colour="darkblue")+geom_hline(yintercept =-66.5, colour="darkblue")
+  }
+  else { return(g1) }
+  return(g1)
+}
+
+# colors per taxa
+taxaCol<-c('#ffffff','#ffffbf','#5e4fa2','#f46d43','#3288bd','#abdda4','#a8c614','#d53e4f','#66c2a5','#e6f598','#fee08b','#9e0142','#fdae61', '#fdae62')
+
+# Now let's use the above function to plot these studies across the globe
+(gplot <- drawWorld("y") + 
+  geom_point(data=bio.pairs, aes(x=long.1, y=lat.1, colour = taxa.pairs, size = overlap.years), 
+             alpha=I(0.7)))
+
+# Let's also look at the distribution of taxa pairs in these data
+par(mai = c(.5,3.5,.1,.1)) #create space under x-axis
+barplot(table(bio.pairs$taxa.pairs), las = 2, horiz = T)
+
+
+
+
+####################################################################################################
+
+# # TASK 1: SPECIES PAIRS # # 
+
+####################################################################################################
+
 ###PLOT SPP PAIRS----
 ## So let's explore a particular pair of time series with lots of overlapping data
 pair=164
 
-pair_1_ID <- bio_pairs_10km$ID.1[pair]
-pair_2_ID <- bio_pairs_10km$ID.2[pair]
+pair_1_ID <- bio.pairs$ID.1[pair]
+pair_2_ID <- bio.pairs$ID.2[pair]
 
 timeseries_1 <- collated.pairs %>% dplyr::filter(ID == pair_1_ID)
 timeseries_2 <- collated.pairs %>% dplyr::filter(ID == pair_2_ID)
@@ -77,8 +149,8 @@ head(sp1_data)
 #Because we want to look at how the abundances of species pairs co-vary over time, for now, let's take the average 
 #of all spatial replicates within each year for each species. 
 
-#There are many reasons why this might not be the most accurate approach, try to think of some different ideas for 
-#how we can best approach this issue and bring them to the working group (TASK 1)
+#TASK 1: There are many reasons why this might not be the most accurate approach, try to think of some different ideas for 
+#how we can best approach this issue and bring them to the working group
 
 sp1_data <- timeseries_1 %>%
   dplyr::filter(
@@ -147,7 +219,7 @@ fig_data %>%
 #How does it look? Are your species highly correlated over time? positively or negatively? 
 #let's look back at the metadata and see what kind of organisms we are looking at 
 
-bio_pairs_10km%>%subset(ID.1==pair_1_ID&ID.2==pair_2_ID)
+bio.pairs%>%subset(ID.1==pair_1_ID&ID.2==pair_2_ID)
 
 #so you can see we are looking at small mammals and plants in tallgrass prairie 
 #seems like biologically we might expect these groups to co-vary? does your species pair reflect this?
@@ -158,6 +230,23 @@ timeseries_2%>%filter(grepl(sp2, SPECIES))%>%select(GENUS_SPECIES)%>%distinct(.)
 #feel free to research more about these individual species to inform why they may or may correlate over time
 
 
+
+####################################################################################################
+
+# # TASK 2: NO DATA IN OVERLAPPING YEARS # # 
+
+####################################################################################################
+
+## IN PROGRESS (NC)
+
+
+
+
+####################################################################################################
+
+# # TASK 3: TREATMENTS # # 
+
+####################################################################################################
 
 ###TREATMENTS----
 #Now let's consider the broader stud(ies) and experiments in which these data were collected 
@@ -176,7 +265,7 @@ head(meta.pairs$GENERAL_TREAT)
 #however we have not accounted for these different treatments in any way when plotting the species correlations above
 
 ##This could potentially cause issues in our interpretations of the different time series
-#Try to think of some different ideas for how we might account for this and bring them to the working group (TASK 3)
+#TASK 3: Try to think of some different ideas for how we might account for this and bring them to the working group
 
 #now let's see where these studies were located 
 head(meta.pairs$CENT_LAT)
