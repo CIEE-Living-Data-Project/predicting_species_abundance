@@ -227,7 +227,7 @@ bio.pairs%>%subset(ID.1==pair_1_ID&ID.2==pair_2_ID)
 timeseries_1%>%filter(grepl(sp1, SPECIES))%>%select(GENUS_SPECIES)%>%distinct(.)
 timeseries_2%>%filter(grepl(sp2, SPECIES))%>%select(GENUS_SPECIES)%>%distinct(.)
 
-#feel free to research more about these individual species to inform why they may or may correlate over time
+#feel free to research more about these individual species to inform why they may or may not correlate over time
 
 
 
