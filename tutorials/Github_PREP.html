@@ -11,7 +11,6 @@
 
 <meta name="author" content="Sam Straus" />
 
-<meta name="date" content="2022-01-12" />
 
 <title>Github Tutorial</title>
 
@@ -164,15 +163,24 @@ pre code {
 
 <h1 class="title toc-ignore">Github Tutorial</h1>
 <h4 class="author">Sam Straus</h4>
-<h4 class="date">01/12/2022</h4>
+<h4 class="date">Updated 02/27/2023</h4>
 
 </div>
 
 
+<p><strong>Before the start of the working group</strong>, we’d like you to: - make sure you have git installed - create a GitHub account - configure git so that it links to you GitHub account - create and store a Personal Access Token - practice commits, pushes, and pulls</p>
+<p>The following tutorial will help walk you through each of these steps! Please attend our office hours, or contact us directly, if you need help with any of these steps.</p>
 <div id="install-git-on-your-computer" class="section level3">
 <h3>Install Git on your computer</h3>
-<p>There are several options for installing git on your own computer. Github has an installation guide on their website, and this guide has some helpful additional instructions.</p>
+<p>There are several options for installing git on your own computer. Github has a handy <a href="https://github.com/git-guides/install-git">installation guide</a> on their website, and <a href="https://happygitwithr.com/install-git.html">this guide</a> has some helpful additional instructions.</p>
+<p>To check if you already have git installed, open up your terminal or command line and enter <code>git version</code></p>
 <p>Many (but not all!) of the options for installation are command line based, which can be intimidating if you’re not used to it. If you encounter any issues installing git, please contact Sam Straus at <a href="mailto:samantha.straus@mcgill.ca" class="email">samantha.straus@mcgill.ca</a>.</p>
+<div id="configure-git" class="section level4">
+<h4>Configure git</h4>
+<p>We’re demonstrating an approach to configuring your git account using Rstudio, but there is also a very simple command line approach you can <a href="https://happygitwithr.com/hello-git.html">follow here</a>, if you wish.</p>
+<p>To do this in Rstudio with the <code>usethis</code> package:</p>
+<p><code>{r} use_git_config(user.name = &quot;your name&quot;, user.email = &quot;name@email.org&quot;)</code></p>
+</div>
 </div>
 <div id="configure-your-github-credentials" class="section level3">
 <h3>Configure your Github credentials</h3>
@@ -188,16 +196,11 @@ pre code {
 <p>Next, run the following line of code:</p>
 <p><code>usethis::create_github_token()</code></p>
 <p>This will open GitHub at the PAT page. Follow <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token">the instructions</a> and click “Generate Token.” Copy the access token that has been generated.</p>
-<p><strong>Use Rstudio to save your PAT</strong> To save your PAT so you don’t have to enter it over and over again, run the following:</p>
+<p><strong>Use Rstudio to save your PAT</strong> To save your PAT so you don’t have to enter it over and over again, run the following using the <code>gitcreds</code> package:</p>
 <p><code>gitcreds::gitcreds_set()</code></p>
 <p>When asked to do so, paste your PAT and hit enter. You can also check your saved PAT using <code>gitcreds::gitcreds_get()</code></p>
 <p>Voila! Your PAT is stored, and you may go about pulling and pushing as you please!</p>
-</div>
-<div id="configure-git" class="section level4">
-<h4>Configure git</h4>
-<p>We’re demonstrating an approach to configuring your git account using Rstudio, but there is also a very simple command line approach you can <a href="https://happygitwithr.com/hello-git.html">follow here</a>, if you wish.</p>
-<p>To do this in Rstudio with the <code>usethis</code> package:</p>
-<p><code>{r} use_git_config(user.name = &quot;your name&quot;, user.email = &quot;name@email.org&quot;)</code></p>
+<p>To see a brief walk-through that demonstrates installation, configuration, and pushing and pulling, check out this <a href="https://www.youtube.com/watch?v=J5Vn6ZNa0xs">YouTube video</a>.</p>
 </div>
 <div id="why-use-git" class="section level4">
 <h4>Why use git?</h4>

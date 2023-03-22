@@ -1,15 +1,35 @@
 ---
 title: "Github Tutorial"
 author: "Sam Straus"
-date: "01/12/2022"
+date: "Updated 02/27/2023"
 output: html_document
 ---
 
+**Before the start of the working group**, we'd like you to:
+- make sure you have git installed
+- create a GitHub account
+- configure git so that it links to you GitHub account
+- create and store a Personal Access Token
+- practice commits, pushes, and pulls
+
+The following tutorial will help walk you through each of these steps! Please attend our office hours, or contact us directly, if you need help with any of these steps.
+
 ### Install Git on your computer
 
-There are several options for installing git on your own computer. Github has an installation guide on their website, and this guide has some helpful additional instructions.
+There are several options for installing git on your own computer. Github has a handy [installation guide](https://github.com/git-guides/install-git) on their website, and [this guide](https://happygitwithr.com/install-git.html) has some helpful additional instructions.
 
-Many (but not all!) of the options for installation are command line based, which can be intimidating if you're not used to it. If you encounter any issues installing git, please contact Sam Straus at samantha.straus@mcgill.ca.
+To check if you already have git installed, open up your terminal or command line and enter `git version`
+
+Many (but not all!) of the options for installation are command line based, which can be intimidating if you're not used to it. If you encounter any issues installing git, please contact Sam Straus at [samantha.straus\@mcgill.ca](mailto:samantha.straus@mcgill.ca){.email}.
+
+#### Configure git
+
+We're demonstrating an approach to configuring your git account using Rstudio, but there is also a very simple command line approach you can [follow here](https://happygitwithr.com/hello-git.html), if you wish.
+
+To do this in Rstudio with the `usethis` package:
+
+`{r} use_git_config(user.name = "your name", user.email = "name@email.org")`
+
 
 ### Configure your Github credentials
 
@@ -35,8 +55,7 @@ Next, run the following line of code:
 
 This will open GitHub at the PAT page. Follow [the instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and click "Generate Token." Copy the access token that has been generated.
 
-**Use Rstudio to save your PAT** 
-To save your PAT so you don't have to enter it over and over again, run the following:
+**Use Rstudio to save your PAT** To save your PAT so you don't have to enter it over and over again, run the following using the `gitcreds` package:
 
 `gitcreds::gitcreds_set()`
 
@@ -44,13 +63,9 @@ When asked to do so, paste your PAT and hit enter. You can also check your saved
 
 Voila! Your PAT is stored, and you may go about pulling and pushing as you please!
 
-#### Configure git
 
-We're demonstrating an approach to configuring your git account using Rstudio, but there is also a very simple command line approach you can [follow here](https://happygitwithr.com/hello-git.html), if you wish.
+To see a brief walk-through that demonstrates installation, configuration, and pushing and pulling, check out this [YouTube video](https://www.youtube.com/watch?v=J5Vn6ZNa0xs).
 
-To do this in Rstudio with the `usethis` package:
-
-`{r} use_git_config(user.name = "your name", user.email = "name@email.org")`
 
 #### Why use git?
 
