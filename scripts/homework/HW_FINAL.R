@@ -1,5 +1,5 @@
 # Aims:
-# 1. Visualize BioTIME data in space
+# 1. Visualize BioTIME data in space and complete the following tasks sprinkled throughout code below
 # 2. TASK 1: Calculate correlations and visualize time series of species pairs
 # 3. TASK 2: Identify study pairs that have no data in their overlapping time series
 # 4. TASK 3: Explore the effect of treatments on time series data
@@ -7,7 +7,7 @@
 
 # Authors: Ryan Langendorf, Courtney Collins, Nathalie Chardon
 # Date created: 13 Mar 2023
-# Date updated: 15 Mar 2023 (NC)
+# Date updated: 23 Mar 2023 (NC)
 
 # # LIBRARIES # #
 library(tidyverse)
@@ -233,11 +233,120 @@ timeseries_2%>%filter(grepl(sp2, SPECIES))%>%select(GENUS_SPECIES)%>%distinct(.)
 
 ####################################################################################################
 
-# # TASK 2: NO DATA IN OVERLAPPING YEARS # # 
+# # TASK 2: CHECK FOR ZEROS IN DATA FOR TAXA PAIRS IN OVERLAPPING YEARS # # 
 
 ####################################################################################################
 
-## IN PROGRESS (NC)
+# Now let's make the same graph as above, but at the taxa level.
+
+# Abundance data for taxa 1 from the pair identified at the start of the last section
+taxon1_data <- timeseries_1 %>%
+  dplyr::group_by(YEAR) %>%
+  dplyr::summarise(
+    Abundance = sum( ## This assumes there will only ever be either abundance or biomass data
+      mean(sum.allrawdata.ABUNDANCE, na.rm = TRUE),
+      mean(sum.allrawdata.BIOMASS, na.rm = TRUE),
+      na.rm = TRUE
+    )
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(YEAR)%>%
+  distinct(.)
+
+# Abundance data for taxa 2 from the pair identified at the start of the last section
+taxon2_data <- timeseries_2 %>%
+  dplyr::group_by(YEAR) %>%
+  dplyr::summarise(
+    Abundance = sum( ## This assumes there will only ever be either abundance or biomass data
+      mean(sum.allrawdata.ABUNDANCE, na.rm = TRUE),
+      mean(sum.allrawdata.BIOMASS, na.rm = TRUE),
+      na.rm = TRUE
+    )
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(YEAR)%>%
+  distinct(.)
+
+# Calculate correlation between two taxa
+cor_pair <- cor(taxon1_data$Abundance, taxon2_data$Abundance)
+
+# Plot our timeseries
+fig_data <- dplyr::bind_rows(
+  taxon1_data %>% dplyr::mutate(Taxon = bio.pairs$taxa.1[pair]),
+  taxon2_data %>% dplyr::mutate(Taxon = bio.pairs$taxa.2[pair])
+)
+
+# Plot correlation over time 
+fig_data %>%
+  ggplot() +
+  theme_bw() +
+  geom_line(
+    aes(
+      x = YEAR,
+      y = Abundance,
+      color = Taxon
+    ), 
+    linewidth = 3
+  ) +
+  labs(
+    title = paste0("Correlation = ", round(cor_pair, 2))
+  ) + xlab("Year")
+
+# How does this graph compare to the species-level graph you made? Is the correlation higher or lower?
+
+# This example had abundance data for both taxa groups in all years. What about taxa pairs that 
+# have many 0s in their overlapping years? Let's look for an example of such a pair. 
+
+zeros <- data.frame(study_id = NA, years = NA) #initialize empty dataframe
+
+for (i in 1:nrow(bio.pairs)) {
+  
+  # create dataframe for each timeseries in a pair
+  timeseries_1 <- collated.pairs %>% dplyr::filter(ID == bio.pairs$ID.1[i])
+  timeseries_2 <- collated.pairs %>% dplyr::filter(ID == bio.pairs$ID.2[i])
+  
+  # summarize mean abundance per year for taxon 1
+  taxon1_data <- timeseries_1 %>%
+    dplyr::group_by(YEAR) %>%
+    dplyr::summarise(
+      Abundance1 = sum( ## This assumes there will only ever be either abundance or biomass data
+        mean(sum.allrawdata.ABUNDANCE, na.rm = TRUE),
+        mean(sum.allrawdata.BIOMASS, na.rm = TRUE),
+        na.rm = TRUE
+      )
+    )
+  
+  # summarize mean abundance per year for taxon 2
+  taxon2_data <- timeseries_2 %>%
+    dplyr::group_by(YEAR) %>%
+    dplyr::summarise(
+      Abundance2 = sum( ## This assumes there will only ever be either abundance or biomass data
+        mean(sum.allrawdata.ABUNDANCE, na.rm = TRUE),
+        mean(sum.allrawdata.BIOMASS, na.rm = TRUE),
+        na.rm = TRUE
+      )
+    )
+  
+  # keep only overlapping years
+  tax12_data <- inner_join(taxon1_data, taxon2_data, by = 'YEAR')
+  
+  # identify and record any years of study ID that have 0s in abundance or biomass
+  if (0 %in% tax12_data$Abundance1) {
+    
+    zeros <- rbind(zeros, 
+                   c(bio.pairs$ID.1[i], paste(min(tax12_data$YEAR), max(tax12_data$YEAR), sep = '_')))
+  }
+}
+
+# Look at zeros
+zeros
+
+# Turns out there are no overlapping years with zeros in abundance or biomass! That's great news, 
+# and will make our analyses easier. 
+
+# TASK 2: Think about some reasons why having 0s in taxa 1 and taxa 2 of overlapping pairs of years
+# could present some difficulties in our analyses of asking whether changes in abundance in taxa in 
+# one year can predict changes in abundance of another taxa.
 
 
 
@@ -254,6 +363,11 @@ timeseries_2%>%filter(grepl(sp2, SPECIES))%>%select(GENUS_SPECIES)%>%distinct(.)
 load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
 
 #filter for our unique IDs   
+pair=164
+
+pair_1_ID <- bio.pairs$ID.1[pair]
+pair_2_ID <- bio.pairs$ID.2[pair]
+
 meta.pairs<-filter(meta.pairs, STUDY_ID==pair_1_ID|STUDY_ID==pair_2_ID)
 
 #let's look at the columns that describe the methods of these studies 
