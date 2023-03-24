@@ -29,6 +29,35 @@ load('data/prep_biotime/bio_pairs_10km.RData') #metadata of overlapping studies
 
 ####################################################################################################
 
+# # UPDATE R AND RSTUDIO # # 
+
+####################################################################################################
+
+## Please make sure you have R version 4.2.3 installed. 
+
+# Check your version: 
+R.version
+
+# Update your version: https://cran.rstudio.com
+
+# Note that for macOS, the newest version can either be loaded for silicon (M1 or newer) or Intel chips. 
+# Check what kind you have: Apple symbol in menu bar --> About this Mac --> look at "Processor" info
+
+
+## Please make sure you have RStudio version 1.4.1106 installed. 
+
+# Check your version: RStudio in menu bar --> About RStudio --> look at Version info (2023.03.0+386 will show on Mac)
+
+# Update your version: https://support--rstudio-com.netlify.app/products/rstudio/download/
+
+## Here is a useful blog about the installation if you have questions: 
+## https://www.r-bloggers.com/2022/01/how-to-install-and-update-r-and-rstudio/
+
+
+
+
+####################################################################################################
+
 # # VISUALIZE DATA # # 
 
 ####################################################################################################
