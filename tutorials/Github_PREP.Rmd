@@ -66,6 +66,8 @@ Voila! Your PAT is stored, and you may go about pulling and pushing as you pleas
 
 To see a brief walk-through that demonstrates installation, configuration, and pushing and pulling, check out this [YouTube video](https://www.youtube.com/watch?v=J5Vn6ZNa0xs).
 
+For a more comprehensive and in-depth demonstration, check out this other [Youtube video](https://youtu.be/F2HaWcqDvMI).
+
 
 #### Why use git?
 
