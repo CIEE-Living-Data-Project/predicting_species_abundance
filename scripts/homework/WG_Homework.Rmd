@@ -27,6 +27,10 @@ Note that for macOS, the newest version can either be loaded for silicon (M1 or 
 
 Please make sure you have RStudio version 1.4.1106 installed. To check your version: RStudio in menu bar --\> About RStudio --\> look at Version info (2023.03.0+386 will show on Mac). Follow [this link](https://support--rstudio-com.netlify.app/products/rstudio/download/) to update your Rstudio. [This blog post](https://www.r-bloggers.com/2022/01/how-to-install-and-update-r-and-rstudio/) has useful information about installing if you have questions.
 
+#### Working with Github through Rprojects
+
+To access all datasets for this homework, please create a version controlled Rproject from our Github repository here https://github.com/CIEE-Living-Data-Project/predicting_species_abundance. For more info on how to use Git through Rprojects see the Github_PREP tutorial attached to the homework email.  
+
 ### Load libraries and input files
 
 ```{r, message = FALSE}
