@@ -63,10 +63,10 @@ When asked to do so, paste your PAT and hit enter. You can also check your saved
 
 Voila! Your PAT is stored, and you may go about pulling and pushing as you please!
 
+**Use Rprojects to communicate with Github through Rstudio**
+Please watch this brief video that demonstrates installation, configuration, and pushing and pulling with Rprojects in Rstudio [YouTube video](https://www.youtube.com/watch?v=J5Vn6ZNa0xs).
 
-To see a brief walk-through that demonstrates installation, configuration, and pushing and pulling, check out this [YouTube video](https://www.youtube.com/watch?v=J5Vn6ZNa0xs).
-
-For a more comprehensive and in-depth demonstration, check out this other [Youtube video](https://youtu.be/F2HaWcqDvMI).
+For a more comprehensive and in-depth demonstration, check out this other video/workshop [Youtube video](https://youtu.be/F2HaWcqDvMI).
 
 
 #### Why use git?

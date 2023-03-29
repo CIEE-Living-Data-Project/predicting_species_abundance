@@ -29,7 +29,7 @@ Please make sure you have RStudio version 1.4.1106 installed. To check your vers
 
 #### Working with Github through Rprojects
 
-To access all datasets for this homework, please create a version controlled Rproject from our Github repository here https://github.com/CIEE-Living-Data-Project/predicting_species_abundance. For more info on how to use Git through Rprojects see the Github_PREP tutorial attached to the homework email.  
+To access all datasets for this homework, please create a version controlled .Rproject from our Github repository here: https://github.com/CIEE-Living-Data-Project/predicting_species_abundance. For more info on how to use Github and version control through Rprojects see the Github_PREP tutorial.  
 
 ### Load libraries and input files
 
