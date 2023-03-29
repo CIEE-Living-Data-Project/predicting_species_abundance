@@ -12,3 +12,6 @@
 
 #full bioTime query 
 data/prep_biotime/BioTIMEQuery_24_06_2021.csv
+
+#don't push Rmd htmls
+*.html
