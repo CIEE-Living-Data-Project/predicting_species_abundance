@@ -1,6 +1,14 @@
-### Tutorials
+**Project name:** Predicting Species Abundance
 
-This folder houses educational material and tutorials to teach the necessary skills for this working group.
+**Date created:** 06 February 2023
+
+**Created by:** Sam Straus
+
+**Date updated:** 23 April 2023
+
+**Updated by:** Sam Straus
+
+This folder houses educational material and tutorials to teach the GitHub skills for this working group.
 
 [![CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](http://creativecommons.org/licenses/by/4.0/)
 
