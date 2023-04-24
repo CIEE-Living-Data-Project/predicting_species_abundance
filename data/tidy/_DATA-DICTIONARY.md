@@ -11,13 +11,13 @@
 **Description of `collated.pairs.RData`:**
 
 | Column Name              | Description                                                             |
-|--------------------------|-------------------------------------------------------------------------|
+|---------------------|---------------------------------------------------|
 | X                        | Unique record ID                                                        |
 | ID                       | Study ID                                                                |
 | DAY                      | Day of month                                                            |
 | MONTH                    | Month of record, 1-12                                                   |
 | YEAR                     | Year of record                                                          |
-| SAMPLE_DESC              | uniqyue description code, concatenated latitude, longitude and year     |
+| SAMPLE_DESC              | unique description code, concatenated latitude, longitude and year      |
 | PLOT                     | Plot ID, if applicable                                                  |
 | ID_SPECIES               | Unique species ID number                                                |
 | LATITUDE                 | Latitude of study site                                                  |
