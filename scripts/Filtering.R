@@ -5,6 +5,7 @@ library("tibble") # help to create simple dataframes
 library("readr") # flexible package for reading in data files
 library("ggplot2") # data visualization
 library("magrittr") # aids in syntax and piping
+library("progress")
 
 #load data
 load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/tidy/collated_pairs.RData")#collated pairs of overlapping studies
@@ -13,7 +14,7 @@ load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicti
 #subseted<-collated.pairs[1:10000,]
 
 working<-collated.pairs %>%
-  group_by(ID,YEAR,LATITUDE,LONGITUDE,SAMPLE_DESC,GENUS) %>%
+  group_by(ID,LATITUDE,LONGITUDE,YEAR,GENUS) %>%
   summarize(mean_abun=mean(sum.allrawdata.ABUNDANCE,na.rm=T),
             median_abun=median(sum.allrawdata.ABUNDANCE,na.rm=T),
             min_abun=min(sum.allrawdata.ABUNDANCE),
@@ -31,12 +32,159 @@ working <- collated.pairs %>%
   summarize(EFFORT.YEAR = n_distinct(PLOT)) %>%
   left_join(working, ., by = join_by(ID, YEAR))
 
-hist(working$EFFORT.YEAR)
-hist(working$mean_bio)
 
-hist(working$mean_abun)
+## calc overlap for each pair in each ID
+calc.overlap.pair<-function(p){
+  require(progress)
+  require(dplyr)
+pair=bio.pairs[p,]
 
-table(working$ID[which(working$EFFORT.YEAR>600)])
+#get timeseries
+timeseries_1 <- working %>% dplyr::filter(ID == pair$ID.1)
+timeseries_2 <- working %>% dplyr::filter(ID == pair$ID.2)
+
+#get genera lists
+genera1 <- timeseries_1$GENUS %>% unique()
+genera1 = genera1[!is.na(genera1)]
+
+genera2 <- timeseries_2$GENUS %>% unique()
+genera2 = genera2[!is.na(genera2)]
+
+#print(paste("Comparing study",pair$ID.1,"and study",pair$ID.2))
+#print(paste("NUMBER OF GENERA in",pair$ID.1,"=",length(genera1)))
+#print(paste("NUMBER OF GENERA in",pair$ID.2,"=",length(genera2)))
+
+#make progress bar
+#n_iter <- length(genera1)
+#pb <- progress_bar$new(format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",total = n_iter,complete = "=",   # Completion bar character
+#                       incomplete = "-", # Incomplete bar character
+#                       current = ">",    # Current bar character
+#                       clear = FALSE,    # If TRUE, clears the bar when finish
+#                       width = 100)      # Width of the progress bar
+
+
+#start with between studies
+mat<-data.frame("Gn1"=NA,"Gn2"=NA,"Max.Overlap"=NA)
+mat<-mat[-1,]
+for (i in 1:length(genera1)){
+  gen1=genera1[i]
+  #pb$tick()
+  
+  for (x in 1:length(genera2)){
+    gen2=genera2[x]
+    
+    #get overlapping years
+    years1=timeseries_1$YEAR[which(timeseries_1$GENUS==gen1)]
+    years2=timeseries_2$YEAR[which(timeseries_2$GENUS==gen2)]
+    
+    cont.overlapping<-split(years1[which(years1%in%years2)], cumsum(c(1, diff(years1[which(years1%in%years2)]) != 1)))
+    
+    dat<-data.frame("Period"=NA,"value"=NA)
+    for (y in 1:length(cont.overlapping)){
+    dat[y,1]=y
+    dat[y,2]=length(cont.overlapping[[y]])}
+    
+    #take max
+    mat<-rbind(mat,data.frame("Gn1"=gen1,"Gn2"=gen2,"Max.Overlap"=max(dat$value)))
+    
+    
+    }
+  
+  
+
+  
+}
+mat$Type="Between"
+mat$PAIR.ID=paste0(pair$ID.1,"_",pair$ID.2)
+
+return(mat)
+}
+
+calc.overlap.single<-function(ID){
+  
+  #get timeseries
+  timeseries_1 <- working %>% dplyr::filter(ID == ID)
+
+  #get genera lists
+  genera1 <- timeseries_1$GENUS %>% unique()
+  genera1 = genera1[!is.na(genera1)]
+  
+  print(paste("NUMBER OF GENERA in",ID,"=",length(genera1)))
+
+  #make progress bar
+  n_iter <- length(genera1)
+  pb <- progress_bar$new(format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
+                         total = n_iter,
+                         complete = "=",   # Completion bar character
+                         incomplete = "-", # Incomplete bar character
+                         current = ">",    # Current bar character
+                         clear = FALSE,    # If TRUE, clears the bar when finish
+                         width = 100)      # Width of the progress bar
+  
+  
+  
+  #then do ID1
+  mat.id1<-data.frame("Gn1"=NA,"Gn2"=NA,"Max.Overlap"=NA)
+  mat.id1<-mat.id1[-1,]
+  for (i in 1:length(genera1)){
+    pb$tick()
+    
+    gen1=genera1[i]
+    
+    for (x in 1:length(genera1)){
+      gen2=genera1[x]
+      
+      #get overlapping years
+      years1=timeseries_1$YEAR[which(timeseries_1$GENUS==gen1)]
+      years2=timeseries_1$YEAR[which(timeseries_1$GENUS==gen2)]
+      
+      cont.overlapping<-split(years1[which(years1%in%years2)], cumsum(c(1, diff(years1[which(years1%in%years2)]) != 1)))
+      
+      dat<-data.frame("Period"=NA,"value"=NA)
+      for (y in 1:length(cont.overlapping)){
+        dat[y,1]=y
+        dat[y,2]=length(cont.overlapping[[y]])}
+      
+      #take max
+      mat.id1<-rbind(mat.id1,data.frame("Gn1"=gen1,"Gn2"=gen2,"Max.Overlap"=max(dat$value)))
+      
+      
+    }
+    
+    
+    print(paste("DONE:",i,"out of",length(genera1)))
+    
+    
+  }
+  mat.id1$Type="Within"
+  mat.id1$PAIR.ID=paste0(pair$ID.1)
+  mat.id1<-mat.id1[-which(mat.id1$Gn1==mat.id1$Gn2),]
+  
+  return(mat.id1)
+}
+
+#make progress bar
+n_iter <- nrow(bio.pairs)
+pb <- progress_bar$new(format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
+                       total = n_iter,
+                       complete = "=",   # Completion bar character
+                       incomplete = "-", # Incomplete bar character
+                       current = ">",    # Current bar character
+                       clear = FALSE,    # If TRUE, clears the bar when finish
+                       width = 100)      # Width of the progress bar
+
+results=data.frame("Gn1"=NA,"Gn2"=NA,"Max.Overlap"=NA,"Type"=NA,"PAIR.ID"=NA)
+results<-results[-1,]
+for (h in 1:nrow(bio.pairs)){
+  pb$tick()
+  data.pair<-calc.overlap.pair(h)
+  results<-rbind(results,data.pair)
+  
+}
+
+
+
+
 
 
 
