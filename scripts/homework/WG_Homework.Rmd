@@ -29,7 +29,7 @@ Please make sure you have RStudio version 1.4.1106 installed. To check your vers
 
 #### Working with Github through Rprojects
 
-To access all datasets for this homework, please create a version controlled .Rproject from our Github repository here: https://github.com/CIEE-Living-Data-Project/predicting_species_abundance. For more info on how to use Github and version control through Rprojects see the Github_PREP tutorial.  
+To access all datasets for this homework, please create a version controlled .Rproject from our Github repository here: <https://github.com/CIEE-Living-Data-Project/predicting_species_abundance>. For more info on how to use Github and version control through Rprojects see the Github_PREP tutorial.
 
 ### Load libraries and input files
 
@@ -387,17 +387,18 @@ We can see for ID 311 that there were seven fire and grazing treatments with 2 t
 TASK 3: Try to think of some different ideas for how we might account for this and bring them to the working group.
 
 Next, let's see where these studies were located.
+
 ```{r}
 head(meta.pairs$CENT_LAT)
 head(meta.pairs$CENT_LONG)
 ```
 
-So it appears these studies were in the exact same location. Let's dig a bit deeper. 
+So it appears these studies were in the exact same location. Let's dig a bit deeper.
 
 ```{r}
 head(meta.pairs$DATA_SOURCE)
 ```
 
-Upon further investigation, we see that they are both from the Konza Prairie LTER, but they don't both report the same treatments. We might need to do some more digging to sort out these inconsistencies... 
+Upon further investigation, we see that they are both from the Konza Prairie LTER, but they don't both report the same treatments. We might need to do some more digging to sort out these inconsistencies...
 
-See if you can find any other inconsistencies in the meta-data for these 2 studies, or look through the entire meta.pairs dataframe to see if anything else looks concerning! 
+See if you can find any other inconsistencies in the meta-data for these 2 studies, or look through the entire meta.pairs dataframe to see if anything else looks concerning!
