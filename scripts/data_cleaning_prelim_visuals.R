@@ -57,7 +57,7 @@ write.csv(working, "data/cleaned_collated_pairs_EBMW.csv")
 
 #Double checking genus low sampling - did removing rare species remove rare genera? 
 low_sampling_cleaned <- working %>%
-  group_by(GENUS, ID) %>%
+  group_by(GENUS) %>%
   summarize(n=n()) %>%
   arrange(n)%>%
   filter(n<3) %>%
@@ -65,7 +65,7 @@ low_sampling_cleaned <- working %>%
   print()
 
 low_sampling_collated <- collated.pairs %>%
-  group_by(GENUS, ID) %>%
+  group_by(GENUS) %>%
   summarize(n=n()) %>%
   arrange(n)%>%
   filter(n<3)%>%
