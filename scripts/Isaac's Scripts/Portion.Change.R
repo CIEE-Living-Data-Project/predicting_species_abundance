@@ -192,6 +192,3 @@ saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
 
 
 
-
-
-
