@@ -15,6 +15,7 @@ rm(list=ls())
 #### DATA #####
 load("./data/tidy/collated_pairs.RData") # collated pairs of overlapping studies
 load('./data/prep_biotime/bio_pairs_10km.RData') # metadata of overlapping studies
+load("./data/prep_biotime/meta_pairs_10km.RData") # metadata on study methods
 
 # piped statement that calculates summary statistics per genus per year
 collated.pairs_genus <- collated.pairs %>%
@@ -38,11 +39,11 @@ collated.pairs_genus1 <- collated.pairs %>%
   group_by(ID, YEAR) %>%
   summarize(EFFORT.YEAR = n_distinct(PLOT)) %>%
   left_join(collated.pairs_genus, ., by = c("ID", "YEAR"))
-#telling us how many plots that genus was found in, in one study in one year. NOT how many plots they sampled IN a study per year. WE WANT THAT.
+#number of plots sampled per study per year is propagated across all study/year genera because of left_join
 
 ### ----- New code from Mia, Sophia, Faraz  -----------------
 
-#DOING THAT:
+#JUST a dataset with study ID, year, and number of plots sampled:
 collated.pairs_genus2 <- collated.pairs %>%
   group_by(ID, YEAR) %>%
   summarize(EFFORT.YEAR = n_distinct(PLOT))
@@ -58,10 +59,11 @@ collated.pairs_genus2 %>%
 #gives the IDs of each study that had greater than 200 plots in a year (4 studies)
 
 #what were those 4 studies? Use STUDY_ID to get a feel for what habitats etc
-load("./data/prep_biotime/meta_pairs_10km.RData")
 df <- meta.pairs %>%
   filter(STUDY_ID %in% c(54, 295, 296, 355)) %>% 
   head()
+#snail study, among others. HAS_PLOTS is confusing - what is S?
+
 #zooming in on studies other than those 4 studies
 plot2 <- collated.pairs_genus2 %>% 
   filter(!(ID %in% c(54, 295, 296, 355))) %>% 
@@ -73,7 +75,7 @@ plot2 <- collated.pairs_genus2 %>%
 
 #Next steps: 
 #Standardize the abundance of each genus by the number of plots sampled PER year in each study
-#What does "HAS_PLOT" mean in meata.data?
+#What does "HAS_PLOT" mean in meta.data?
 
 
 
