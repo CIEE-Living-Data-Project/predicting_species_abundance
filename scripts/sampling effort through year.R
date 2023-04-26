@@ -1,4 +1,6 @@
-#### script that 
+#### script that calculates sampling effort through year 
+#### authors: Gavia Lertzman-Lepofsky, Haley Branch
+#### 25 April 2023
 
 # libraries
 library(dplyr)
