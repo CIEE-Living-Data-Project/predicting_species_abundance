@@ -62,6 +62,27 @@ collated.pairs_summary_effort <- filtered.collated.pairs %>%
   left_join(collated.pairs_summary, ., by = c('ID', 'YEAR')) #join with new dataset above by year and ID
 
 #standardizing abundances by sampling effort
+
+#Visualizing variation in sampling effort across years within each study:
+
+temp <- filtered.collated.pairs %>% 
+  group_by(ID, YEAR) %>% #group by study, year
+  summarize(EFFORT.YEAR = n_distinct(PLOT)) #count number of distinct plots
+
+plot <- ggplot(data = temp, aes(x = YEAR, y = EFFORT.YEAR, group = ID, color = ID)) +
+  theme_classic() +
+  geom_line();plot
+#this plots the number of plots per study (colors) across years
+
+
+#zooming in on studies other than those 4 studies
+plot2 <- temp %>% 
+  filter(!(ID %in% c(54, 295, 296, 355))) %>% 
+  ggplot(aes(x = YEAR, y = EFFORT.YEAR, group = ID, color = ID)) + 
+  theme_classic() +
+  geom_line();plot2
+#lots of variation in sampling effort (plot number) among years here too
+
 # 1. back at the species level, standardize abundances by sum.allrawdata.ABUNDANCE or BIOMASS / EFFORT.YEAR
 
 collated.pairs_standardized <- filtered.collated.pairs %>% 
