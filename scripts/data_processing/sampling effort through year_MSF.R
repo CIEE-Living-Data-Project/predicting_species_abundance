@@ -1,7 +1,7 @@
 #### script that calculates sampling effort through year 
 #### authors: Gavia Lertzman-Lepofsky, Haley Branch
 #### 25 April 2023
-#### further work done by Mia, Sophia, and Faraz 26 April 2023
+#### further work done by Mia, Sophia, and Faraz 26 April 2023, indicated below
 
 
 # libraries
@@ -10,7 +10,7 @@ library(tidyr)
 
 rm(list=ls()) 
 
-setwd("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance")
+
 
 #### DATA #####
 load("./data/tidy/collated_pairs.RData") # collated pairs of overlapping studies
@@ -29,6 +29,7 @@ collated.pairs_genus <- collated.pairs %>%
             min_bio=min(sum.allrawdata.BIOMASS),
             max_bio=max(sum.allrawdata.BIOMASS),
             sd_bio=sd(sum.allrawdata.BIOMASS,na.rm=T))
+#This swallows the plot-specific data into a single genus row per study
 
 
 # calculates sampling effort per year by summing number of plots 
@@ -37,6 +38,46 @@ collated.pairs_genus1 <- collated.pairs %>%
   group_by(ID, YEAR) %>%
   summarize(EFFORT.YEAR = n_distinct(PLOT)) %>%
   left_join(collated.pairs_genus, ., by = c("ID", "YEAR"))
+#telling us how many plots that genus was found in, in one study in one year. NOT how many plots they sampled IN a study per year. WE WANT THAT.
+
+### ----- New code from Mia, Sophia, Faraz  -----------------
+
+#DOING THAT:
+collated.pairs_genus2 <- collated.pairs %>%
+  group_by(ID, YEAR) %>%
+  summarize(EFFORT.YEAR = n_distinct(PLOT))
+  
+plot <- ggplot(data = collated.pairs_genus2, aes(x = YEAR, y = EFFORT.YEAR, group = ID, color = ID)) +
+  theme_classic() +
+  geom_line();plot
+#this plots the number of plots per study (colors) across years
+
+collated.pairs_genus2 %>%
+  filter(EFFORT.YEAR >= 200) %>% 
+  summarize(big_studies = n_distinct(ID))
+#gives the IDs of each study that had greater than 200 plots in a year (4 studies)
+
+#what were those 4 studies? Use STUDY_ID to get a feel for what habitats etc
+load("./data/prep_biotime/meta_pairs_10km.RData")
+df <- meta.pairs %>%
+  filter(STUDY_ID %in% c(54, 295, 296, 355)) %>% 
+  head()
+#zooming in on studies other than those 4 studies
+plot2 <- collated.pairs_genus2 %>% 
+  filter(!(ID %in% c(54, 295, 296, 355))) %>% 
+  ggplot(aes(x = YEAR, y = EFFORT.YEAR, group = ID, color = ID)) + 
+  theme_classic() +
+  geom_line();plot2
+#lots of variation in sampling effort (plot number) among years here too
+
+
+#Next steps: 
+#Standardize the abundance of each genus by the number of plots sampled PER year in each study
+#What does "HAS_PLOT" mean in meata.data?
+
+
+
+### -------------------------------
 
 
 
