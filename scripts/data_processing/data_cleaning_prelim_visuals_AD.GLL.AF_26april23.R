@@ -19,6 +19,12 @@ load('data/prep_biotime/bio_pairs_10km.RData') #"key" with overlapping studies, 
 load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
 #subseted<-collated.pairs[1:10000,]
 
+# adds taxa ID so that easy to ID which genera belong to what type of animal/plant/fungi
+collated.pairs$ID <- as.character(collated.pairs$ID)
+meta.pairs$STUDY_ID <- as.character(meta.pairs$STUDY_ID)
+collated.pairs <- left_join(collated.pairs, meta.pairs[, c(1, 3,4, 12, 13)], by=c("ID"="STUDY_ID"))
+
+
 #First, look for species with less than three observation across all studies and years
 low_sampling <- collated.pairs %>%
   group_by(GENUS_SPECIES) %>% #group by species
@@ -35,7 +41,7 @@ filtered.collated.pairs <- collated.pairs %>% #get original collated pairs datas
 #Wrangle the collated.pairs into genus organization
 # note: NAs in sd and CoV when not enough variation in data to calculate a variance
 collated.pairs_summary <- filtered.collated.pairs %>% #read in filtered collated pairs
-  group_by(ID,YEAR,LATITUDE,LONGITUDE,GENUS) %>% #group by study, location, genus
+  group_by(ID,YEAR,LATITUDE,LONGITUDE,GENUS, TAXA, ORGANISMS, CLIMATE, REALM) %>% #group by study, location, genus
   summarize(mean_abun=mean(sum.allrawdata.ABUNDANCE,na.rm=T), #mean abundance
             median_abun=median(sum.allrawdata.ABUNDANCE,na.rm=T), #median abundance
             min_abun=min(sum.allrawdata.ABUNDANCE), #min abundance
