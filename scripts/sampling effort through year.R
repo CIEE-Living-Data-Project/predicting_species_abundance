@@ -4,10 +4,11 @@
 
 # libraries
 library(dplyr)
+library(tidyr)
 
 rm(list=ls()) 
 
-setwd("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/scripts")
+setwd("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance")
 
 #### DATA #####
 load("./data/tidy/collated_pairs.RData") # collated pairs of overlapping studies
@@ -71,7 +72,7 @@ collated.pairs_north$SEASON <- ifelse(as.character(collated.pairs_north$MONTH)==
 collated.pairs_south <- subset(collated.pairs, HEMISPHERE=="south")
 collated.pairs_south$SEASON <- ifelse(as.character(collated.pairs_south$MONTH)=="12" | as.character(collated.pairs_south$MONTH)=="1" | as.character(collated.pairs_south$MONTH)=="2",  "summer", 
                                       ifelse( as.character(collated.pairs_south$MONTH)=="3" | as.character(collated.pairs_south$MONTH)=="4" | as.character(collated.pairs_south$MONTH)=="5", "fall",
-                                              ifelse(as.character(collated.pairs_south$MONTH)=="6" | as.character(collated.pairs_south$MONTH)=="1" | as.character(collated.pairs_south$MONTH)=="2", "winter", 
+                                              ifelse(as.character(collated.pairs_south$MONTH)=="6" | as.character(collated.pairs_south$MONTH)=="7" | as.character(collated.pairs_south$MONTH)=="8", "winter", 
                                                      ifelse(as.character(collated.pairs_south$MONTH)=="9" | as.character(collated.pairs_south$MONTH)=="10" | as.character(collated.pairs_south$MONTH)=="11","spring", NA))))
 
 # equatorial
@@ -89,12 +90,15 @@ collated.pairs_seasonal_summary <- collated.pairs_seasonal %>%
   group_by(ID, YEAR, SEASON) %>%
   summarize(no.months.sampled = n_distinct(MONTH))
 
-#collated.pairs_seasonal_genus <- left_join(collated.pairs_genus, collated.pairs_seasonal_summary)
 # visualize sampling efforts per season
-ggplot(na.omit(collated.pairs_seasonal_genus), aes(no.months.sampled)) + geom_histogram() +
-  facet_wrap(~SEASON, scales="fixed")
+ggplot(collated.pairs_seasonal_summary, aes(no.months.sampled)) + 
+  geom_histogram() +
+  facet_wrap(~SEASON, scales="free")
 
 # convert this to wide format where SEASON each has own column, 
 # this would allow seasonality of sampling to be merged back into sampling effort
+# note that because no true seasons in equator, yearly sampling effort is not binned to season
+collated.pairs_seasonal_summary_wide <- spread(collated.pairs_seasonal_summary, SEASON, no.months.sampled)
 
+#collated.pairs_seasonal_genus <- left_join(collated.pairs_genus, collated.pairs_seasonal_summary)
 
