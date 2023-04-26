@@ -16,6 +16,7 @@ library("tibble")
 library("readr") 
 library("ggplot2")
 library("magrittr")
+library('ggmap')
 
 rm(list=ls()) 
 
@@ -105,8 +106,8 @@ taxaCol<-c('#ffffff','#ffffbf','#5e4fa2','#f46d43','#3288bd','#abdda4','#a8c614'
 
 # Now let's use the above function to plot these studies across the globe
 (gplot <- drawWorld("y") + 
-    geom_point(data=bio.pairs, aes(x=long.1, y=lat.1, colour = taxa.pairs, size = overlap.years), 
-               alpha=I(0.7)))
+  geom_point(data=bio.pairs, aes(x=long.1, y=lat.1, colour = taxa.pairs, size = overlap.years), 
+             alpha=I(0.7)))
 
 # Let's also look at the distribution of taxa pairs in these data
 par(mai = c(.5,3.5,.1,.1)) #create space under x-axis
@@ -123,14 +124,103 @@ barplot(table(bio.pairs$taxa.pairs), las = 2, horiz = T)
 
 ###PLOT SPP PAIRS----
 ## So let's explore a particular pair of time series with lots of overlapping data
-pair=164
+pair=142
 
 pair_1_ID <- bio.pairs$ID.1[pair]
 pair_2_ID <- bio.pairs$ID.2[pair]
 
 timeseries_1 <- collated.pairs %>% dplyr::filter(ID == pair_1_ID)
 timeseries_2 <- collated.pairs %>% dplyr::filter(ID == pair_2_ID)
+timeseries_1_species_unique <- unique(head(timeseries_1$GENUS, 250))
+timeseries_2_species_unique <- unique(head(timeseries_2$GENUS, 250))
 
+interaction_predation <- get_interaction_matrix(target.taxon.names=timeseries_2_species_unique, 
+                                             source.taxon.names=timeseries_1_species_unique, 
+                                             interaction.type=list('eats', 'eatenBy', 'preysOn', 'preyedUponBy', 
+                                                                   'kills', 'killedBy'
+                                                                   ))
+interaction_hosts <- get_interaction_matrix(target.taxon.names=timeseries_2_species_unique, 
+                                                source.taxon.names=timeseries_1_species_unique, 
+                                                interaction.type=list('parasitoidOf', 'hasParasitoid', 
+                                                                      'hostOf', 'hasHost'
+                                                ))
+interaction_pollination <- get_interaction_matrix(target.taxon.names=timeseries_2_species_unique, 
+                                            source.taxon.names=timeseries_1_species_unique, 
+                                            interaction.type=list('pollinates', 'pollinatedBy', 
+                                                                  'flowersVisitedBy', 'visitsFlowersOf'
+                                            ))
+interaction_habitat <- get_interaction_matrix(target.taxon.names=timeseries_2_species_unique, 
+                                                  source.taxon.names=timeseries_1_species_unique, 
+                                                  interaction.type=list('createsHabitatFor', 
+                                                                        'epiphyteOf', 
+                                                                        'hasEpiphyte'
+                                                  ))
+interaction_other <- get_interaction_matrix(target.taxon.names=timeseries_2_species_unique, 
+                                              source.taxon.names=timeseries_1_species_unique, 
+                                              interaction.type=list('interactsWith', 
+                                                                    'coOccursWith', 
+                                                                    'adjacentTo'
+                                              ))
+
+
+# iteraction_df <- as.data.frame(interaction_matrix)
+# interaction_longer <- pivot_longer(iteraction_df, cols=!source.taxon.name, names_to='target_species', values_to = "interaction")
+# interaction_longer <- unnest(interaction_longer, cols = c(interaction, source.taxon.name))
+# species_with_interactions <- interaction_longer %>%
+#   filter(interaction==1)
+
+
+convert_interaction_to_longer <- function(df) {
+  # Convert the matrix to a data frame and add row names as a new column
+  df_2 <- data.frame(df, row.names = rownames(df))
+  # Use pivot_longer to reshape the data
+  df_long <- pivot_longer(df_2, cols = !source.taxon.name, names_to = "target_species", 
+                          values_to = "interaction")
+  # Unnest the nested data
+  df_long <- unnest(df_long, cols = c(interaction, source.taxon.name))
+  df_long$type <- sub("^interaction_", "", deparse(substitute(df)))
+  # Filter to only include rows with interaction=1
+  df_long <- filter(df_long, interaction == 1)
+  # Rename the columns to match the desired output
+  colnames(df_long) <- c("source_species", "target_species", "interaction")
+  return(df_long)
+}
+
+predation <- convert_interaction_to_longer(interaction_predation)
+hosts <- convert_interaction_to_longer(interaction_hosts)
+pollination <- convert_interaction_to_longer(interaction_pollination)
+habitat <- convert_interaction_to_longer(interaction_habitat)
+other <- convert_interaction_to_longer(interaction_other)
+
+
+final <- rbind(predation, hosts, pollination, habitat, other)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# #Emily's notes: let's try one with fungi and plants
+# fungi_plants <- bio.pairs %>%
+#   filter(taxa.pairs=="Fungi-Terrestrial plants")
+# long_time <- bio.pairs %>%
+#   filter(overlap.years>20)
+# 
+# pair=8
+# 
+# pair_1_ID <- long_time$ID.1[pair]
+# pair_2_ID <- long_time$ID.2[pair]
+# 
+# timeseries_1 <- collated.pairs %>% dplyr::filter(ID == pair_1_ID)
+# timeseries_2 <- collated.pairs %>% dplyr::filter(ID == pair_2_ID)
 
 years_overlap <- unique(timeseries_1$YEAR)[unique(timeseries_1$YEAR) %in% unique(timeseries_2$YEAR)] %>% sort()
 
@@ -139,39 +229,51 @@ years_overlap #so these timeseries have overlapping data for 30 years!
 
 ## Let's make a list of the species in these two timeseries
 timeseries_1_species <- timeseries_1$SPECIES %>% unique()
+timeseries_1_species <- final$source_species %>% unique()
 timeseries_1_species = timeseries_1_species[!is.na(timeseries_1_species)]
 timeseries_1_species_length <- sapply(timeseries_1_species, function(x){
   timeseries_1 %>%
-    dplyr::filter(SPECIES == x) %>%
+    dplyr::filter(GENUS_SPECIES == x) %>%
     dplyr::select(YEAR) %>%
     unique() %>%
     unlist() %>%
     length()
 })
+unique(timeseries_1_species)
 
 timeseries_2_species <- timeseries_2$SPECIES %>% unique()
+timeseries_2_species <- final$target_species %>% unique()
+timeseries_2_species <- gsub(".", " ", timeseries_2_species, fixed=TRUE)
+
 timeseries_2_species = timeseries_2_species[!is.na(timeseries_2_species)]
 timeseries_2_species_length <- sapply(timeseries_2_species, function(x){
   timeseries_2 %>%
-    dplyr::filter(SPECIES == x) %>%
+    dplyr::filter(GENUS_SPECIES == x) %>%
     dplyr::select(YEAR) %>%
     unique() %>%
     unlist() %>%
     length()
 })
+unique(timeseries_2_species)
+
 
 ## Now we will randomly select a species from each timeseries, with at least 10 observations
 sp1 = timeseries_1_species[sample(x = which(timeseries_1_species_length > 10), size = 1)]
 sp2 = timeseries_2_species[sample(x = which(timeseries_2_species_length > 10), size = 1)]
+#Why do we do this? Seems like random might not be the best approach - might be better to inform by
+#doing ones that might actually be correlated
 
 
 #let's look at the data for one of the species 
 sp1_data <- timeseries_1 %>%
   dplyr::filter(
-    SPECIES == sp1,
+    GENUS_SPECIES == sp1,
     YEAR %in% years_overlap
   ) 
 head(sp1_data)
+
+
+
 #notice that there are multiple observations of this species within the same year with different abundance values
 #these are due to sampling occurring at different spatial locations within the study area (for example plots)
 
@@ -181,9 +283,39 @@ head(sp1_data)
 #TASK 1: There are many reasons why this might not be the most accurate approach, try to think of some different ideas for 
 #how we can best approach this issue and bring them to the working group
 
+#Potentially mode? Or is there any way to distinguish by plots, look at what might be edge effects? 
+#Let's map this to take a look: 
+# Get a map background using Stamen maps
+map <- get_stamenmap(
+  bbox = c(left= (mean(sp1_data$LONGITUDE)-0.01), 
+                              right= (mean(sp1_data$LONGITUDE)+0.01), 
+                              bottom = (mean(sp1_data$LATITUDE)-0.01), 
+                              top = (mean(sp1_data$LATITUDE)+0.01) 
+                              ), 
+               zoom = 10, maptype = c("terrain"))
+
+# Create a scatterplot of the latitude and longitude points, colored by abundance
+ggplot(data = sp1_data, aes(x = LONGITUDE, y = LATITUDE, fill = sum.allrawdata.ABUNDANCE)) +
+  geom_point(size = 3) +
+  scale_fill_gradient(low = "white", high = "red")
+
+# Overlay the scatterplot on the map background
+ggmap(map) +
+  geom_point(data = sp1_data, aes(x = LONGITUDE, y = LATITUDE, fill = sum.allrawdata.ABUNDANCE), size = 3, alpha = 0.7) +
+  scale_fill_gradient(low = "white", high = "red")
+#how much does the abundance vary? 
+ggplot(sp1_data, aes(x=sum.allrawdata.ABUNDANCE ))+
+  geom_histogram()
+
+#Ok mode might not be the best
+#But there is a clear distribution here
+#We can check this for species 2
+
+
+
 sp1_data <- timeseries_1 %>%
   dplyr::filter(
-    SPECIES == sp1,
+    GENUS_SPECIES == sp1,
     YEAR %in% years_overlap
   ) %>%
   dplyr::group_by(YEAR) %>%
@@ -200,7 +332,7 @@ sp1_data <- timeseries_1 %>%
 
 sp2_data <- timeseries_2 %>%
   dplyr::filter(
-    SPECIES == sp2,
+    GENUS_SPECIES == sp2,
     YEAR %in% years_overlap
   ) %>%
   dplyr::group_by(YEAR) %>%
@@ -214,14 +346,23 @@ sp2_data <- timeseries_2 %>%
   dplyr::ungroup() %>%
   dplyr::arrange(YEAR)
 
+ggplot(sp2_data, aes(x=PLOT, y=sum.allrawdata.BIOMASS ))+
+  geom_point()
+
+#Ok, so if there is plot data could we do a mixed effects model? Incorporate differences among plots? 
+
 ## So you will remember, the overlap we calculated above is at the taxon level, so for all species in the timeseries 
 #but each pair of species may not overlap across all the years 
 #so we need to filter the data by only the years that these species overlap in sampling 
 sp1_data %<>% dplyr::filter(YEAR %in% sp2_data$YEAR)
+sp1_data <- sp1_data %>%
+  mutate(scaled_abundance = scale(Abundance))
 sp2_data %<>% dplyr::filter(YEAR %in% sp1_data$YEAR)
+sp2_data <- sp2_data %>%
+  mutate(scaled_abundance = scale(Abundance))
 
 ## Calculate correlation between two species
-cor_pair <- cor(sp1_data$Abundance, sp2_data$Abundance)
+cor_pair <- cor(sp1_data$scaled_abundance[,1], sp2_data$scaled_abundance[,1])
 
 ## Plot our timeseries
 fig_data <- dplyr::bind_rows(
@@ -236,7 +377,7 @@ fig_data %>%
   geom_line(
     aes(
       x = YEAR,
-      y = Abundance,
+      y = scaled_abundance[,1],
       color = Species
     ), 
     linewidth = 3
@@ -295,6 +436,9 @@ taxon2_data <- timeseries_2 %>%
   dplyr::ungroup() %>%
   dplyr::arrange(YEAR)%>%
   distinct(.)
+
+taxon1_data %<>% dplyr::filter(YEAR %in% taxon2_data$YEAR)
+taxon2_data %<>% dplyr::filter(YEAR %in% taxon1_data$YEAR)
 
 # Calculate correlation between two taxa
 cor_pair <- cor(taxon1_data$Abundance, taxon2_data$Abundance)
@@ -376,6 +520,10 @@ zeros
 # TASK 2: Think about some reasons why having 0s in taxa 1 and taxa 2 of overlapping pairs of years
 # could present some difficulties in our analyses of asking whether changes in abundance in taxa in 
 # one year can predict changes in abundance of another taxa.
+#Could be years that were not sampled, or years that there was actually no biomass observed
+#E.g. migrating species? Species undergoing local extinction?
+#Might have to approach on case-by-case, look at study itself
+#IF actually based on study design, wouldn't be that hard to do some sort of interpolation
 
 
 
@@ -409,6 +557,13 @@ head(meta.pairs$GENERAL_TREAT)
 
 ##This could potentially cause issues in our interpretations of the different time series
 #TASK 3: Try to think of some different ideas for how we might account for this and bring them to the working group
+#Somehow only use control groups? 
+#note: seasonal differences too, this particular dataset collected in spring and autumn
+#However, if our focus is on long-term abundances, this should be fine
+#Also to note - we could just eliminate ones that use plots, as these tend to indicate treatment...
+#But this could eliminate a whole chunk of our data
+
+
 
 #now let's see where these studies were located 
 head(meta.pairs$CENT_LAT)
