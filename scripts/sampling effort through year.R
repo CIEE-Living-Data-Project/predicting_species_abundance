@@ -100,5 +100,6 @@ ggplot(collated.pairs_seasonal_summary, aes(no.months.sampled)) +
 # note that because no true seasons in equator, yearly sampling effort is not binned to season
 collated.pairs_seasonal_summary_wide <- spread(collated.pairs_seasonal_summary, SEASON, no.months.sampled)
 
+# bind back to full data if wanted 
 #collated.pairs_seasonal_genus <- left_join(collated.pairs_genus, collated.pairs_seasonal_summary)
 
