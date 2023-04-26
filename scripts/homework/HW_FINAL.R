@@ -105,8 +105,8 @@ taxaCol<-c('#ffffff','#ffffbf','#5e4fa2','#f46d43','#3288bd','#abdda4','#a8c614'
 
 # Now let's use the above function to plot these studies across the globe
 (gplot <- drawWorld("y") + 
-  geom_point(data=bio.pairs, aes(x=long.1, y=lat.1, colour = taxa.pairs, size = overlap.years), 
-             alpha=I(0.7)))
+    geom_point(data=bio.pairs, aes(x=long.1, y=lat.1, colour = taxa.pairs, size = overlap.years), 
+               alpha=I(0.7)))
 
 # Let's also look at the distribution of taxa pairs in these data
 par(mai = c(.5,3.5,.1,.1)) #create space under x-axis
