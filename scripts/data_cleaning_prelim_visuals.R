@@ -55,6 +55,22 @@ write.csv(working, "data/cleaned_collated_pairs_EBMW.csv")
 
 ####################################################################################################
 
+working <- read.csv("data/cleaned_collated_pairs_EBMW.csv")
+
+
+#Check if sampling effort changes
+variation_in_sampling <- working %>%
+  group_by(ID) %>%
+  summarize(sd = sd(EFFORT.YEAR))
+#studies where SD differs by more than 10?
+high_variation <- variation_in_sampling %>%
+  filter(sd>10)
+
+study_54 <- working %>%
+  filter(ID==54)
+  
+
+
 #Double checking genus low sampling - did removing rare species remove rare genera? 
 low_sampling_cleaned <- working %>%
   group_by(GENUS) %>%
@@ -242,5 +258,54 @@ fig_data %>%
 
 
 
+
+
+#Checking zeroes again
+# This example had abundance data for both taxa groups in all years. What about taxa pairs that 
+# have many 0s in their overlapping years? Let's look for an example of such a pair. 
+
+zeros <- data.frame(study_id = NA, years = NA) #initialize empty dataframe
+
+for (i in 1:nrow(bio.pairs)) {
+  
+  # create dataframe for each timeseries in a pair
+  timeseries_1 <- working %>% dplyr::filter(ID == bio.pairs$ID.1[i])
+  timeseries_2 <- working %>% dplyr::filter(ID == bio.pairs$ID.2[i])
+  
+  # summarize mean abundance per year for taxon 1
+  taxon1_data <- timeseries_1 %>%
+    dplyr::group_by(YEAR) %>%
+    dplyr::summarise(
+      Abundance1 = sum( ## This assumes there will only ever be either abundance or biomass data
+        mean(mean_abun, na.rm = TRUE),
+        mean(mean_bio, na.rm = TRUE),
+        na.rm = TRUE
+      )
+    )
+  
+  # summarize mean abundance per year for taxon 2
+  taxon2_data <- timeseries_2 %>%
+    dplyr::group_by(YEAR) %>%
+    dplyr::summarise(
+      Abundance2 = sum( ## This assumes there will only ever be either abundance or biomass data
+        mean(mean_abun, na.rm = TRUE),
+        mean(mean_bio, na.rm = TRUE),
+        na.rm = TRUE
+      )
+    )
+  
+  # keep only overlapping years
+  tax12_data <- inner_join(taxon1_data, taxon2_data, by = 'YEAR')
+  
+  # identify and record any years of study ID that have 0s in abundance or biomass
+  if (0 %in% tax12_data$Abundance1) {
+    
+    zeros <- rbind(zeros, 
+                   c(bio.pairs$ID.1[i], paste(min(tax12_data$YEAR), max(tax12_data$YEAR), sep = '_')))
+  }
+}
+
+# Look at zeros
+zeros
 
 
