@@ -6,6 +6,7 @@
 library(dplyr) 
 library(tibble) 
 library(progress)
+library(stringr)
 
 #Load data
 load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/cleaned_collated_standardized_MSF.Rdata")

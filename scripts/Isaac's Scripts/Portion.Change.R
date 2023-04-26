@@ -185,10 +185,25 @@ log.prop.change.with.meta<-left_join(results,meta.data) #join meta data with res
 #add unique genera ID col
 log.prop.change.with.meta$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta$Gn1,log.prop.change.with.meta$Gn2,log.prop.change.with.meta$PairID,sep="_")
 
-#save
-saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
+#
+dummy.dataset <- readRDS("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/dummy.dataset.RDS")
 
 
+dummy.dataset$SERIES.length<-NA
+
+for (i in 1:length(unique(dummy.dataset$UNIQUE.PAIR.ID))){
+
+  id=unique(dummy.dataset$UNIQUE.PAIR.ID)[i]
+  
+  dummy.dataset$SERIES.length[which(dummy.dataset$UNIQUE.PAIR.ID==id)]=nrow(dummy.dataset[which(dummy.dataset$UNIQUE.PAIR.ID==id),])+1
+
+  
+}
+
+
+table(dummy.dataset$SERIES.length)
+
+View(dummy.dataset)
 
 
 
