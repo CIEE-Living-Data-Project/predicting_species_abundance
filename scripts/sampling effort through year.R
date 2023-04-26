@@ -5,7 +5,7 @@ library(dplyr)
 
 rm(list=ls()) 
 
-setwd("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance")
+setwd("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/scripts")
 
 #### DATA #####
 load("./data/tidy/collated_pairs.RData") # collated pairs of overlapping studies
