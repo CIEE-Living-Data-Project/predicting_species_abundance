@@ -160,5 +160,16 @@ all_interactions <- rbind(pair_interactions_1, pair_interactions_2, pair_interac
 colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
 write.csv(all_interactions, "data/genus_interaction_list.csv")
 
+parasite <- all_interactions %>%
+  filter(interaction=="pathogenOf")
+
+#Remove interaction pairs that are mistakes (pathogen, host, hemiparasite
+#- see original all interactions above)
+
+mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', 'pathogenOf')
+all_interactions_2<- all_interactions %>%
+  filter(!interaction %in% mistake_interactions)
+write.csv(all_interactions_2, "data/genus_interaction_list.csv")
+
 
 
