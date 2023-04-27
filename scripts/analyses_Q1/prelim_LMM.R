@@ -36,25 +36,33 @@ dat <- readRDS('data/dummy.dataset.RDS')
   
 FAM <- gaussian(link = 'identity')
 
-MODFORM <- brms::bf(Log.prop.change.abun.Gn1 ~ 1 + Log.prop.change.bio.Gn2 + #intercept + fixed effect
+MODFORM <- brms::bf(Log.prop.change.abun.Gn1 ~ Log.prop.change.bio.Gn2 + #intercept + fixed effect
                       
-                      + (Log.prop.change.bio.Gn2 | SERIES.length) + #rand effect of time series length
+                      (Log.prop.change.bio.Gn2 | SERIES.length) + #rand slopes for time series length
                       
-                      + (Log.prop.change.bio.Gn2 | PairID/UNIQUE.PAIR.ID)) 
-                      #rand effect of genus[i]-genus[j] nested within studyID[i]-studyID[j]
+                      (Log.prop.change.bio.Gn2 | PairID/UNIQUE.PAIR.ID))   
+                      #rand slopes for genus[i]-genus[j] nested within studyID[i]-studyID[j]
+
 
 # Fit full model
 
-mod <- brms::brm(MODFORM, data = dat, family = FAM,
+mod <- brms::brm(MODFORM, data = dat, family = FAM, seed = 042023, #set seed
                  
-                    chains = 3, iter = 5000, warmup = 1000, cores = 4, # fitting information
+                    chains = 3, iter = 5000, warmup = 1000, cores = 4, #fitting information
                  
                     file = 'outputs/brms_April2023/dummy_mod.rds', file_refit = 'on_change') #save
 
+# # FITTING ISSUES
 
-coefs <- coef(mod)[2]
+# NA's -> these are biomass values
 
-hist(coefs$`PairID:UNIQUE.PAIR.ID`, breaks = 100)
+# divergent transitions -> NEED TO DEAL WITH THIS (http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup)
+# low ESS -> NEED TO DEAL WITH THIS
+
+coefs <- coef(mod)$`PairID:UNIQUE.PAIR.ID`[1:52, 1, 2] #random int & slopes
+
+hist(coefs, breaks = 100)
+
 
 
 ### NOT RUN; STOP 26.4.2023 NC
