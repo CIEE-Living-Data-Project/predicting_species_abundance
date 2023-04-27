@@ -30,3 +30,11 @@ dat <- readRDS('data/log.prop.change.with.meta.w.taxa.RDS')
 
 ####################################################################################################
 
+
+
+#Mia's code -------------------------
+#is this working?
+library("praise")
+praise()
+
+#end of Mia's code
