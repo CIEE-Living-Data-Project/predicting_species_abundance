@@ -204,11 +204,10 @@ cornus_turdus <- all_interactions_2 %>%
 cased_interactions<- all_interactions_2%>%
   mutate(
     interaction_type = case_when(
-      interaction %in%  c("eatenBy", "eats", "preysOn", "preyedUponBy") ~ "predator_prey",
+      interaction %in%  c("preysOn", "preyedUponBy", "eatenBy", "eats") ~ "predator_prey",
       interaction %in% c("mutualistOf") ~ "mutualism",
       interaction %in% c("hasDispersalVector", "dispersalVectorOf") ~ "dispersal",
-      interaction %in% c("flowersVisitedBy", "visits", "visitsFlowersOf", "visitedBy") ~ "visits",
-      interaction %in% c("interactsWith") ~ "uncategorized_interaction",
+      interaction %in% c("interactsWith", "flowersVisitedBy", "visits", "visitsFlowersOf", "visitedBy") ~ "uncategorized_interaction",
       TRUE ~ NA_character_
     ),
     .keep = "unused"
@@ -224,5 +223,24 @@ cased_interaction_unique <- cased_interactions %>% distinct()
 summary_interactions_cased<- cased_interaction_unique %>%
   group_by(Gn1, Gn2) %>%
   summarize(n=n()) %>%
-  arrange(desc(n))
+  arrange() %>%
+  left_join(cased_interaction_unique, by=c('Gn1', "Gn2"))
 
+
+# 
+# # Remove rows with "unclassified_interaction" that are associated with any other interaction type for each genus pair
+# cased_interactions_filtered <- summary_interactions_cased %>%
+# filter(!(n>1 & interaction_type =="uncategorized_interaction"))
+# cased_interactions_filtered <- summary_interactions_cased %>%
+#   filter(!(n>1 & interaction_type =="visits"))
+
+cased_interactions_filtered_2<- cased_interactions_filtered %>%
+  group_by(Gn1, Gn2) %>%
+  mutate(num_interactions=n())  %>%
+  select(!n)
+
+#To-do: 
+#yay-nay interaction
+#Positive-negative-neutral
+#Integrate with existing dataset of log abundance for modellers and push 
+#Remove original n column from finalized dataset of interactions
