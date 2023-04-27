@@ -55,9 +55,12 @@ years.overlap=cont.overlapping[[dat$Period[which(dat$value==max(dat$value))]]]
 n=dat$Period[which(dat$value>9)]
 
 if (length(n)>1){
-  res=data.frame(matrix(ncol=9,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2","Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2","PairID","Type","SERIES.n")))) #makes an empty dataframe
+  res=data.frame(matrix(ncol=13,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2","Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2","PairID","Type","SERIES.n","SERIES.start","SERIES.end","YEAR.T","YEAR.T1")))) #makes an empty dataframe
   for (x in 1:length(n)){
     years.overlap=cont.overlapping[[n[x]]]
+    
+    start.year=years.overlap[1]
+    end.year=years.overlap[length(years.overlap)]
     
     #get abundances or biomass
     gen1.abun<-study_1$mean_abun_st[which(study_1$GENUS==genera.pair$Gn1 & study_1$YEAR%in%years.overlap)]
@@ -65,6 +68,10 @@ if (length(n)>1){
     
     gen1.bio<-study_1$mean_bio_st[which(study_1$GENUS==genera.pair$Gn1 & study_1$YEAR%in%years.overlap)]
     gen2.bio<-study_2$mean_bio_st[which(study_2$GENUS==genera.pair$Gn2 & study_2$YEAR%in%years.overlap)]
+    
+    #get year t and t+1
+    year.Ts=years.overlap[1:(length(years.overlap)-1)]
+    year.T1s=years.overlap[2:length(years.overlap)]
     
     #calc  change in abun
     N1_gn1_abun = gen1.abun[2:length(gen1.abun)]
@@ -89,11 +96,14 @@ if (length(n)>1){
     res.add<-data.frame("Gn1"=genera.pair$Gn1,"Gn2"=genera.pair$Gn2,
                     "Log.prop.change.abun.Gn1"=log_prop_change_gn1_abun,"Log.prop.change.abun.Gn2"=log_prop_change_gn2_abun,
                     "Log.prop.change.bio.Gn1"=log_prop_change_gn1_bio,"Log.prop.change.bio.Gn2"=log_prop_change_gn2_bio,
-                    "PairID"=genera.pair$PAIR.ID,"Type"=genera.pair$Type,"SERIES.n"=x)
-
+                    "PairID"=genera.pair$PAIR.ID,"Type"=genera.pair$Type,
+                    "SERIES.n"=x,"SERIES.start"=start.year,"SERIES.end"=end.year,
+                    "YEAR.T"=year.Ts,"YEAR.T1"=year.T1s)
+    
     res<-rbind(res,res.add)
   }
   
+  res$SERIES.l=nrow(res)+1
   return(res)
   
   
@@ -102,13 +112,19 @@ if (length(n)>1){
 if (length(n)==1){
   years.overlap=cont.overlapping[[n]]
   
-#get abundances or biomass
+  start.year=years.overlap[1]
+  end.year=years.overlap[length(years.overlap)]
   
+#get abundances or biomass
 gen1.abun<-study_1$mean_abun_st[which(study_1$GENUS==genera.pair$Gn1 & study_1$YEAR%in%years.overlap)]
 gen2.abun<-study_2$mean_abun_st[which(study_2$GENUS==genera.pair$Gn2 & study_2$YEAR%in%years.overlap)]
 
 gen1.bio<-study_1$mean_bio_st[which(study_1$GENUS==genera.pair$Gn1 & study_1$YEAR%in%years.overlap)]
 gen2.bio<-study_2$mean_bio_st[which(study_2$GENUS==genera.pair$Gn2 & study_2$YEAR%in%years.overlap)]
+
+#get year t and t+1
+year.Ts=years.overlap[1:(length(years.overlap)-1)]
+year.T1s=years.overlap[2:length(years.overlap)]
 
 #calc  change in abun
 N1_gn1_abun = gen1.abun[2:length(gen1.abun)]
@@ -133,11 +149,15 @@ log_prop_change_gn2_bio = log(N1_gn2_bio/N0_gn2_bio)
 res<-data.frame("Gn1"=genera.pair$Gn1,"Gn2"=genera.pair$Gn2,
            "Log.prop.change.abun.Gn1"=log_prop_change_gn1_abun,"Log.prop.change.abun.Gn2"=log_prop_change_gn2_abun,
            "Log.prop.change.bio.Gn1"=log_prop_change_gn1_bio,"Log.prop.change.bio.Gn2"=log_prop_change_gn2_bio,
-           "PairID"=genera.pair$PAIR.ID,"Type"=genera.pair$Type,"SERIES.n"=1)
+           "PairID"=genera.pair$PAIR.ID,"Type"=genera.pair$Type,
+           "SERIES.n"=1,"SERIES.start"=start.year,"SERIES.end"=end.year,
+           "YEAR.T"=year.Ts,"YEAR.T1"=year.T1s)
+
+res$SERIES.l=nrow(res)+1
 
 return(res)}}
 
-results=data.frame(matrix(ncol=9,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2","Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2","PairID","Type","SERIES.n")))) #makes an empty dataframe
+results=data.frame(matrix(ncol=14,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2","Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2","PairID","Type","SERIES.n","SERIES.start","SERIES.end","SERIES.l","YEAR.T","YEAR.T1")))) #makes an empty dataframe
 pb<-set.prog.bar(nrow(pairs.keep))
 for (i in 1:nrow(pairs.keep)){
   pb$tick()
@@ -153,33 +173,31 @@ make.meta<-function(data,meta){
   pb<-set.prog.bar(length(unique(data$PairID)))
   for (i in 1:length(unique(data$PairID))){
     pb$tick()
-    
+
     PairID=unique(data$PairID)[i]
     
     ID1=str_split(PairID,"_")[[1]][1]
     ID2=str_split(PairID,"_")[[1]][2]
     
     met<-data.frame("PairID"=PairID,"ID1"=ID1,"ID2"=ID2,
-               "REALM1"=meta$REALM[which(meta$STUDY_ID==ID1)],
-               "REALM2"=meta$REALM[which(meta$STUDY_ID==ID2)],
-               "TAXA1"=meta$TAXA[which(meta$STUDY_ID==ID1)],
-               "TAXA2"=meta$TAXA[which(meta$STUDY_ID==ID2)],
-               "HABITAT1"=meta$HABITAT[which(meta$STUDY_ID==ID1)],
-               "HABITAT2"=meta$HABITAT[which(meta$STUDY_ID==ID2)],
-               "PROTECTED_AREA1"=meta$PROTECTED_AREA[which(meta$STUDY_ID==ID1)],
-               "PROTECTED_AREA2"=meta$PROTECTED_AREA[which(meta$STUDY_ID==ID2)])
+               "REALM1"=unique(meta$REALM[which(meta$ID==ID1)]),
+               "REALM2"=unique(meta$REALM[which(meta$ID==ID2)]),
+               "TAXA1"=unique(meta$TAXA[which(meta$ID==ID1)]),
+               "TAXA2"=unique(meta$TAXA[which(meta$ID==ID2)]),
+               "ORGANISMS1"=unique(meta$ORGANISMS[which(meta$ID==ID1)]),
+               "ORGANISMS2"=unique(meta$ORGANISMS[which(meta$ID==ID2)]),
+               "CLIMATE1"=unique(meta$CLIMATE[which(meta$ID==ID1)]),
+               "CLIMATE2"=unique(meta$CLIMATE[which(meta$ID==ID2)]))
     
     meta.data<-rbind(meta.data,met)
     
     
   }
 
-  
   return(meta.data)
   
-  
 } #function to fetch meta data
-meta.data<-make.meta(results,meta.pairs)
+meta.data<-make.meta(results,collated.pairs_standardized_summary)
 log.prop.change.with.meta<-left_join(results,meta.data) #join meta data with results df
 
 #add unique genera ID col
@@ -188,7 +206,4 @@ log.prop.change.with.meta$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta$Gn1,log
 #save
 saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
 
-
-
-
-
+getwd()
