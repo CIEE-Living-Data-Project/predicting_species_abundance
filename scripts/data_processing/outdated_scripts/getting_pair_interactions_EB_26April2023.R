@@ -177,11 +177,10 @@ summary_interactions <- all_interactions_2 %>%
   summarize(n=n()) %>%
   arrange(desc(n))
 
-
-#what are interactions?
-cornus_turdus <- all_interactions_2 %>%
-  filter(Gn1=='Cornus'& Gn2 == 'Turdus')
-
+#unique rows summary_interactions: 
+unique_interactions_1 <-summary_interactions %>%
+  select(Gn1, Gn2) %>%
+  distinct()
 
 
 #Next steps: start collapsing interaction types into larger groups, 
@@ -196,9 +195,6 @@ cornus_turdus <- all_interactions_2 %>%
 #uncategorized_interaction
   #interactsWith
 
-
-
-#Try different functions from chatgpt
 
 # Use case_when to classify the columns
 cased_interactions<- all_interactions_2%>%
@@ -239,8 +235,52 @@ cased_interactions_filtered_2<- cased_interactions_filtered %>%
   mutate(num_interactions=n())  %>%
   select(!n)
 
+
 #To-do: 
 #yay-nay interaction
 #Positive-negative-neutral
 #Integrate with existing dataset of log abundance for modellers and push 
 #Remove original n column from finalized dataset of interactions
+
+#
+#Yes/no interaction
+#Get pairs 
+distinct_pairs <- cased_interactions_filtered_2 %>%
+  select(Gn1, Gn2) %>%
+  distinct()
+
+#Read in interactions 
+log_change <- readRDS("data/preprocessing/log.prop.change.with.meta.RDS")
+head(log_change)
+
+# Create a new column in df2 called "interaction" and initialize all values to 0
+log_change$interaction_present <- 0
+
+# Loop through each row in df2 and check if it matches any pairs in df1
+pb<-set.prog.bar(nrow(log_change)) #sets progress bar
+for (i in 1:nrow(log_change)) {
+  pb$tick()
+  if (paste(log_change$Gn1[i], log_change$Gn2[i], sep = "-") %in% 
+      paste(distinct_pairs$Gn1, distinct_pairs$Gn2, sep = "-")
+      | paste(log_change$Gn2[i], log_change$Gn1[i], sep = "-") %in% 
+      paste(distinct_pairs$Gn1, distinct_pairs$Gn2, sep = "-")) {
+    log_change$interaction_present[i] <- 1
+  }
+}
+
+colnames(log_change)[26] <- "interaction_found"
+
+saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
+
+
+#Do positive negative neutral 
+pos_neg_interactions<- cased_interactions_filtered_2%>%
+  mutate(
+    interaction_benefit = case_when(
+      interaction %in%  c("predator_prey") ~ "negative",
+      interaction %in% c("mutualism", "dispersal") ~ "positive",
+      interaction %in% c("uncategorized_interaction") ~ "neutral",
+      TRUE ~ NA_character_
+    ),
+    .keep = "unused"
+  )

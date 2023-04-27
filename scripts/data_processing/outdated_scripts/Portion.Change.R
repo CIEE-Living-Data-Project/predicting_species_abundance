@@ -9,12 +9,15 @@ library(progress)
 library(stringr)
 
 #Load data
-load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/cleaned_collated_standardized_MSF.Rdata")
-between.studies.overlap<-readRDS("data/between.studies.overlap.RDS")
+load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/preprocessing/cleaned_collated_standardized_MSF.Rdata")
+between.studies.overlap<-readRDS("data/preprocessing/between.studies.overlap.RDS")
+within.studies.overlap<-readRDS("data/preprocessing/within.studies.overlap.RDS")
+
 bio.pairs <- read.csv("data/prep_biotime/bio_pairs_10km.csv")
 meta.pairs <- read.csv("data/prep_biotime/meta_pairs_10km.csv")
 
 pairs.keep=between.studies.overlap[which(between.studies.overlap$Max.Overlap>9),] #this is generated in the Overlap script
+pairs.keep=within.studies.overlap[which(within.studies.overlap$Max.Overlap>9),] #this is generated in the Overlap script
 
 #function to add progress bar
 set.prog.bar<-function(n_iter){
@@ -198,20 +201,23 @@ make.meta<-function(data,meta){
   
 } #function to fetch meta data
 meta.data<-make.meta(results,collated.pairs_standardized_summary)
-log.prop.change.with.meta<-left_join(results,meta.data) #join meta data with results df
+log.prop.change.with.meta.WITHIN<-left_join(results,meta.data) #join meta data with results df
 
 #add unique genera ID col
 log.prop.change.with.meta$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta$Gn1,log.prop.change.with.meta$Gn2,log.prop.change.with.meta$PairID,sep="_")
+log.prop.change.with.meta.WITHIN$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta.WITHIN$Gn1,log.prop.change.with.meta.WITHIN$Gn2,log.prop.change.with.meta.WITHIN$PairID,sep="_")
 
 #save
 saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
+saveRDS(log.prop.change.with.meta.WITHIN,"data/preprocessing/log.prop.change.with.meta.WITHIN.RDS")
+
 log.prop.change.with.meta<-readRDS("data/log.prop.change.with.meta.RDS")
 
 #add better taxa cols
 library(taxize)
 taxa1<-tax_name(query = unique(log.prop.change.with.meta$Gn1), get = "class", db = "itis")
 taxa2<-tax_name(query = unique(log.prop.change.with.meta$Gn2)[-which(unique(log.prop.change.with.meta$Gn2)%in%unique(log.prop.change.with.meta$Gn1))], get = "class", db = "itis")
-
+taxa<-rbind(taxa1,taxa2)
 #add new taxa col
 taxa<-readRDS("data/class.assignment.RDS")
 taxa$Gn1=taxa$query
@@ -222,9 +228,21 @@ taxa$RESOLVED.TAXA2=taxa$RESOLVED.TAXA1
 log.prop.change.with.meta.taxa<-left_join(log.prop.change.with.meta,taxa[,c("Gn1","RESOLVED.TAXA1")])
 log.prop.change.with.meta.taxa<-left_join(log.prop.change.with.meta.taxa,taxa[,c("Gn2","RESOLVED.TAXA2")])
 
-table(log.prop.change.with.meta.taxa$RESOLVED.TAXA1)
+log.prop.change.with.meta.WITHIN<-left_join(log.prop.change.with.meta.WITHIN,taxa[,c("Gn1","RESOLVED.TAXA1")])
+log.prop.change.with.meta.WITHIN<-left_join(log.prop.change.with.meta.WITHIN,taxa[,c("Gn2","RESOLVED.TAXA2")])
+
 
 saveRDS(log.prop.change.with.meta.taxa,"data/log.prop.change.with.meta.w.taxa.RDS")
+saveRDS(log.prop.change.with.meta.WITHIN,"data/preprocessing/log.prop.change.with.meta.WITHIN.w.taxa.RDS")
+
+
+
+table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA1)
+table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA2)
+
+
+
+
 
 
 
