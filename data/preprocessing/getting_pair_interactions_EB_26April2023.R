@@ -166,90 +166,10 @@ parasite <- all_interactions %>%
 #Remove interaction pairs that are mistakes (pathogen, host, hemiparasite
 #- see original all interactions above)
 
-<<<<<<< HEAD
-mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', 'pathogenOf', 
-                          'hasVector', 'parasiteOf')
-=======
 mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', 'pathogenOf')
->>>>>>> AF/scripts-rearrangement
 all_interactions_2<- all_interactions %>%
   filter(!interaction %in% mistake_interactions)
 write.csv(all_interactions_2, "data/genus_interaction_list.csv")
 
-<<<<<<< HEAD
-summary_interactions <- all_interactions_2 %>%
-  group_by(Gn1, Gn2) %>%
-  summarize(n=n()) %>%
-  arrange(desc(n))
 
 
-#what are interactions?
-cornus_turdus <- all_interactions_2 %>%
-  filter(Gn1=='Cornus'& Gn2 == 'Turdus')
-
-
-
-#Next steps: start collapsing interaction types into larger groups, 
-#predator-prey (including herbivory)
-  #eatenBy, eats, preysOn, preyedUponBy
-#mutualism
-  #mutualistOf
-#dispersal 
-  #hasDispersalVector, dispersalVectorOf
-#visits
-  #flowersVisitedBy, #visits, #visitsFlowersOf, #visitedBy
-#uncategorized_interaction
-  #interactsWith
-
-
-
-#Try different functions from chatgpt
-
-# Use case_when to classify the columns
-cased_interactions<- all_interactions_2%>%
-  mutate(
-    interaction_type = case_when(
-      interaction %in%  c("preysOn", "preyedUponBy", "eatenBy", "eats") ~ "predator_prey",
-      interaction %in% c("mutualistOf") ~ "mutualism",
-      interaction %in% c("hasDispersalVector", "dispersalVectorOf") ~ "dispersal",
-      interaction %in% c("interactsWith", "flowersVisitedBy", "visits", "visitsFlowersOf", "visitedBy") ~ "uncategorized_interaction",
-      TRUE ~ NA_character_
-    ),
-    .keep = "unused"
-  )
-
-# Remove pairs whose characters don't match anything
-cased_interactions <- cased_interactions %>%
-  filter(!is.na(interaction_type))
-cased_interaction_unique <- cased_interactions %>% distinct()
-
-#Let's check how many have multiple interactions still assigned
-
-summary_interactions_cased<- cased_interaction_unique %>%
-  group_by(Gn1, Gn2) %>%
-  summarize(n=n()) %>%
-  arrange() %>%
-  left_join(cased_interaction_unique, by=c('Gn1', "Gn2"))
-
-
-# 
-# # Remove rows with "unclassified_interaction" that are associated with any other interaction type for each genus pair
-# cased_interactions_filtered <- summary_interactions_cased %>%
-# filter(!(n>1 & interaction_type =="uncategorized_interaction"))
-# cased_interactions_filtered <- summary_interactions_cased %>%
-#   filter(!(n>1 & interaction_type =="visits"))
-
-cased_interactions_filtered_2<- cased_interactions_filtered %>%
-  group_by(Gn1, Gn2) %>%
-  mutate(num_interactions=n())  %>%
-  select(!n)
-
-#To-do: 
-#yay-nay interaction
-#Positive-negative-neutral
-#Integrate with existing dataset of log abundance for modellers and push 
-#Remove original n column from finalized dataset of interactions
-=======
-
-
->>>>>>> AF/scripts-rearrangement
