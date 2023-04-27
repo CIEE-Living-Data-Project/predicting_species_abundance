@@ -1,9 +1,9 @@
 # Aims:
-# 1. Explore approaches to answer Q2
+# 1. Visualize data to explore Q2
 
-# Author: Nathalie Chardon
+# Author: Gavia Lertzman-Lepofsky
 # Date created: 27 April 2023
-# Date updated: 26 April 2023 (NC)
+# Date updated: 27 April 2023 (NC)
 
 
 # # LIBRARIES # #
@@ -18,8 +18,8 @@ rm(list=ls())
 
 # # INPUT FILES # #
 dat <- readRDS('data/log.prop.change.with.meta.w.taxa.RDS')
+int <- read.csv("data/preprocessing/genus_interaction_list.csv")
 
-# # OUTPUT FILES # #
 
 
 ####################################################################################################
@@ -41,16 +41,21 @@ length(unique(dat$PairID)) # 63 pairs
 # nope
 subset(dat, CLIMATE1=="tropical" & REALM2=="Marine")
 
+# how many types of interactions?
+table(int$interaction)
 
-# not very much tropical 
-# and only one pair
+# visualize pairs across realm and climate
 ggplot(dat, 
-       aes(Log.prop.change.abun.Gn1, Log.prop.change.abun.Gn2, colour=PairID)) +
+       aes(Log.prop.change.abun.Gn1, Log.prop.change.abun.Gn2, colour=UNIQUE.PAIR.ID)) +
   geom_point(pch=1) +
   facet_wrap(REALM1~CLIMATE1) +
   theme_base() +
   theme(legend.position = "none")
 
+# how many data points per panel?
+dat %>% 
+  group_by(REALM1, CLIMATE1) %>% 
+  summarize(length(UNIQUE.PAIR.ID))
 
 # plot abundance change through time only terrestrial temperate, coloured by something
 # Year.T on x axis
@@ -70,16 +75,6 @@ ggplot(.,
 # can't do BioTime climate classification bc not enough variation, could maybe download worldclim or abs lat, but what is hypothesis? 
 # are there certain types of taxon pairs that have better predictive accuracy
 # eg. Check if prediction accuracy varies for different taxon pairs (e.g., mammal-bird)
-
-
-# Connectivity (how many connections one genus has to another) - proxy for generalism
-# of trophic levels occupied (genera with multiple different types of interactions e.g. a genus that’s involved in both a predator-prey and mutualistic relationship)
-# Climate (e.g. Temperate, Tropical, etc.)
-#  Interaction Network centrality/connectance?
-  
-
-
-
 
 
 
