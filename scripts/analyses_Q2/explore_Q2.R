@@ -30,3 +30,6 @@ dat <- readRDS('data/log.prop.change.with.meta.w.taxa.RDS')
 
 ####################################################################################################
 
+# Look at data
+dat <- readRDS('data/log.prop.change.with.meta.w.taxa.RDS')
+
