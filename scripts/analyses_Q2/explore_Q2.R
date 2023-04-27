@@ -29,15 +29,3 @@ dat <- readRDS('data/log.prop.change.with.meta.w.taxa.RDS')
 # # DATA EXPLORATION # # 
 
 ####################################################################################################
-
-
-
-
-### test line 
-
-
-
-
-
-
-
