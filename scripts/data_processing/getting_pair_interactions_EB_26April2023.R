@@ -270,6 +270,8 @@ for (i in 1:nrow(log_change)) {
 
 colnames(log_change)[26] <- "interaction_found"
 
+saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
+
 
 #Do positive negative neutral 
 pos_neg_interactions<- cased_interactions_filtered_2%>%
