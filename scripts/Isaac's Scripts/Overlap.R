@@ -9,8 +9,8 @@ library(progress)
 library(stringr)
 
 #Load data
-load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/cleaned_collated_standardized_MSF.Rdata")
-bio.pairs <- read_csv("data/prep_biotime/bio_pairs_10km.csv")
+load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/preprocessing/cleaned_collated_standardized_MSF.Rdata")
+bio.pairs <- read.csv("data/prep_biotime/bio_pairs_10km.csv")
 
 #Load some functions
 calc.overlap.between<-function(p,data){
@@ -110,7 +110,7 @@ calc.overlap.within<-function(ID,data){
     
   }
   mat.id1$Type="Within"
-  mat.id1$PAIR.ID=ID
+  mat.id1$PAIR.ID=paste0(ID,"_",ID)
   mat.id1<-mat.id1[-which(mat.id1$Gn1==mat.id1$Gn2),]
   
   return(mat.id1)
@@ -152,5 +152,6 @@ for (h in 1:length(unique(c(bio.pairs$ID.1,bio.pairs$ID.2)))){
 overlap.all.pairs<-rbind(between.studies.overlap,within.studies.overlap)
 
 #Save
-saveRDS(between.studies.overlap,"data/between.studies.overlap.RDS")
+saveRDS(between.studies.overlap,"data/preprocessing/between.studies.overlap.RDS")
+saveRDS(within.studies.overlap,"data/preprocessing/within.studies.overlap.RDS")
 
