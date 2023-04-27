@@ -1,4 +1,4 @@
-#Title: calculate portion change for species pairs 
+#Title: Calculate portion change for species pairs 
 #Author: Isaac Eckert
 #Date: April 26th, 2023
 
@@ -205,5 +205,27 @@ log.prop.change.with.meta$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta$Gn1,log
 
 #save
 saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
+log.prop.change.with.meta<-readRDS("data/log.prop.change.with.meta.RDS")
 
-getwd()
+#add better taxa cols
+library(taxize)
+taxa1<-tax_name(query = unique(log.prop.change.with.meta$Gn1), get = "class", db = "itis")
+taxa2<-tax_name(query = unique(log.prop.change.with.meta$Gn2)[-which(unique(log.prop.change.with.meta$Gn2)%in%unique(log.prop.change.with.meta$Gn1))], get = "class", db = "itis")
+
+#add new taxa col
+taxa<-readRDS("data/class.assignment.RDS")
+taxa$Gn1=taxa$query
+taxa$Gn2=taxa$query
+names(taxa)[which(names(taxa)=="class")]<-"RESOLVED.TAXA1"
+taxa$RESOLVED.TAXA2=taxa$RESOLVED.TAXA1
+
+log.prop.change.with.meta.taxa<-left_join(log.prop.change.with.meta,taxa[,c("Gn1","RESOLVED.TAXA1")])
+log.prop.change.with.meta.taxa<-left_join(log.prop.change.with.meta.taxa,taxa[,c("Gn2","RESOLVED.TAXA2")])
+
+table(log.prop.change.with.meta.taxa$RESOLVED.TAXA1)
+
+saveRDS(log.prop.change.with.meta.taxa,"data/log.prop.change.with.meta.w.taxa.RDS")
+
+
+
+
