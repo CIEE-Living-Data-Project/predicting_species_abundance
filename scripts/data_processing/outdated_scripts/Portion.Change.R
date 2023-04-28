@@ -232,13 +232,48 @@ log.prop.change.with.meta.WITHIN<-left_join(log.prop.change.with.meta.WITHIN,tax
 log.prop.change.with.meta.WITHIN<-left_join(log.prop.change.with.meta.WITHIN,taxa[,c("Gn2","RESOLVED.TAXA2")])
 
 
-saveRDS(log.prop.change.with.meta.taxa,"data/log.prop.change.with.meta.w.taxa.RDS")
+saveRDS(log.prop.change.with.meta.taxa,"data/preprocessing/log.prop.change.with.meta.w.taxa.RDS")
 saveRDS(log.prop.change.with.meta.WITHIN,"data/preprocessing/log.prop.change.with.meta.WITHIN.w.taxa.RDS")
-
-
 
 table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA1)
 table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA2)
+
+#combine both and split for bio and abun
+between<-readRDS("data/preprocessing/log.prop.change.with.meta.w.taxa.RDS")
+witin<-readRDS("data/preprocessing/log.prop.change.with.meta.WITHIN.w.taxa.RDS")
+
+all=rbind(between,witin)
+remove(witin,between)
+
+#split again for biomass and abun
+abun=all[which(!is.na(all$Log.prop.change.abun.Gn1) & !is.na(all$Log.prop.change.abun.Gn2)),-which(names(all)%in%c("Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2"))] #keep only rows with non NA abundance values and get rid of bio cols
+bio=all[which(!is.na(all$Log.prop.change.bio.Gn1) & !is.na(all$Log.prop.change.bio.Gn2)),-which(names(all)%in%c("Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2"))] #keep only rows with non NA biomass values and get rid of abun cols
+
+
+names(abun)[which(names(abun)=="Log.prop.change.abun.Gn1")]<-"Prop.Change.Gn1"
+names(abun)[which(names(abun)=="Log.prop.change.abun.Gn2")]<-"Prop.Change.Gn2"
+names(bio)[which(names(bio)=="Log.prop.change.bio.Gn1")]<-"Prop.Change.Gn1"
+names(bio)[which(names(bio)=="Log.prop.change.bio.Gn2")]<-"Prop.Change.Gn2"
+
+abun$Metric="ABUNDANCE"
+bio$Metric="BIOMASS"
+
+full.data<-rbind(abun,bio)
+
+saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
