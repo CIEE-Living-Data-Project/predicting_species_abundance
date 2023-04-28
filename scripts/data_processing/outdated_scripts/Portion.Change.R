@@ -239,7 +239,7 @@ table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA1)
 table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA2)
 
 #combine both and split for bio and abun
-between<-readRDS("data/preprocessing/log.prop.change.with.meta.w.taxa.RDS")
+between<-readRDS("data/preprocessing/log.prop.change.with.meta.BETWEEN.w.taxa.RDS")
 witin<-readRDS("data/preprocessing/log.prop.change.with.meta.WITHIN.w.taxa.RDS")
 
 all=rbind(between,witin)
@@ -249,16 +249,27 @@ remove(witin,between)
 abun=all[which(!is.na(all$Log.prop.change.abun.Gn1) & !is.na(all$Log.prop.change.abun.Gn2)),-which(names(all)%in%c("Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2"))] #keep only rows with non NA abundance values and get rid of bio cols
 bio=all[which(!is.na(all$Log.prop.change.bio.Gn1) & !is.na(all$Log.prop.change.bio.Gn2)),-which(names(all)%in%c("Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2"))] #keep only rows with non NA biomass values and get rid of abun cols
 
+cross.abun.bio=all[which(!is.na(all$Log.prop.change.abun.Gn1) & !is.na(all$Log.prop.change.bio.Gn2)),-which(names(all)%in%c("Log.prop.change.bio.Gn1","Log.prop.change.abun.Gn2"))]
+cross.bio.abun=all[which(!is.na(all$Log.prop.change.bio.Gn1) & !is.na(all$Log.prop.change.abun.Gn2)),-which(names(all)%in%c("Log.prop.change.abun.Gn1","Log.prop.change.bio.Gn2"))]
 
 names(abun)[which(names(abun)=="Log.prop.change.abun.Gn1")]<-"Prop.Change.Gn1"
 names(abun)[which(names(abun)=="Log.prop.change.abun.Gn2")]<-"Prop.Change.Gn2"
+
 names(bio)[which(names(bio)=="Log.prop.change.bio.Gn1")]<-"Prop.Change.Gn1"
 names(bio)[which(names(bio)=="Log.prop.change.bio.Gn2")]<-"Prop.Change.Gn2"
 
+names(cross.abun.bio)[which(names(cross.abun.bio)=="Log.prop.change.abun.Gn1")]<-"Prop.Change.Gn1"
+names(cross.abun.bio)[which(names(cross.abun.bio)=="Log.prop.change.bio.Gn2")]<-"Prop.Change.Gn2"
+
+names(cross.bio.abun)[which(names(cross.bio.abun)=="Log.prop.change.bio.Gn1")]<-"Prop.Change.Gn1"
+names(cross.bio.abun)[which(names(cross.bio.abun)=="Log.prop.change.abun.Gn2")]<-"Prop.Change.Gn2"
+
 abun$Metric="ABUNDANCE"
 bio$Metric="BIOMASS"
+cross.abun.bio$Metric="CROSS"
+cross.bio.abun$Metric="CROSS"
 
-full.data<-rbind(abun,bio)
+full.data<-rbind(abun,bio,cross.abun.bio,cross.bio.abun)
 
 saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
 
@@ -266,16 +277,10 @@ saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
 full.data=readRDS("data/preprocessing/log.prop.change.full.data.RDS")
 bio.pairs=read.csv("data/prep_biotime/bio_pairs_10km.csv")
 
-
 bio.pairs$PairID=paste(bio.pairs$ID.1,bio.pairs$ID.2,sep="_")
-
-
 full.data<-left_join(full.data,bio.pairs[,c(1,22)])
+full.data$dist[which(full.data$ID1==full.data$ID2)]<-0
 
-
-
-
-
-
+saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
 
 
