@@ -160,6 +160,10 @@ all_interactions <- rbind(pair_interactions_1, pair_interactions_2, pair_interac
 colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
 write.csv(all_interactions, "data/genus_interaction_list.csv")
 
+
+#Read in all_interactions_2 
+all_interactions <- read.csv("data/preprocessing/genus_interaction_list.csv")
+
 parasite <- all_interactions %>%
   filter(interaction=="pathogenOf")
 
@@ -170,7 +174,7 @@ mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', '
                           'hasVector', 'parasiteOf')
 all_interactions_2<- all_interactions %>%
   filter(!interaction %in% mistake_interactions)
-write.csv(all_interactions_2, "data/genus_interaction_list.csv")
+# write.csv(all_interactions_2, "data/genus_interaction_list.csv")
 
 summary_interactions <- all_interactions_2 %>%
   group_by(Gn1, Gn2) %>%
@@ -230,10 +234,9 @@ summary_interactions_cased<- cased_interaction_unique %>%
 # cased_interactions_filtered <- summary_interactions_cased %>%
 #   filter(!(n>1 & interaction_type =="visits"))
 
-cased_interactions_filtered_2<- cased_interactions_filtered %>%
+cased_interactions_filtered_2<- cased_interactions %>%
   group_by(Gn1, Gn2) %>%
-  mutate(num_interactions=n())  %>%
-  select(!n)
+  mutate(num_interactions=n())
 
 
 #To-do: 
@@ -257,6 +260,18 @@ head(log_change)
 log_change$interaction_present <- 0
 
 # Loop through each row in df2 and check if it matches any pairs in df1
+set.prog.bar<-function(n_iter){
+  #make progress bar
+  progress_bar$new(format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
+                   total = n_iter,
+                   complete = "=",
+                   incomplete = "-",
+                   current = ">",
+                   clear = FALSE,
+                   width = 100)
+  
+} #function to make a progress bar
+
 pb<-set.prog.bar(nrow(log_change)) #sets progress bar
 for (i in 1:nrow(log_change)) {
   pb$tick()
@@ -274,12 +289,15 @@ saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
 
 
 #Do positive negative neutral 
+log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+
+
 pos_neg_interactions<- cased_interactions_filtered_2%>%
   mutate(
     interaction_benefit = case_when(
-      interaction %in%  c("predator_prey") ~ "negative",
-      interaction %in% c("mutualism", "dispersal") ~ "positive",
-      interaction %in% c("uncategorized_interaction") ~ "neutral",
+      interaction_type %in%  c("predator_prey") ~ "negative",
+      interaction_type %in% c("mutualism", "dispersal") ~ "positive",
+      interaction_type %in% c("uncategorized_interaction") ~ "neutral",
       TRUE ~ NA_character_
     ),
     .keep = "unused"
