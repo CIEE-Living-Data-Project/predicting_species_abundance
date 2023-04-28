@@ -262,18 +262,15 @@ full.data<-rbind(abun,bio)
 
 saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
 
+#add distance col
+full.data=readRDS("data/preprocessing/log.prop.change.full.data.RDS")
+bio.pairs=read.csv("data/prep_biotime/bio_pairs_10km.csv")
 
 
+bio.pairs$PairID=paste(bio.pairs$ID.1,bio.pairs$ID.2,sep="_")
 
 
-
-
-
-
-
-
-
-
+full.data<-left_join(full.data,bio.pairs[,c(1,22)])
 
 
 
