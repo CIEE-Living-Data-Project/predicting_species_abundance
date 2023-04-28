@@ -11,7 +11,7 @@
 **Description of: `between.studies.overlap.RDS`:** This RDS file is a spreadsheet containing information about genus pairs and the amount of years (observations?) they overlap between studies. Genus names are aggregated from species-level observations
 
 | Column Name | Description                                                                     |
-|---------------|---------------------------------------------------------|
+|-------------|---------------------------------------------------------------------------------|
 | Gn1         | Genus 1 of pair                                                                 |
 | Gn2         | Genus 2 of pair                                                                 |
 | Max.Overlap | Maximum number of overlapping observations per pair                             |
@@ -21,7 +21,7 @@
 **Description of**: `cleaned_collated_standardized_MSF.Rdata`: R object name: collated.pairs_standardized_summary. This dataframe is the final collated pairs data used for downstream analysis. It is created using the `scripts/data_processing/Data.processing.R` script. Abundance and biomass measures are standardized at the species level. Species abundance and biomass measures are divided by the sampling effort (EFFORT.YEAR = number of plots sampled per study per year) to produce a standardized measure. Mean, median, min/max, and sd+CoV are then re-calculated from these new standardized measures, Created by Mia Waters, Sophia Fan, and Faraz Khan
 
 | Column Name    | Description                                                                                                                                                                                                                                                               |
-|---------------|---------------------------------------------------------|
+|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | ID             | Study ID                                                                                                                                                                                                                                                                  |
 | YEAR           | Year of study                                                                                                                                                                                                                                                             |
 | GENUS          | Genus name aggregated from species-level observations                                                                                                                                                                                                                     |
@@ -45,7 +45,7 @@
 **Description of**: `dummy.dataset.RDS` is a fake dataset using random pairs from `log.prop.change.with.meta.RDS`. This dummy dataset was used to create and test our analysis framework before using our real data.
 
 | Column Name              | Description                                       |
-|---------------|---------------------------------------------------------|
+|--------------------------|---------------------------------------------------|
 | Gn1                      | Genus of first species in pair                    |
 | Gn2                      | Genus of second species in pair                   |
 | Log.prop.change.abun.Gn1 | Log proportion change in abundance of Gn1         |
@@ -71,7 +71,7 @@
 **Description of**: `genus_interaction_list.csv` is a file containing the interaction types between different genera included in our final genus list.
 
 | Column Name | Description                                                                                                                                                                                                                                  |
-|---------------|---------------------------------------------------------|
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | ...1        | Record number                                                                                                                                                                                                                                |
 | Gn1         | Genus 1 of pair                                                                                                                                                                                                                              |
 | Gn2         | Genus 2 of pair                                                                                                                                                                                                                              |
@@ -80,7 +80,7 @@
 **Description of:** `log.prop.change.with.meta.RDS` is an RDS file with the log proportional change of abundance, including study metadata
 
 | Column Name              | Description                                       |
-|---------------|---------------------------------------------------------|
+|--------------------------|---------------------------------------------------|
 | Gn1                      | Genus of first species in pair                    |
 | Gn2                      | Genus of second species in pair                   |
 | Log.prop.change.abun.Gn1 | Log proportion change in abundance of Gn1         |
