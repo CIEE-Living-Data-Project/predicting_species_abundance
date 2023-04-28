@@ -1,9 +1,11 @@
-# Aims:
-# 1. Visualize data to explore Q2
-
 # Author: Gavia Lertzman-Lepofsky
 # Date created: 27 April 2023
 # Date updated: 27 April 2023 (NC)
+
+# Aims:
+# 1. Visualize data to explore Q2
+# counts of samples per realm and climates
+# figure: plotting data by realm and climate to see distribution, coloured by unique genus-pair and study ID
 
 
 # # LIBRARIES # #
@@ -57,8 +59,9 @@ dat %>%
   group_by(REALM1, CLIMATE1) %>% 
   summarize(length(UNIQUE.PAIR.ID))
 
-# plot abundance change through time only terrestrial temperate, coloured by something
-# Year.T on x axis
+# plot abundance change through time only terrestrial temperate, coloured by taxa pair
+# not a useful figure
+# confirms that no trend through time though
 dat %>% 
   filter(REALM1=="Terrestrial" & REALM2=="Terrestrial") %>% 
   mutate(taxa.pair=paste(TAXA1, TAXA2, sep="_")) %>% 
