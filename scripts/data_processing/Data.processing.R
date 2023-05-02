@@ -85,26 +85,26 @@ collated.pairs_standardized_summary <- collated.pairs_standardized %>% #read in 
   summarize(mean_abun_st=mean(ST.ABUN,na.rm=T), #mean abundance
             median_abun_st=median(ST.ABUN,na.rm=T), #median abundance
             min_abun_st=min(ST.ABUN), # min abundance
-            avg_abun_lowest_5perc = mean(ST.ABUN[ST.ABUN <= quantile(ST.ABUN, .05, na.rm = T)], 
+            avg_abun_min_5perc = mean(ST.ABUN[ST.ABUN <= quantile(ST.ABUN, .05, na.rm = T)], 
                                      na.rm=T), # calculate specified quantile (in this case lowest 5% of data), and then calc mean of these values
             max_abun_st=max(ST.ABUN), # max abundance
-            avg_abun_highest_5perc = mean(ST.ABUN[ST.ABUN <= quantile(ST.ABUN, .95, na.rm = T)], 
+            avg_abun_max_5perc = mean(ST.ABUN[ST.ABUN <= quantile(ST.ABUN, .95, na.rm = T)], 
                                      na.rm=T), # mean of top 5% values, abundance
             sd_abun_st=sd(ST.ABUN,na.rm=T), #sd abundance (when more than one species per genera)
             CoV_abun_st = sd_abun_st/mean_abun_st, # coef of variation
             mean_bio_st=mean(ST.BIO,na.rm=T), #mean biomass
             median_bio_st=median(ST.BIO,na.rm=T), #median biomass
             min_bio_st=min(ST.BIO), #min biomass
-            avg_bio_lowest_5perc = mean(ST.BIO[ST.BIO <= quantile(ST.BIO, .05, na.rm = T)], 
+            avg_bio_min_5perc = mean(ST.BIO[ST.BIO <= quantile(ST.BIO, .05, na.rm = T)], 
                                          na.rm=T), # mean lowest 5% biomass
             max_bio_st=max(ST.BIO), #max biomass
-            avg_bio_highest_5perc = mean(ST.ABUN[ST.BIO <= quantile(ST.BIO, .95, na.rm = T)], 
+            avg_bio_max_5perc = mean(ST.ABUN[ST.BIO <= quantile(ST.BIO, .95, na.rm = T)], 
                                           na.rm=T), # mean of top 5% values, biomass
             sd_bio_st=sd(ST.BIO,na.rm=T), #sd biomass
             CoV_bio_st = sd_bio_st/mean_bio_st) #coef of variation
 
 #Save file as needed using function below
-#save(collated.pairs_standardized_summary, file = "data/cleaned_collated_standardized_MSF.Rdata")
+#save(collated.pairs_standardized_summary, file = "data/collated.pairs_standardized_summary_GLL.Rdata")
 
 ######
 #Find overlapping consecutive years for all pairs
