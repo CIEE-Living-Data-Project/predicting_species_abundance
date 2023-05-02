@@ -30,8 +30,7 @@ rm(list=ls())
 ####################################################################################################
 
 # Data
-#dat <- readRDS('data/dummy.dataset.RDS') #dummy data 
-
+#dat <- readRDS('data/preprocessing/dummy.dataset.RDS') #dummy data 
 dat <- readRDS('data/preprocessing/log.prop.change.with.meta.RDS')#full cleaned 
 names(dat)
 
@@ -44,7 +43,7 @@ FAM <- gaussian(link = 'identity')
 
 MODFORM <- bf(Log.prop.change.abun.Gn1 ~ Log.prop.change.abun.Gn2 + #intercept + fixed effect
                       
-            (Log.prop.change.abun.Gn2 | SERIES.l) + #rand slopes for time series length
+            (Log.prop.change.abun.Gn2 | SERIES.length) + #rand slopes for time series length
                       
             (Log.prop.change.abun.Gn2 | PairID)+    
             
@@ -53,7 +52,7 @@ MODFORM <- bf(Log.prop.change.abun.Gn1 ~ Log.prop.change.abun.Gn2 + #intercept +
 #rand slopes for genus[i]-genus[j] nested within studyID[i]-studyID[j]
 
 # Fit full model
-mod<-brm(MODFORM, data = dat_terr, family = FAM, seed = 042023, #set seed
+mod<-brm(MODFORM, data = dat, family = FAM, seed = 042023, #set seed
          control = list(adapt_delta=0.99, max_treedepth = 12),    
                    chains = 3, iter = 5000, warmup = 1000, cores = 4) #fitting information
                  
