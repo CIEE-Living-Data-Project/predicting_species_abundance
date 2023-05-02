@@ -16,4 +16,4 @@ This directory stores the scripts used to download and process the data, along w
 
 -   The `download_data.R` script outlines the process of downloading the data from BioTIME. The last query occurred on 15 March 2023 by Nathalie Chardon. \\
 
--   The `explore_biotime.R` script includes code for some preliminary data exploration of the dataset, including some exploratory figures that save to the `figures/explore_biottime_Dec2022` directory.
+-   The `create_pairs.R` script creates the `data/prep_biotime/bio_pairs_10km.*` and `data/prep_biotime/meta_pairs_10km.*` files. It also includes code for some preliminary data exploration of the dataset, including some exploratory figures that save to the `figures/explore_biottime_Dec2022` directory.
