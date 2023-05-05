@@ -7,21 +7,18 @@
 # Date created: 26 April 2023
 # Date updated: 26 April 2023 (NC)
 
-
 # # LIBRARIES # #
-library(tidyverse)
 library(dplyr)
-library(brms)
+library(brms)     
 library(MCMCvis)
-
-rm(list=ls()) 
-
+library(cmdstanr)
+library(posterior)
+library(bayesplot)
 
 # # INPUT FILES # #
 #dat <- readRDS('data/dummy.dataset.RDS')
 
 # # OUTPUT FILES # #
-
 
 ####################################################################################################
 
@@ -32,31 +29,47 @@ rm(list=ls())
 # Data
 #dat <- readRDS('data/dummy.dataset.RDS') #dummy data 
 
-dat <- readRDS('data/preprocessing/log.prop.change.with.meta.RDS')#full cleaned 
+dat <- readRDS("/home/shared/isaac.e/R/BioTIME/Data/Inputs/log.prop.change.with.meta.w.taxa.RDS")#full cleaned 
 names(dat)
 
 #subset to terrestrial and marine realms 
 dat_terr<-subset(x = dat, subset = REALM1=="Terrestrial" & REALM2=="Terrestrial")
 
-dat_marine<-subset(x = dat, subset = REALM1!="Terrestrial" & REALM2!="Terrestrial")
+dat_aqua<-subset(x = dat, subset = REALM1!="Terrestrial" & REALM2!="Terrestrial")
 
 FAM <- gaussian(link = 'identity')
 
 MODFORM <- bf(Log.prop.change.abun.Gn1 ~ Log.prop.change.abun.Gn2 + #intercept + fixed effect
-                      
-            (Log.prop.change.abun.Gn2 | SERIES.l) + #rand slopes for time series length
-                      
-            (Log.prop.change.abun.Gn2 | PairID)+    
-            
-            (Log.prop.change.abun.Gn2 | UNIQUE.PAIR.ID))   
+                
+                (Log.prop.change.abun.Gn2 | SERIES.l) + #rand slopes for time series length
+                
+                (Log.prop.change.abun.Gn2 | PairID)+    
+                
+                (Log.prop.change.abun.Gn2 | UNIQUE.PAIR.ID))   
 
 #rand slopes for genus[i]-genus[j] nested within studyID[i]-studyID[j]
 
 # Fit full model
-mod<-brm(MODFORM, data = dat_terr, family = FAM, seed = 042023, #set seed
-         control = list(adapt_delta=0.99, max_treedepth = 12),    
-                   chains = 3, iter = 5000, warmup = 1000, cores = 4) #fitting information
-                 
-save(mod, file = 'outputs/brms_April2023/full_mod_q1.rds') #save
+mod.aqua.G1<-brm(MODFORM, data = dat_aqua, family = FAM, seed = 27042023, #set seed
+                 control = list(adapt_delta=0.99, max_treedepth = 12),    
+                 chains = 2, iter = 50000, warmup = 10000, cores = 40, 
+                 backend="cmdstanr", threads = threading(20)) #fitting information
 
-summary(mod)#look at model outputs
+
+tools::psnice(pid = Sys.getpid(), value = 19)
+
+saveRDS(mod.aqua.G1, file = "/home/shared/isaac.e/R/BioTIME/Data/Outputs/mod.aqua.G1.50K.10K.RDS") #save
+mod.terr=readRDS("/home/shared/isaac.e/R/BioTIME/Data/Outputs/mod.terr.RDS")
+
+# extract model output
+cc <- coef(mod.aqua.G1)$UNIQUE.PAIR.ID
+cc.slopes <- cc[1:dim(cc)[1], 1, dim(cc)[3]] #random slopes for genera-genera ID
+
+hist(cc.slopes, breaks = 100)
+abline(v=mean(cc.slopes),col="firebrick",lwd=3)
+
+summary(mod.aqua.G1)#look at model outputs
+
+dim(cc.slopes)
+
+plot(mod.terr.G1)
