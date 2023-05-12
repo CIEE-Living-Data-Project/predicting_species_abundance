@@ -17,7 +17,7 @@ library('rglobi')
 
 
 #load data
-load("data/tidy/collated_pairs.RData") #full dataset with species/abundances
+load("data/prep_biotime/collated_pairs.RData") #full dataset with species/abundances
 load('data/prep_biotime/bio_pairs_10km.RData') #"key" with overlapping studies, and reference
 #to species in collated.pairs
 load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
@@ -107,7 +107,7 @@ collated.pairs_standardized_summary <- collated.pairs_standardized %>% #read in 
             CoV_bio_st = sd_bio_st/mean_bio_st) #coef of variation
 
 #Save file as needed using function below
-#save(collated.pairs_standardized_summary, file = "data/collated.pairs_standardized_summary_GLL.Rdata")
+#save(collated.pairs_standardized_summary, file = "data/prep_biotime/collated.pairs_standardized_summary_GLL.Rdata")
 
 ######
 #Find overlapping consecutive years for all pairs
@@ -141,7 +141,7 @@ for (h in 1:length(unique(c(bio.pairs$ID.1,bio.pairs$ID.2)))){
 overlap.all.pairs<-rbind(between.studies.overlap,within.studies.overlap)
 
 #Save as needed
-#saveRDS(between.studies.overlap,"data/between.studies.overlap.RDS")
+#saveRDS(between.studies.overlap,"data/data_processing/between.studies.overlap.RDS")
 
 
 ######
@@ -173,7 +173,7 @@ log.prop.change.with.meta<-left_join(results,meta.data) #join meta data with res
 log.prop.change.with.meta$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta$Gn1,log.prop.change.with.meta$Gn2,log.prop.change.with.meta$PairID,sep="_")
 
 #save
-saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
+saveRDS(log.prop.change.with.meta,"data/data_processing/log.prop.change.with.meta.RDS")
 
 
 
@@ -235,7 +235,7 @@ for (i in 1:nrow(split_1)) {
 }
 
 pair_interactions_1 <- do.call(rbind, df_list)
-write.csv(pair_interactions_1, "data/pair_interactions_1.csv")
+write.csv(pair_interactions_1, "data/data_processing/pair_interactions_1.csv")
 
 
 
@@ -256,7 +256,7 @@ for (i in 1:nrow(split_2)) {
 }
 
 pair_interactions_2 <- do.call(rbind, df_list)
-write.csv(pair_interactions_2, "data/pair_interactions_2.csv")
+write.csv(pair_interactions_2, "data/data_processing/pair_interactions_2.csv")
 
 
 
@@ -276,7 +276,7 @@ for (i in 1:nrow(split_3)) {
 }
 
 pair_interactions_3 <- do.call(rbind, df_list)
-write.csv(pair_interactions_3, "data/pair_interactions_3.csv")
+write.csv(pair_interactions_3, "data/data_processing/pair_interactions_3.csv")
 
 
 
@@ -295,7 +295,7 @@ for (i in 1:nrow(split_4)) {
 }
 
 pair_interactions_4 <- do.call(rbind, df_list)
-write.csv(pair_interactions_4, "data/pair_interactions_4.csv")
+write.csv(pair_interactions_4, "data/data_processing/pair_interactions_4.csv")
 
 
 
@@ -316,16 +316,16 @@ for (i in 1:nrow(split_5)) {
 }
 
 pair_interactions_5 <- do.call(rbind, df_list)
-write.csv(pair_interactions_5, "data/pair_interactions_5.csv")
+write.csv(pair_interactions_5, "data/data_processing/pair_interactions_5.csv")
 
 all_interactions <- rbind(pair_interactions_1, pair_interactions_2, pair_interactions_3, 
                           pair_interactions_4, pair_interactions_5)
 colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
-write.csv(all_interactions, "data/genus_interaction_list.csv")
+write.csv(all_interactions, "data/data_processing/genus_interaction_list.csv")
 
 
 #Read in all_interactions_2 
-all_interactions <- read.csv("data/preprocessing/genus_interaction_list.csv")
+all_interactions <- read.csv("data/data_processing/genus_interaction_list.csv")
 
 parasite <- all_interactions %>%
   filter(interaction=="pathogenOf")
@@ -337,7 +337,7 @@ mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', '
                           'hasVector', 'parasiteOf')
 all_interactions_2<- all_interactions %>%
   filter(!interaction %in% mistake_interactions)
-# write.csv(all_interactions_2, "data/genus_interaction_list.csv")
+# write.csv(all_interactions_2, "data/data_processing/genus_interaction_list.csv")
 
 summary_interactions <- all_interactions_2 %>%
   group_by(Gn1, Gn2) %>%
@@ -416,7 +416,7 @@ distinct_pairs <- cased_interactions_filtered_2 %>%
   distinct()
 
 #Read in interactions 
-log_change <- readRDS("data/preprocessing/log.prop.change.with.meta.RDS")
+log_change <- readRDS("data/data_processing/log.prop.change.with.meta.RDS")
 head(log_change)
 
 # Create a new column in df2 called "interaction" and initialize all values to 0
@@ -448,11 +448,11 @@ for (i in 1:nrow(log_change)) {
 
 colnames(log_change)[26] <- "interaction_found"
 
-saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(log_change, "data/data_processing/log.prop.change.interactions.RDS")
 
 
 #Do positive negative neutral 
-log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+log_change_interaction <- readRDS("data/data_processing/log.prop.change.interactions.RDS")
 
 
 pos_neg_interactions<- cased_interactions_filtered_2%>%

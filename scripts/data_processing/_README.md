@@ -31,3 +31,7 @@ This subdirectory of the `scripts/` folder stores the scripts used in the data p
     -   `get.log.prop.change(x,data,pairs.keep)`
 
     -   `make.meta(data,meta)`
+
+-   `/outdated_scripts` is a subdirectory containing scripts that have either been phased out or incorporated into other workflows
+
+-   `Portion.Change.R` Created by Isaac Eckert, this script calculates the proportion change and creates several intermediate data files stored in `data/data_processing/`
