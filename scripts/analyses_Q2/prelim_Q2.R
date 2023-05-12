@@ -146,10 +146,10 @@ MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + interaction_found #intercept +
                )  #don't need random slopes because included in Q1 models
 
 mod <-brm(MODFORM, data = dat, family = FAM, seed = 042023, #set seed
-              
-              # control = list(adapt_delta=0.99, max_treedepth = 12), 
-              
-              chains = 3, iter = 5000, warmup = 1000, cores = 4) #fitting information         
+          
+          chains = 3, iter = 5000, warmup = 1000, cores = 4, #fitting information
+          
+          file = 'outputs/brms_April2023/fake-pred-acc_mod.rds')
 
 
 # # Posterior Distribution
