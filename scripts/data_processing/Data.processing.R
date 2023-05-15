@@ -143,6 +143,9 @@ overlap.all.pairs<-rbind(between.studies.overlap,within.studies.overlap)
 #Save as needed
 #saveRDS(between.studies.overlap,"data/between.studies.overlap.RDS")
 
+#Load previously saved version
+readRDS(./data/preprocessing/between.studies.overlap)
+
 
 ######
 # Calculate portion change for species pairs
