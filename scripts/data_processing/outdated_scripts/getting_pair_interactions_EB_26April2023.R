@@ -1,6 +1,10 @@
 # Date created: 26 Apr 2023
 # Date updated: 26 Apr 2023 (NC)
 
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+
+
 # # LIBRARIES # #
 library(tidyverse)
 library("dplyr")
@@ -15,7 +19,8 @@ library(progress)
 rm(list=ls()) 
 
 
-
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
 log.prop.change.with.meta <- readRDS("data/log.prop.change.with.meta.RDS")
 log_change <- log.prop.change.with.meta
@@ -161,8 +166,18 @@ colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
 write.csv(all_interactions, "data/genus_interaction_list.csv")
 
 
-#Read in all_interactions_2 
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+
+
+##START HERE IF YOU JUST WANT TO WORK WITH THE DATA##
+##Note: all removal of mistake interactions below has already been done on the uploaded
+#dataset
+
+#Read in the completed dataset from above
 all_interactions <- read.csv("data/preprocessing/genus_interaction_list.csv")
+all_interactions <- all_interactions %>%
+  select(!X)
 
 parasite <- all_interactions %>%
   filter(interaction=="pathogenOf")
@@ -234,18 +249,18 @@ summary_interactions_cased<- cased_interaction_unique %>%
 # cased_interactions_filtered <- summary_interactions_cased %>%
 #   filter(!(n>1 & interaction_type =="visits"))
 
-cased_interactions_filtered_2<- cased_interactions %>%
+cased_interactions_filtered_2<- cased_interaction_unique %>%
   group_by(Gn1, Gn2) %>%
   mutate(num_interactions=n())
 
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
-#To-do: 
-#yay-nay interaction
-#Positive-negative-neutral
-#Integrate with existing dataset of log abundance for modellers and push 
-#Remove original n column from finalized dataset of interactions
+#Adding interactions into the log.prop.change dataset
+#Yes/No
+#Positive/negative/neutral
+#Type of interaction
 
-#
 #Yes/no interaction
 #Get pairs 
 distinct_pairs <- cased_interactions_filtered_2 %>%
@@ -286,6 +301,11 @@ for (i in 1:nrow(log_change)) {
 colnames(log_change)[26] <- "interaction_found"
 
 saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(cased_interactions_filtered_2, "data/preprocessing/all.interactions.genus.pairs.RDS")
+
+
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
 
 #Do positive negative neutral 
@@ -301,4 +321,92 @@ pos_neg_interactions<- cased_interactions_filtered_2%>%
       TRUE ~ NA_character_
     ),
     .keep = "unused"
-  )
+  ) %>%
+  distinct()
+
+#Assign positive/negative interactions 
+dummy_data <- log_change_interaction %>%
+  sample_n(10000)
+
+#Create vectors to store
+positive_interaction <- vector("integer", nrow(log_change_interaction))
+negative_interaction <- vector("integer", nrow(log_change_interaction))
+neutral_interaction <- vector("integer", nrow(log_change_interaction))
+
+
+# Iterate over each row in the log_prop_change_interaction dataset
+
+pb<-set.prog.bar(nrow(log_change_interaction)) #sets progress bar
+for (i in 1:nrow(log_change_interaction)) {
+  pb$tick()
+  
+  # Get the genus pair from the current row
+  gn1 <- log_change_interaction$Gn1[i]
+  gn2 <- log_change_interaction$Gn2[i]
+  
+  # Find the corresponding row(s) in the pos_neg_interactions dataset
+  match_rows <- (pos_neg_interactions$Gn1 == gn1 & pos_neg_interactions$Gn2 == gn2) |
+    (pos_neg_interactions$Gn1 == gn2 & pos_neg_interactions$Gn2 == gn1)
+  
+  if (any(match_rows)) {
+    # If matching row(s) are found, check for each interaction type and assign 1 or 0 accordingly
+    positive_interaction[i] <- as.integer("positive" %in% pos_neg_interactions$interaction_benefit[match_rows])
+    negative_interaction[i] <- as.integer("negative" %in% pos_neg_interactions$interaction_benefit[match_rows])
+    neutral_interaction[i] <- as.integer("neutral" %in% pos_neg_interactions$interaction_benefit[match_rows])
+  } else {
+    # If no matching row is found, assign 0 to all interaction types
+    positive_interaction[i] <- 0
+    negative_interaction[i] <- 0
+    neutral_interaction[i] <- 0
+  }
+}
+
+log_change_interaction$positive_interaction <- positive_interaction
+log_change_interaction$negative_interaction <- negative_interaction
+log_change_interaction$neutral_interaction <- neutral_interaction
+
+
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+
+#interaction type
+
+
+# Create empty vectors to store the interaction types
+uncategorized_interaction <- vector("integer", nrow(log_change_interaction))
+predator_prey_interaction <- vector("integer", nrow(log_change_interaction))
+mutualism_interaction <- vector("integer", nrow(log_change_interaction))
+dispersal_interaction <- vector("integer", nrow(log_change_interaction))
+
+# Iterate over each row in the log_change_interaction dataset
+for (i in 1:nrow(log_change_interaction)) {
+  # Get the genus pair from the current row
+  gn1 <- log_change_interaction$Gn1[i]
+  gn2 <- log_change_interaction$Gn2[i]
+  
+  # Find the corresponding row(s) in the cased_interactions_filtered_2 dataset (with both possible orderings)
+  match_rows <- (cased_interactions_filtered_2$Gn1 == gn1 & cased_interactions_filtered_2$Gn2 == gn2) |
+    (cased_interactions_filtered_2$Gn1 == gn2 & cased_interactions_filtered_2$Gn2 == gn1)
+  
+  if (any(match_rows)) {
+    # If matching row(s) are found, check for each interaction type and assign 1 or 0 accordingly
+    uncategorized_interaction[i] <- as.integer("uncategorized_interaction" %in% cased_interactions_filtered_2$interaction_type[match_rows])
+    predator_prey_interaction[i] <- as.integer("predator_prey" %in% cased_interactions_filtered_2$interaction_type[match_rows])
+    mutualism_interaction[i] <- as.integer("mutualism" %in% cased_interactions_filtered_2$interaction_type[match_rows])
+    dispersal_interaction[i] <- as.integer("dispersal" %in% cased_interactions_filtered_2$interaction_type[match_rows])
+  } else {
+    # If no matching row is found, assign 0 to all interaction types
+    uncategorized_interaction[i] <- 0
+    predator_prey_interaction[i] <- 0
+    mutualism_interaction[i] <- 0
+    dispersal_interaction[i] <- 0
+  }
+}
+
+# Assign the interaction types to the log_change_interaction dataset as new columns
+log_change_interaction$uncategorized_interaction <- uncategorized_interaction
+log_change_interaction$predator_prey_interaction <- predator_prey_interaction
+log_change_interaction$mutualism_interaction <- mutualism_interaction
+log_change_interaction$dispersal_interaction <- dispersal_interaction
+
+
