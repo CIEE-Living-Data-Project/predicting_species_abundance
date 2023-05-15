@@ -4,7 +4,7 @@
 
 # Authors: Nathalie Chardon
 # Date created: 12 May 2023
-# Date updated: 12 May 2023 (NC)
+# Date updated: 15 May 2023 (NC)
 
 
 # # LIBRARIES # #
@@ -21,7 +21,7 @@ rm(list=ls())
 
 
 # # INPUT FILES # #
-dat <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
+dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
 
 
 # # OUTPUT FILES # #
@@ -46,7 +46,11 @@ skew <- function(y){ # Fisher-Pearson Skew function based on NIST definition
 
 ####################################################################################################
 
-dat <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
+# Mtg notes 10 May 2023 describe dataset Isaac made at end of working group:
+# https://docs.google.com/document/d/1XvBeeiNZJZmDtivf1hJX9zN3PND9AgM6GxQeh-LpVY4/edit#heading=h.ebszuu9ld6v2
+
+dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
+dat.int <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
 
 # CLIMATE
 table(dat$CLIMATE1) # climate1 and climate2 are the same
@@ -59,7 +63,7 @@ table(dat$REALM2)
 
 # visualize pairs across realm and climate
 ggplot(dat, 
-       aes(Log.prop.change.abun.Gn1, Log.prop.change.abun.Gn2, colour=UNIQUE.PAIR.ID)) +
+       aes(Prop.Change.Gn1, Prop.Change.Gn2, colour=UNIQUE.PAIR.ID)) +
   geom_point(pch=1) +
   facet_wrap(REALM1~CLIMATE1) +
   theme_base() +
@@ -72,9 +76,10 @@ dat %>%
 
 
 # INTERACTION
-table(dat$interaction_found) 
+table(dat.int$interaction_found) 
 
-# NOTE: interaction types are listed as separate columns but should be in 1 column as different numbers
+# NOTE: interaction types are listed as separate columns in different dataset 
+# (log.prop.change.interactions.RDS) but should be in 1 column in this dataset as different numbers
 # to use as explanatory variable (EB working on this)
 
 
@@ -84,18 +89,22 @@ table(dat$interaction_found)
 
 
 # DISTANCE BETWEEN PAIRS
-
-# NOTE: need to include this variable in the main dataset
+hh <- hist(dat$dist, breaks = 8)
+hh$counts #number of pairs per 1km interval
 
 
 # ENOUGH DATA TO SEPARATE BY TAXON-TAXON PAIRS?
 
 # Create unique taxa-taxa pairs & preserving direction of pair interaction
 dat <- dat %>% 
-  mutate(taxa.taxa = paste(TAXA1, TAXA2, sep = '-')) 
+  mutate(taxa.taxa = paste(TAXA1, TAXA2, sep = '-')) %>% 
+  mutate(resolved.taxa.taxa = paste(RESOLVED.TAXA1, RESOLVED.TAXA2, sep = '-')) 
 
-# All pairs have enough data to potentially separate pairs in analyses
+# All original taxa pairs have enough data to potentially separate pairs in analyses
 table(dat$taxa.taxa)
+
+# But much fewer pairs in resolved taxa names
+table(dat$resolved.taxa.taxa)
 
 
 # IS TAXON-TAXON PAIRS CORRELATED WITH INTERACTION TYPE?
@@ -112,27 +121,26 @@ table(dat$taxa.taxa)
 ####################################################################################################
 
 # # Prep data
-dat <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
+dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
 
 # generate random predictive accuracy data
 dat$fake.pred.acc <- rnorm(nrow(dat))
-hist(dat$fake.pred.acc, breaks = 50)
+summary(dat$fake.pred.acc)
 
 # fixed effects as factor
 dat <- dat %>% 
   mutate(CLIMATE1 = factor(CLIMATE1)) %>% 
-  mutate(REALM1 = factor(REALM1)) %>% 
-  mutate(interaction_found = factor(interaction_found)) #add treatment and distance once ready
+  mutate(REALM1 = factor(REALM1)) #add treatment and interaction once ready
 
-# NOTE: assumes that REALM1 is always the realm of the response variable, need to check if this 
-# is true for analyses Gn 2 ~ Gn 1 (checking with IE & CC)
+# NOTE: assumes that REALM1 is always the realm of the response variable, and currently analyses only 
+# done for Gn1 ~ Gn2. Need to switch when reverse direction is analyzed.
 
 # check structure of variables
-str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'interaction_found')])
+str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist')])
 
          
 # Randomly select 1% of data for trail run
-dat <- dat %>% 
+dat1perc <- dat %>% 
   sample_frac(0.01)
 
 
@@ -141,15 +149,15 @@ dat <- dat %>%
 
 FAM <- gaussian(link = 'identity')
 
-MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + interaction_found #intercept + fixed effect
+MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist #intercept + fixed effect
                 
                )  #don't need random slopes because included in Q1 models
 
-mod <-brm(MODFORM, data = dat, family = FAM, seed = 042023, #set seed
+mod <-brm(MODFORM, data = dat1perc, family = FAM, seed = 042023, #set seed
           
           chains = 3, iter = 5000, warmup = 1000, cores = 4, #fitting information
           
-          file = 'outputs/brms_April2023/fake-pred-acc_mod.rds')
+          file = 'outputs/brms_May2023/fake-pred-acc_mod.rds')
 
 
 # # Posterior Distribution
@@ -188,7 +196,7 @@ pp_check(mod, ndraws = 100) #posterior predictive checks - are predicted values 
 pairs(mod)
 
 # Skewness: observed (black line) and simulated (grey distribution) SKEW metric (1000 simulated datasets)
-ppc_stat(y = dat$fake.pred.acc,
+ppc_stat(y = dat1perc$fake.pred.acc,
          yrep = posterior_predict(mod, ndraws = 1000),
          stat = "skew")
 
@@ -202,7 +210,7 @@ w <- weights(model_loo$psis_object)
 # used to generate the continuous random variables is the true distribution.
 # -> If LOO-PIT values concentrated at 0/1 => possibly under-dispersed model
 # -> If LOO-PIT values concentrated near 0.5 => possibly over-dispersed model
-ppc_loo_pit_overlay(dat$fake.pred.acc,
+ppc_loo_pit_overlay(dat1perc$fake.pred.acc,
                     posterior_predict(mod),
                     lw = w)
 
@@ -211,15 +219,17 @@ ppc_loo_pit_overlay(dat$fake.pred.acc,
 
 # # NEXT STEPS: 
 
+# - include interaction type and treatment once these variables are ready
+
+# - generate fake.pred.acc with different distribution to more realistically simulate what these 
+# values are likely to be
+
 # - split dataframe into unique taxon-taxon pairs and run model for each (i.e. importance of each of 
 # these factors could be different dependent on taxon-taxon pair)
 
 # - could also include taxon-taxon pair as fixed or random effect, depending on what information we 
 # want to get out of it (fixed = want to know the difference; random = want to simply account for 
-# different responses)
-
-# - generate fake.pred.acc with different distribution to more realistically simulate what these 
-# values are likely to be
+# different responses), but this adds a lot of degrees of freedom
 
 
 
