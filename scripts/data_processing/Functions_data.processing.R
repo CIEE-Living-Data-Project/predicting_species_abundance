@@ -15,12 +15,15 @@ set.prog.bar<-function(n_iter){
                    clear = FALSE,
                    width = 100)
   
+  
 } 
 
 
 
+
+
 #####################
-# OVERLAPPING YEARS
+# 3. OVERLAPPING YEARS
 #####################
 
 ## Calculate years overlap of genera between timeseries
@@ -136,7 +139,7 @@ calc.overlap.within<-function(ID,data){
 
 
 #####################
-# PROPORTION CHANGE
+# 4. PROPORTION CHANGE
 #####################
 
 ## Compute log proportion change
