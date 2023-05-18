@@ -2,12 +2,12 @@
 # 1. Preliminary code to answer Q2: 
 # prediction accuracy ~ climate + interaction type + realm + treatment + distance between pairs
 
-# Authors: Nathalie Chardon
+# Authors: Nathalie Chardon, GLL
 # Date created: 12 May 2023
 # Date updated: 15 May 2023 (NC)
 
 
-# # LIBRARIES # #
+#### LIBRARIES ####
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
@@ -20,14 +20,14 @@ library(bayesplot)
 rm(list=ls()) 
 
 
-# # INPUT FILES # #
+#### INPUT FILES ####
 dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
 
 
 # # OUTPUT FILES # #
 
 
-# # FUNCTIONS # # 
+#### FUNCTIONS ####
 
 # Skew function (from: https://towardsdatascience.com/evaluating-bayesian-mixed-models-in-r-python-27d344a03016_)
 skew <- function(y){ # Fisher-Pearson Skew function based on NIST definition
@@ -42,7 +42,8 @@ skew <- function(y){ # Fisher-Pearson Skew function based on NIST definition
 
 ####################################################################################################
 
-# # DATA EXPLORATION (revised from explore_Q2.R) # # 
+#### DATA EXPLORATION ####
+# (revised from explore_Q2.R) # # 
 
 ####################################################################################################
 
@@ -93,15 +94,22 @@ hh <- hist(dat$dist, breaks = 8)
 hh$counts #number of pairs per 1km interval
 
 
-# ENOUGH DATA TO SEPARATE BY TAXON-TAXON PAIRS?
-
 # Create unique taxa-taxa pairs & preserving direction of pair interaction
 dat <- dat %>% 
   mutate(taxa.taxa = paste(TAXA1, TAXA2, sep = '-')) %>% 
   mutate(resolved.taxa.taxa = paste(RESOLVED.TAXA1, RESOLVED.TAXA2, sep = '-')) 
 
 # All original taxa pairs have enough data to potentially separate pairs in analyses
+# note: what is ALL category?
 table(dat$taxa.taxa)
+
+# enough variation in climate and realm to use as explanatory variables?
+summary.taxa <- dat %>% 
+  group_by(taxa.taxa) %>% 
+  summarize(n_distinct(CLIMATE1), n_distinct(REALM1))
+View(summary.taxa)
+# no there are not, withing taxa.taxa pair, mostly only 1 climate or 1 realm covered
+# probably because climate is such a coarse binning
 
 # But much fewer pairs in resolved taxa names
 table(dat$resolved.taxa.taxa)
@@ -116,21 +124,21 @@ table(dat$resolved.taxa.taxa)
 
 ####################################################################################################
 
-# # FRAMEWORK FOR DATA ANALYSIS # # 
+#### FRAMEWORK FOR DATA ANALYSIS ####
 
 ####################################################################################################
 
 # # Prep data
-dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
 
 # generate random predictive accuracy data
+# update to make more real
 dat$fake.pred.acc <- rnorm(nrow(dat))
 summary(dat$fake.pred.acc)
 
 # fixed effects as factor
 dat <- dat %>% 
   mutate(CLIMATE1 = factor(CLIMATE1)) %>% 
-  mutate(REALM1 = factor(REALM1)) #add treatment and interaction once ready
+  mutate(REALM1 = factor(REALM1)) # add treatment and interaction once ready
 
 # NOTE: assumes that REALM1 is always the realm of the response variable, and currently analyses only 
 # done for Gn1 ~ Gn2. Need to switch when reverse direction is analyzed.
@@ -138,9 +146,9 @@ dat <- dat %>%
 # check structure of variables
 str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist')])
 
-         
-# Randomly select 1% of data for trail run
-dat1perc <- dat %>% 
+
+# Randomly select 1% of data for trial run
+data_model <- dat %>% 
   sample_frac(0.01)
 
 
@@ -153,14 +161,15 @@ MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist #intercept + fixed effect
                 
                )  #don't need random slopes because included in Q1 models
 
-mod <-brm(MODFORM, data = dat1perc, family = FAM, seed = 042023, #set seed
+mod <-brm(MODFORM, data = data_model, family = FAM, seed = 042023, #set seed
           
           chains = 3, iter = 5000, warmup = 1000, cores = 4, #fitting information
           
           file = 'outputs/brms_May2023/fake-pred-acc_mod.rds')
 
+mod <- readRDS(file="outputs/brms_May2023/fake-pred-acc_mod.rds")
 
-# # Posterior Distribution
+#### Posterior Distribution ####
 
 # Summary of posterior distribution for fixed and random effects:
 # Estimate: mean of posterior distribution
@@ -171,7 +180,7 @@ summary(mod)
 plot(conditional_effects(mod), ask = FALSE) #fitted parameters and their CI
 
 
-# # Prior distribution
+#### Prior distribution ####
 
 # What about priors? brms will try to pick reasonable defaults, which you can see:
 prior_summary(mod) #can define priors in brm(priors = ...)
@@ -182,7 +191,7 @@ ps <- powerscale_sensitivity(mod) #look at 'diagnosis' column to see if prior is
 unique(ps$sensitivity$diagnosis)
 
 
-# # Model Fit
+#### Model Fit ####
 
 # sample size (Bulk_ESS & Tail_ESS) should > 1000 & rhat < 1.1
 summary(mod)
@@ -217,19 +226,56 @@ ppc_loo_pit_overlay(dat1perc$fake.pred.acc,
 # # CONCLUSION: model fits very well on all counts except for skew. 
 
 
-# # NEXT STEPS: 
+#### Models on each taxon-taxon pair ####
+
+# split data into each taxon-taxon pair for separate analysis
+# list where each element is a taxa.taxa pair, 29 elements
+split.data <- split(dat, dat$taxa.taxa)
+
+# check to make sure variation in CLIMATE, REALM across taxa.taxa in order to fit model
+lapply(split.data, class)
+
+# Randomly select 1% of data of each taxon.taxon pair for trial run
+split.data_small <- lapply(split.data, sample_frac, .01)
+
+
+# fit model on each element of list
+FAM <- gaussian(link = 'identity')
+MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist)  #don't need random slopes because included in Q1 models
+
+fitting.model <- function(data) {
+  taxon.pair <- unique(data$taxa.taxa)
+  FAM <- gaussian(link = 'identity')
+  MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist)  #don't need random slopes because included in Q1 models
+  
+  mod <-brm(MODFORM, data = data, family = FAM, seed = 042023, #set seed
+            
+            chains = 3, iter = 5000, warmup = 1000, cores = 4 #fitting information
+            #file = paste0("outputs/brms_May2023/fake-pred-acc_mod_TaxonPair_", taxon.pair, ".rds")
+                          )
+  }
+
+# throwing error because not enough variation in climate and realm to use as explanatory variable
+lapply(split.data, fitting.model)
+
+#mod <- readRDS(file="outputs/brms_May2023/fake-pred-acc_mod.rds")
+
+
+#### NEXT STEPS ####
 
 # - include interaction type and treatment once these variables are ready
 
 # - generate fake.pred.acc with different distribution to more realistically simulate what these 
 # values are likely to be
 
-# - split dataframe into unique taxon-taxon pairs and run model for each (i.e. importance of each of 
-# these factors could be different dependent on taxon-taxon pair)
+# - split dataframe into unique taxon-taxon pairs and run model for each 
+# (i.e. importance of each of these factors could be different dependent on taxon-taxon pair)
+# done--wrote code to do this but stopped because not enough variation in climate/realm to fit model
 
 # - could also include taxon-taxon pair as fixed or random effect, depending on what information we 
 # want to get out of it (fixed = want to know the difference; random = want to simply account for 
 # different responses), but this adds a lot of degrees of freedom
+
 
 
 
