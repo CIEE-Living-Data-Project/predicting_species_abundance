@@ -93,6 +93,11 @@ table(dat.int$interaction_found)
 hh <- hist(dat$dist, breaks = 8)
 hh$counts #number of pairs per 1km interval
 
+# is distance between pairs related to between vs within study classification?
+# yes, within study classifications only at 0 distances
+# I suspect this will cause the model problems with convergence if no variation in distance across within category
+plot(as.factor(dat$Type), as.numeric(dat$dist))
+sum(subset(dat, Type=="Within")$dist) # all within distances are 0
 
 # Create unique taxa-taxa pairs & preserving direction of pair interaction
 dat <- dat %>% 
@@ -131,9 +136,66 @@ table(dat$resolved.taxa.taxa)
 # # Prep data
 
 # generate random predictive accuracy data
-# update to make more real
-dat$fake.pred.acc <- rnorm(nrow(dat))
-summary(dat$fake.pred.acc)
+# bounded between 0 and 1 using truncated normal distribution
+# x <- rnorm(mean=.2, sd=.1, n=nrow(dat)+30000) # plus some buffer
+# x <- x[x < 1 & x >= 0]
+# x <- x[1:50000]
+# hist(x)
+
+# predictions: 
+# higher for shorter distances between pairs
+# higher predictive ability for terrestrial than aquatic, aquatic also has more variation
+# takes about 2 min
+out <- c()
+for( i in 1:nrow(dat)){
+  print(i)
+  # higher prediction accuracy for terrestrial
+  if(dat$REALM1[i]=="Terrestrial") {
+    repeat{
+      # 0 distances give mean of .8
+      if(dat$dist[i]==0){
+        x <- rnorm(mean=0.65, sd=.1, n=1) 
+      }
+      
+      # as sites get further apart, give proportionally lower prediction accuracy
+      if(dat$dist[i]>0){
+        x <- rnorm(mean=(.65/(dat$dist[i]*10000))*2.5, sd=.1, n=1) # multiply km by scalar so no numbers less than 1
+      }
+      
+      if (x < 1 & x >= 0){ # change these numbers to truncate normal at different points
+        break
+      }
+    }
+    out[i] <- x
+    
+  } else {
+    # lower base prediction accuracy for aquatic and higher sd
+    repeat{
+      # 0 distances give mean of .8
+      if(dat$dist[i]==0){
+        x <- rnorm(mean=0.5, sd=.15, n=1) 
+      }
+      
+      # as sites get further apart, give proportionally lower prediction accuracy
+      if(dat$dist[i]>0){
+        x <- rnorm(mean=(.5/(dat$dist[i]*10000))*2.5, sd=.15, n=1) # convert km to m, scales by log
+      }
+      
+      if (x < 1 & x >= 0){ # change these numbers to truncate normal at different points
+        break
+      }
+    }
+    out[i] <- x
+  }
+ 
+}
+
+hist(out)
+
+dat$fake.pred.acc <- out
+
+# looks okay
+ggplot(dat, aes(fake.pred.acc)) + geom_histogram() + facet_wrap(~REALM1)
 
 # fixed effects as factor
 dat <- dat %>% 
@@ -150,22 +212,24 @@ str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist')])
 # Randomly select 1% of data for trial run
 data_model <- dat %>% 
   sample_frac(0.01)
-
+data_model <- dat
 
 # # Model Framework for all taxa
 # prediction accuracy ~ climate + interaction type + realm + treatment + distance between pairs
 
-FAM <- gaussian(link = 'identity')
+#FAM <- gaussian(link = 'identity') # update based on requirements of y data
+FAM <- Beta() # for moddelling proportiond data between 0 and 1
 
-MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist #intercept + fixed effect
+MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist # intercept + fixed effect
                 
                )  #don't need random slopes because included in Q1 models
 
 mod <-brm(MODFORM, data = data_model, family = FAM, seed = 042023, #set seed
           
-          chains = 3, iter = 5000, warmup = 1000, cores = 4, #fitting information
+          chains = 3, iter = 5000, warmup = 1000, cores = 4#, #fitting information
           
-          file = 'outputs/brms_May2023/fake-pred-acc_mod.rds')
+          #file = 'outputs/brms_May2023/fake-pred-acc_mod.rds'
+          )
 
 mod <- readRDS(file="outputs/brms_May2023/fake-pred-acc_mod.rds")
 
@@ -224,6 +288,8 @@ ppc_loo_pit_overlay(dat1perc$fake.pred.acc,
                     lw = w)
 
 # # CONCLUSION: model fits very well on all counts except for skew. 
+# for new simulated pp checks aren't great even when modelling with beta distribution
+# however model does converge and ESS and Rhat all look ok, so gonna wait to streamline this model until know better how real data is distributed
 
 
 #### Models on each taxon-taxon pair ####
@@ -255,7 +321,7 @@ fitting.model <- function(data) {
                           )
   }
 
-# throwing error because not enough variation in climate and realm to use as explanatory variable
+# throwing error because not enough variation in climate and realm to use as explanatory variable on single taxa.taxa models
 lapply(split.data, fitting.model)
 
 #mod <- readRDS(file="outputs/brms_May2023/fake-pred-acc_mod.rds")
@@ -266,16 +332,18 @@ lapply(split.data, fitting.model)
 # - include interaction type and treatment once these variables are ready
 
 # - generate fake.pred.acc with different distribution to more realistically simulate what these 
-# values are likely to be
+# values are likely to be (done), updated model to use beta distribution because simulated prop values between 0 and 1
 
 # - split dataframe into unique taxon-taxon pairs and run model for each 
 # (i.e. importance of each of these factors could be different dependent on taxon-taxon pair)
 # done--wrote code to do this but stopped because not enough variation in climate/realm to fit model
+# note also that 0 distances and Type:within are perfectly correlated (ie no non 0 distances for within site comparisons)
 
 # - could also include taxon-taxon pair as fixed or random effect, depending on what information we 
 # want to get out of it (fixed = want to know the difference; random = want to simply account for 
 # different responses), but this adds a lot of degrees of freedom
 
-
+# when know rough output distribution from Q1 analyses simulate data to reflect this
+# and update model specs to reflect this, make sure statistical distribution etc is accurate for distribution of Y data
 
 
