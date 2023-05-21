@@ -306,3 +306,32 @@ make.meta<-function(data,meta){
 } #function to fetch meta data
 
 
+
+#####################
+# 5. Assign interaction types between pairs
+#####################
+
+
+make_split <- function(split) {
+  
+  df_list <- list()
+  
+  pb<-set.prog.bar(nrow(split)) #sets progress bar
+  for (i in 1:nrow(split)) {
+    pb$tick()
+    gn1 <- split[i, "Gn1"]
+    gn2 <- split[i, "Gn2"]
+    interactions <- get_interactions_by_taxa(sourcetaxon=gn1, 
+                                             targettaxon=gn2)
+    unique <- unique(interactions$interaction_type)
+    new_df <- data.frame(genus_1 = rep(gn1, each = length(unique)), 
+                         genus_2 = rep(gn2, each = length(unique)))
+    pairs <- cbind(new_df, char = rep(unique, length.out = nrow(new_df)))
+    df_list[[i]] <- pairs
+  }
+  
+  pair_interaction <- do.call(rbind, df_list)
+  
+  return(pair_interactions)
+  
+}
