@@ -4,7 +4,7 @@
 
 # Authors: Nathalie Chardon, GLL
 # Date created: 12 May 2023
-# Date updated: 19 May 2023 (NC)
+# Date updated: 22 May 2023 (GLL)
 
 
 #### LIBRARIES ####
@@ -43,7 +43,7 @@ skew <- function(y){ # Fisher-Pearson Skew function based on NIST definition
 ####################################################################################################
 
 #### DATA EXPLORATION ####
-# (revised from explore_Q2.R) # # 
+# (revised from explore_Q2.R, written by GLL) # # 
 
 ####################################################################################################
 
@@ -137,15 +137,10 @@ table(dat$resolved.taxa.taxa)
 
 # generate random predictive accuracy data
 # bounded between 0 and 1 using truncated normal distribution
-# x <- rnorm(mean=.2, sd=.1, n=nrow(dat)+30000) # plus some buffer
-# x <- x[x < 1 & x >= 0]
-# x <- x[1:50000]
-# hist(x)
-
-# predictions: 
-# higher for shorter distances between pairs
-# higher predictive ability for terrestrial than aquatic, aquatic also has more variation
+# prediction accuracy is higher for shorter distances between pairs,
+# higher for terrestrial than aquatic, aquatic also has more variation
 # takes about 2 min
+set.seed(5681)
 out <- c()
 for( i in 1:nrow(dat)){
   print(i)
@@ -212,13 +207,13 @@ str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist')])
 # Randomly select 1% of data for trial run
 data_model <- dat %>% 
   sample_frac(0.01)
-data_model <- dat
+#data_model <- dat
 
 # # Model Framework for all taxa
 # prediction accuracy ~ climate + interaction type + realm + treatment + distance between pairs
 
 #FAM <- gaussian(link = 'identity') # update based on requirements of y data
-FAM <- Beta() # for moddelling proportiond data between 0 and 1
+FAM <- Beta() # for moddelling proportiond data between 0 and 1, 11 min on .01%
 
 MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist # intercept + fixed effect
                 
@@ -226,12 +221,12 @@ MODFORM <- bf(fake.pred.acc ~ CLIMATE1 + REALM1 + dist # intercept + fixed effec
 
 mod <-brm(MODFORM, data = data_model, family = FAM, seed = 042023, #set seed
           
-          chains = 3, iter = 5000, warmup = 1000, cores = 4#, #fitting information
+          chains = 3, iter = 5000, warmup = 1000, cores = 4, #fitting information
           
-          #file = 'outputs/brms_May2023/fake-pred-acc_mod.rds'
+          file = 'outputs/brms_May2023/fake-pred-acc_mod_updated.rds'
           )
 
-mod <- readRDS(file="outputs/brms_May2023/fake-pred-acc_mod.rds")
+mod <- readRDS(file="outputs/brms_May2023/fake-pred-acc_mod_updated.rds")
 
 #### Posterior Distribution ####
 
