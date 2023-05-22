@@ -4,7 +4,7 @@
 
 # Authors: Nathalie Chardon, GLL
 # Date created: 12 May 2023
-# Date updated: 15 May 2023 (NC)
+# Date updated: 19 May 2023 (NC)
 
 
 #### LIBRARIES ####
@@ -329,14 +329,14 @@ lapply(split.data, fitting.model)
 
 #### NEXT STEPS ####
 
-# - include interaction type and treatment once these variables are ready
+# - include interaction type and treatment once these variables are ready [TBD]
 
-# - generate fake.pred.acc with different distribution to more realistically simulate what these 
-# values are likely to be (done), updated model to use beta distribution because simulated prop values between 0 and 1
+# [done] generate fake.pred.acc with different distribution to more realistically simulate what these 
+# values are likely to be and then update model to use beta distribution because simulated prop values between 0 and 1
 
-# - split dataframe into unique taxon-taxon pairs and run model for each 
+# [done] split dataframe into unique taxon-taxon pairs and run model for each 
 # (i.e. importance of each of these factors could be different dependent on taxon-taxon pair)
-# done--wrote code to do this but stopped because not enough variation in climate/realm to fit model
+# GLL wrote code to do this but stopped because not enough variation in climate/realm to fit model
 # note also that 0 distances and Type:within are perfectly correlated (ie no non 0 distances for within site comparisons)
 
 # - could also include taxon-taxon pair as fixed or random effect, depending on what information we 
