@@ -284,29 +284,3 @@ full.data$dist[which(full.data$ID1==full.data$ID2)]<-0
 saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
 
 
-full.data=readRDS("data/preprocessing/log.prop.change.full.data.RDS")
-
-View(full.data)
-
-#need to update SERIES.l to be SERIES.n specific
-#change the metric to 2 factor instead of 3
-
-#update data file
-full.data=readRDS("data/preprocessing/log.prop.change.full.data.RDS")
-full.data.updated=full.data
-
-#fix metric
-full.data.updated$Metric[which(full.data$Metric%in%c("ABUNDANCE","BIOMASS"))]<-"SAME"
-table(full.data.updated$Metric)
-
-#fix SERIES.l
-full.data.updated$SERIES.l=full.data.updated$SERIES.end-full.data.updated$SERIES.start+1
-
-#save
-saveRDS(full.data.updated,"data/preprocessing/log.prop.change.full.data.UPDATED.RDS")
-
-
-
-
-
-
