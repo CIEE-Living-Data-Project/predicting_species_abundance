@@ -29,7 +29,7 @@ library(bayesplot)
 # Data
 #dat <- readRDS('data/dummy.dataset.RDS') #dummy data 
 
-dat <- readRDS("/home/shared/isaac.e/R/BioTIME/Data/Inputs/log.prop.change.with.meta.w.taxa.RDS")#full cleaned 
+dat <- readRDS("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/preprocessing/log.prop.change.full.data.RDS") #full cleaned 
 names(dat)
 
 #subset to terrestrial and marine realms 
