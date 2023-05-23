@@ -410,3 +410,26 @@ log_change_interaction$mutualism_interaction <- mutualism_interaction
 log_change_interaction$dispersal_interaction <- dispersal_interaction
 
 
+#Write new log change interaction: 
+saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.RDS")
+log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+
+
+interesting_interactions <- log_change_interaction %>%
+  filter(predator_prey_interaction==1 & dispersal_interaction==0) %>%
+  filter(Gn1=='Achillea', Gn2=="Melanoplus") %>%
+  select(Gn1, Gn2, YEAR.T, Log.prop.change.bio.Gn1, Log.prop.change.abun.Gn2)
+
+# Reshape the data into a longer format
+data_long <- interesting_interactions %>%
+  pivot_longer(cols=starts_with('log.prop'), 
+               names_prefix='Log.prop.change.',
+               names_to = "Variable", 
+               values_to = "Abundance") 
+
+
+data_long %>%
+  ggplot(aes(x=YEAR.T, y=Abundance))+
+  geom_point(aes(colour=Variable))+
+  theme_classic()+
+  geom_smooth(aes(colour=Variable),method='loess', span=0.1)
