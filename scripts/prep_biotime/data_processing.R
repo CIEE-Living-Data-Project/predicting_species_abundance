@@ -103,7 +103,7 @@ collated.pairs <- mutate(collated.pairsx, sum.allrawdata.ABUNDANCE = #change abu
 collated.pairs<-rename(collated.pairs, ID=STUDY_ID) #rename for clarity CGC
 head(collated.pairs)
 
-save(collated.pairs, file = 'data/prep_biotime/collated_pairs.RData')
+save(collated.pairs, file = 'data/tidy/collated_pairs.RData')
 
 
 

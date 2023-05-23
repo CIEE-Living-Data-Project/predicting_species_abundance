@@ -4,15 +4,15 @@
 
 **Created by:** Sam Straus
 
-**Date updated:** 12 May 2023
+**Date updated:**
 
-**Updated by:** Sam Straus
+**Updated by:**
 
 **Description of `bio_pairs*`:**\
 Both the `bio_pairs_1km.*` and `bio_pairs_10km.*` share the same data dictionary, as follows
 
 | Column Name   | Description                                                              |
-|----------------|--------------------------------------------------------|
+|---------------|--------------------------------------------------------------------------|
 | dist          | Distance (km) between study sites in ID.1 and ID.2                       |
 | ID.1          | Unique study ID number of first study site in pair                       |
 | ID.2          | Unique study ID number of second study site in pair                      |
@@ -38,7 +38,7 @@ Both the `bio_pairs_1km.*` and `bio_pairs_10km.*` share the same data dictionary
 **Description of `BioTIMEMetadata_24_06_2021.csv`:** This data file contains detailed study metadata for each unique Study ID. This is the raw data file downloaded from BioTIME by Nathalie Chardon on 15 Mar 2023.
 
 | Column Name       | Description                                                                |
-|-----------------|-------------------------------------------------------|
+|-------------------|----------------------------------------------------------------------------|
 | STUDY_ID          | Unique study ID number of study                                            |
 | REALM             | Realm (Terrestrial, Marine, Freshwater) in which the study occurred        |
 | CLIMATE           | Climate of study site (Temperate, Tropical, Polar, Global)                 |
@@ -82,32 +82,10 @@ Both the `bio_pairs_1km.*` and `bio_pairs_10km.*` share the same data dictionary
 | BIOMASS_TYPE      | Type of biomass measure used: Weight or Cover; NOT USING FOR WORKING GROUP |
 | SAMPLE_DESC_NAME  |                                                                            |
 
-**Description of `collated.pairs.RData`:**
-
-| Column Name              | Description                                                             |
-|--------------------|----------------------------------------------------|
-| X                        | Unique record ID                                                        |
-| ID                       | Study ID                                                                |
-| DAY                      | Day of month                                                            |
-| MONTH                    | Month of record, 1-12                                                   |
-| YEAR                     | Year of record                                                          |
-| SAMPLE_DESC              | unique description code, concatenated latitude, longitude and year      |
-| PLOT                     | Plot ID, if applicable                                                  |
-| ID_SPECIES               | Unique species ID number                                                |
-| LATITUDE                 | Latitude of study site                                                  |
-| LONGITUDE                | Longitude of study site                                                 |
-| sum.allrawdata.ABUNDANCE | Sum of raw abundance values                                             |
-| sum.allrawdata.BIOMASS   | Sun of raw biomass values                                               |
-| GENUS                    | Genus of species ID                                                     |
-| SPECIES                  | Species epithet of species ID                                           |
-| GENUS_SPECIES            | concatenation of Genus and Species columns                              |
-| ABUNDANCE_TYPE           | Type of abundance measure (Count, Density, MeanCount, Presence/Absence) |
-| BIOMASS_TYPE             | Type of biomass measure (Cover, Weight)                                 |
-
 **Description of `meta_pairs_10km.*`:** This file contains all of the information from `BioTIMEMetadata_24_06_2021.csv` and also includes a few columns added and population by Nathalie Chardon, Courtney Collins, Ryan Langendorf, Haley Branch, and Sam Straus.
 
 | Column Name         | Description                                                                                                                                                                                                                                 |
-|-------------|-----------------------------------------------------------|
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | STUDY_ID            | Unique study ID number of study                                                                                                                                                                                                             |
 | reviewed_by         | \| The name of the person who verified the record                                                                                                                                                                                           |
 | REALM               | Realm (Terrestrial, Marine, Freshwater) in which the study occurred                                                                                                                                                                         |
