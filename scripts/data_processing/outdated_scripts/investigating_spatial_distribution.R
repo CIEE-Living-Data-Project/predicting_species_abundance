@@ -133,15 +133,22 @@ avg_dist_within_study <- distances %>%
             sd = sd(distance_to_avg))
 
 
+#Pull in realm from meta.pairs to investigate in box plot 
+load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
+meta.pairs.realm <- meta.pairs %>%
+  dplyr::select(STUDY_ID, REALM) 
+colnames(meta.pairs.realm) <- c("ID", "REALM")
+merged_df <- merge(no_zeroes, meta.pairs.realm, by = "ID")
+
 
 
 #Plot the data - not including ones with zero variance 
-box_plot_dist <-  no_zeroes %>%
+box_plot_dist <-  merged_df %>%
   ggplot(aes(x=as.character(ID), y=distance_to_avg, group=as.character(ID)))+
-  geom_boxplot(aes(colour=as.character(ID))) +
+  geom_boxplot(aes(colour=as.character(REALM))) +
   xlab("Study ID") +
   ylab("Distance to Average Lat/Lon of Study") +
-  labs(colour="Study ID")+
+  labs(colour="Realm")+
   theme_classic()
 box_plot_dist
 
