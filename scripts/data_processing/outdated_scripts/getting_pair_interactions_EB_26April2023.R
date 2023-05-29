@@ -1,5 +1,6 @@
 # Date created: 26 Apr 2023
 # Date updated: 26 Apr 2023 (NC)
+# Date updated: 22 May 2023 (ENB)
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -22,29 +23,37 @@ rm(list=ls())
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
-log.prop.change.with.meta <- readRDS("data/log.prop.change.with.meta.RDS")
+#Step 1. 
+    #Assign interactions to the list of unique genus pairs from the modelling dataset
+
+
+#read in the full dataset used for Q1 and Q2 analysis
+log.prop.change.with.meta <- readRDS("data/preprocessing/log.prop.change.full.data.RDS")
 log_change <- log.prop.change.with.meta
 
 head(log.prop.change.with.meta)
 
-#list of bio pairs with at least 10 overlapping years
+# get list of unique bio pair genera 
 genus_pairs <- apply(log_change[, c("Gn1", "Gn2")], 1, function(x) paste(sort(x), collapse = "-"))
 unique_pairs <- unique(genus_pairs)
 split_pairs <- data.frame(Gn1 = sapply(strsplit(unique_pairs, "-"), "[", 1),
                           Gn2 = sapply(strsplit(unique_pairs, "-"), "[", 2))
 
-#short sample dataset: 
-# Split into 5 groups of roughly equal size
-groups <- cut(seq_along(1:12623), breaks = 5, labels = FALSE)
+#Since the genera pairs are very large, they will crash Globi as is
+#So, I split them into five pairs of roughly equal size, so
+#we can split the globi processing up 
 
-# Split data into separate data frames
+# Split into 5 groups of roughly equal size
+groups <- cut(seq_along(1:nrow(split_pairs)), breaks = 8, labels = FALSE)
+
+# Turn the splits into data frames
 df_split <- split(split_pairs, groups)
 names(df_split) <- paste0("split_", names(df_split))
 
-
+#Bring the splits into the environment
 list2env(df_split, envir = .GlobalEnv)
 
-
+#Make Isaac's progress bar 
 set.prog.bar<-function(n_iter){
   #make progress bar
   progress_bar$new(format = "(:spin) [:bar] :percent [Elapsed time: :elapsedfull || Estimated time remaining: :eta]",
@@ -57,11 +66,10 @@ set.prog.bar<-function(n_iter){
   
 } #function to make a progress bar
 
-#Run for BETWEEN studies
-
+#Create a blank list for the for loop below 
 df_list <- list()
 
-
+#Loop for assigning genera interactions: loop 1
 pb<-set.prog.bar(nrow(split_1)) #sets progress bar
 for (i in 1:nrow(split_1)) {
   pb$tick()
@@ -77,12 +85,12 @@ df_list[[i]] <- pairs
 }
 
 pair_interactions_1 <- do.call(rbind, df_list)
-write.csv(pair_interactions_1, "data/pair_interactions_1.csv")
+#write.csv(pair_interactions_1, "data/pair_interactions_1.csv")
 
 
 
 
-
+#Loop for assigning genera interactions: loop 2
 pb<-set.prog.bar(nrow(split_2)) #sets progress bar
 for (i in 1:nrow(split_2)) {
   pb$tick()
@@ -98,11 +106,11 @@ for (i in 1:nrow(split_2)) {
 }
 
 pair_interactions_2 <- do.call(rbind, df_list)
-write.csv(pair_interactions_2, "data/pair_interactions_2.csv")
+#write.csv(pair_interactions_2, "data/pair_interactions_2.csv")
 
 
 
-
+#Loop for assigning genera interactions: loop 3
 pb<-set.prog.bar(nrow(split_3)) #sets progress bar
 for (i in 1:nrow(split_3)) {
   pb$tick()
@@ -118,10 +126,10 @@ for (i in 1:nrow(split_3)) {
 }
 
 pair_interactions_3 <- do.call(rbind, df_list)
-write.csv(pair_interactions_3, "data/pair_interactions_3.csv")
+#write.csv(pair_interactions_3, "data/pair_interactions_3.csv")
 
 
-
+#Loop for assigning genera interactions: loop 4
 pb<-set.prog.bar(nrow(split_4)) #sets progress bar
 for (i in 1:nrow(split_4)) {
   pb$tick()
@@ -137,12 +145,12 @@ for (i in 1:nrow(split_4)) {
 }
 
 pair_interactions_4 <- do.call(rbind, df_list)
-write.csv(pair_interactions_4, "data/pair_interactions_4.csv")
+#write.csv(pair_interactions_4, "data/pair_interactions_4.csv")
 
 
 
 
-
+#Loop for assigning genera interactions: loop 5
 pb<-set.prog.bar(nrow(split_5)) #sets progress bar
 for (i in 1:nrow(split_5)) {
   pb$tick()
@@ -158,12 +166,13 @@ for (i in 1:nrow(split_5)) {
 }
 
 pair_interactions_5 <- do.call(rbind, df_list)
-write.csv(pair_interactions_5, "data/pair_interactions_5.csv")
+#write.csv(pair_interactions_5, "data/pair_interactions_5.csv")
 
+#Bind the results of all five loops together 
 all_interactions <- rbind(pair_interactions_1, pair_interactions_2, pair_interactions_3, 
                           pair_interactions_4, pair_interactions_5)
 colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
-write.csv(all_interactions, "data/genus_interaction_list.csv")
+#write.csv(all_interactions, "data/genus_interaction_list.csv")
 
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -179,18 +188,16 @@ all_interactions <- read.csv("data/preprocessing/genus_interaction_list.csv")
 all_interactions <- all_interactions %>%
   select(!X)
 
-parasite <- all_interactions %>%
-  filter(interaction=="pathogenOf")
-
-#Remove interaction pairs that are mistakes (pathogen, host, hemiparasite
-#- see original all interactions above)
+#Upon manual inspection, some interactions are clearly mistakes due to
+#ambiguity in the genera
+#these steps remove those mistakes 
 
 mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', 'pathogenOf', 
                           'hasVector', 'parasiteOf')
 all_interactions_2<- all_interactions %>%
   filter(!interaction %in% mistake_interactions)
-# write.csv(all_interactions_2, "data/genus_interaction_list.csv")
 
+#Get number o
 summary_interactions <- all_interactions_2 %>%
   group_by(Gn1, Gn2) %>%
   summarize(n=n()) %>%
@@ -203,6 +210,7 @@ unique_interactions_1 <-summary_interactions %>%
 
 
 #Next steps: start collapsing interaction types into larger groups, 
+#Key: 
 #predator-prey (including herbivory)
   #eatenBy, eats, preysOn, preyedUponBy
 #mutualism
@@ -234,20 +242,11 @@ cased_interactions <- cased_interactions %>%
 cased_interaction_unique <- cased_interactions %>% distinct()
 
 #Let's check how many have multiple interactions still assigned
-
 summary_interactions_cased<- cased_interaction_unique %>%
   group_by(Gn1, Gn2) %>%
   summarize(n=n()) %>%
   arrange() %>%
   left_join(cased_interaction_unique, by=c('Gn1', "Gn2"))
-
-
-# 
-# # Remove rows with "unclassified_interaction" that are associated with any other interaction type for each genus pair
-# cased_interactions_filtered <- summary_interactions_cased %>%
-# filter(!(n>1 & interaction_type =="uncategorized_interaction"))
-# cased_interactions_filtered <- summary_interactions_cased %>%
-#   filter(!(n>1 & interaction_type =="visits"))
 
 cased_interactions_filtered_2<- cased_interaction_unique %>%
   group_by(Gn1, Gn2) %>%
@@ -257,10 +256,14 @@ cased_interactions_filtered_2<- cased_interaction_unique %>%
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
 #Adding interactions into the log.prop.change dataset
-#Yes/No
-#Positive/negative/neutral
-#Type of interaction
+#interaction info being added: 
+  #Interaction Yes (1)/No(0)
+  #Positive/negative/neutral
+  #Type of interaction
 
+
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #Yes/no interaction
 #Get pairs 
 distinct_pairs <- cased_interactions_filtered_2 %>%
@@ -268,7 +271,7 @@ distinct_pairs <- cased_interactions_filtered_2 %>%
   distinct()
 
 #Read in interactions 
-log_change <- readRDS("data/preprocessing/log.prop.change.with.meta.RDS")
+log_change <- readRDS("data/preprocessing/log.prop.change.full.data.RDS")
 head(log_change)
 
 # Create a new column in df2 called "interaction" and initialize all values to 0
@@ -298,17 +301,14 @@ for (i in 1:nrow(log_change)) {
   }
 }
 
-colnames(log_change)[26] <- "interaction_found"
-
 saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
 saveRDS(cased_interactions_filtered_2, "data/preprocessing/all.interactions.genus.pairs.RDS")
 
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+#Positive negative neutral (hyphenated)
 
-
-#Do positive negative neutral 
 log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
 
 
@@ -337,6 +337,7 @@ neutral_interaction <- vector("integer", nrow(log_change_interaction))
 # Iterate over each row in the log_prop_change_interaction dataset
 
 pb<-set.prog.bar(nrow(log_change_interaction)) #sets progress bar
+#take interaction types, and hyphenate if there are multiple
 for (i in 1:nrow(log_change_interaction)) {
   pb$tick()
   
@@ -349,37 +350,46 @@ for (i in 1:nrow(log_change_interaction)) {
     (pos_neg_interactions$Gn1 == gn2 & pos_neg_interactions$Gn2 == gn1)
   
   if (any(match_rows)) {
-    # If matching row(s) are found, check for each interaction type and assign 1 or 0 accordingly
-    positive_interaction[i] <- as.integer("positive" %in% pos_neg_interactions$interaction_benefit[match_rows])
-    negative_interaction[i] <- as.integer("negative" %in% pos_neg_interactions$interaction_benefit[match_rows])
-    neutral_interaction[i] <- as.integer("neutral" %in% pos_neg_interactions$interaction_benefit[match_rows])
+    # If matching row(s) are found, retrieve interaction types
+    interaction_benefit <- pos_neg_interactions$interaction_benefit[match_rows]
+    
+    # Hyphenate multiple interaction types or assign "NA" if none
+    if (length(interaction_benefit) > 0) {
+      hyphenated_interaction <- paste(interaction_benefit, collapse = "-")
+    } else {
+      hyphenated_interaction <- "NA"
+    }
+    
+    # Assign the hyphenated interaction to the corresponding column
+    log_change_interaction$interaction_benefit[i] <- hyphenated_interaction
   } else {
-    # If no matching row is found, assign 0 to all interaction types
-    positive_interaction[i] <- 0
-    negative_interaction[i] <- 0
-    neutral_interaction[i] <- 0
+    # If no matching row is found, assign "NA" to the interaction type
+    log_change_interaction$interaction_benefit[i] <- "NA"
   }
 }
 
-log_change_interaction$positive_interaction <- positive_interaction
-log_change_interaction$negative_interaction <- negative_interaction
-log_change_interaction$neutral_interaction <- neutral_interaction
+
+saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
 
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
-#interaction type
+#interaction types detailed - hyphenated
+
+#Read in hyphenated data from positive/negative code above (if starting from here)
+log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
+#Create a dummy dataset to test function below
+dummy_data <- sample_n(log_change_interaction, 10000)
 
 
-# Create empty vectors to store the interaction types
-uncategorized_interaction <- vector("integer", nrow(log_change_interaction))
-predator_prey_interaction <- vector("integer", nrow(log_change_interaction))
-mutualism_interaction <- vector("integer", nrow(log_change_interaction))
-dispersal_interaction <- vector("integer", nrow(log_change_interaction))
-
-# Iterate over each row in the log_change_interaction dataset
+pb <- set.prog.bar(nrow(log_change_interaction)) # Sets progress bar
+# Create an empty vector to store the interaction types for each row
+interaction_types_detailed <- vector("character", length = nrow(log_change_interaction))
+# Define a for loop to process each row, and assign interaction types to each pair
 for (i in 1:nrow(log_change_interaction)) {
+  pb$tick()
+  
   # Get the genus pair from the current row
   gn1 <- log_change_interaction$Gn1[i]
   gn2 <- log_change_interaction$Gn2[i]
@@ -389,47 +399,22 @@ for (i in 1:nrow(log_change_interaction)) {
     (cased_interactions_filtered_2$Gn1 == gn2 & cased_interactions_filtered_2$Gn2 == gn1)
   
   if (any(match_rows)) {
-    # If matching row(s) are found, check for each interaction type and assign 1 or 0 accordingly
-    uncategorized_interaction[i] <- as.integer("uncategorized_interaction" %in% cased_interactions_filtered_2$interaction_type[match_rows])
-    predator_prey_interaction[i] <- as.integer("predator_prey" %in% cased_interactions_filtered_2$interaction_type[match_rows])
-    mutualism_interaction[i] <- as.integer("mutualism" %in% cased_interactions_filtered_2$interaction_type[match_rows])
-    dispersal_interaction[i] <- as.integer("dispersal" %in% cased_interactions_filtered_2$interaction_type[match_rows])
+    # If matching row(s) are found, hyphenate the interaction types into a single string
+    interaction_types <- paste(cased_interactions_filtered_2$interaction_type[match_rows], collapse = "-")
   } else {
-    # If no matching row is found, assign 0 to all interaction types
-    uncategorized_interaction[i] <- 0
-    predator_prey_interaction[i] <- 0
-    mutualism_interaction[i] <- 0
-    dispersal_interaction[i] <- 0
+    # If no matching row is found, assign NA
+    interaction_types <- NA
   }
+  
+  # Assign the interaction types to the corresponding index in the vector
+  interaction_types_detailed[i] <- interaction_types
 }
 
-# Assign the interaction types to the log_change_interaction dataset as new columns
-log_change_interaction$uncategorized_interaction <- uncategorized_interaction
-log_change_interaction$predator_prey_interaction <- predator_prey_interaction
-log_change_interaction$mutualism_interaction <- mutualism_interaction
-log_change_interaction$dispersal_interaction <- dispersal_interaction
+# Assign the interaction types to the log_change_interaction dataset as a new column
+log_change_interaction$interaction_types_detailed <- interaction_types_detailed
 
 
 #Write new log change interaction: 
-saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
 log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
 
-
-interesting_interactions <- log_change_interaction %>%
-  filter(predator_prey_interaction==1 & dispersal_interaction==0) %>%
-  filter(Gn1=='Achillea', Gn2=="Melanoplus") %>%
-  select(Gn1, Gn2, YEAR.T, Log.prop.change.bio.Gn1, Log.prop.change.abun.Gn2)
-
-# Reshape the data into a longer format
-data_long <- interesting_interactions %>%
-  pivot_longer(cols=starts_with('log.prop'), 
-               names_prefix='Log.prop.change.',
-               names_to = "Variable", 
-               values_to = "Abundance") 
-
-
-data_long %>%
-  ggplot(aes(x=YEAR.T, y=Abundance))+
-  geom_point(aes(colour=Variable))+
-  theme_classic()+
-  geom_smooth(aes(colour=Variable),method='loess', span=0.1)
