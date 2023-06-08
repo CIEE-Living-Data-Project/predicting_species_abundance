@@ -9,9 +9,9 @@ library(progress)
 library(stringr)
 
 #Load data
-load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/data_processing/outdated/cleaned_collated_standardized_MSF.Rdata")
-between.studies.overlap<-readRDS("data/data_processing/between.studies.overlap.RDS")
-within.studies.overlap<-readRDS("data/data_processing/within.studies.overlap.RDS")
+load("~/Library/CloudStorage/OneDrive-McGillUniversity/R Scripts/GitHub/predicting_species_abundance/data/preprocessing/cleaned_collated_standardized_MSF.Rdata")
+between.studies.overlap<-readRDS("data/preprocessing/between.studies.overlap.RDS")
+within.studies.overlap<-readRDS("data/preprocessing/within.studies.overlap.RDS")
 
 bio.pairs <- read.csv("data/prep_biotime/bio_pairs_10km.csv")
 meta.pairs <- read.csv("data/prep_biotime/meta_pairs_10km.csv")
@@ -164,8 +164,6 @@ results=data.frame(matrix(ncol=14,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "L
 pb<-set.prog.bar(nrow(pairs.keep))
 for (i in 1:nrow(pairs.keep)){
   pb$tick()
-  i=1
-  
   wk<-get.log.prop.change(i,collated.pairs_standardized_summary,pairs.keep)
   results<-rbind(results,wk)
   
@@ -273,10 +271,10 @@ cross.bio.abun$Metric="CROSS"
 
 full.data<-rbind(abun,bio,cross.abun.bio,cross.bio.abun)
 
-saveRDS(full.data,"data/data_processing/log.prop.change.full.data.RDS")
+saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
 
 #add distance col
-full.data=readRDS("data/data_processing/log.prop.change.full.data.RDS")
+full.data=readRDS("data/preprocessing/log.prop.change.full.data.RDS")
 bio.pairs=read.csv("data/prep_biotime/bio_pairs_10km.csv")
 
 bio.pairs$PairID=paste(bio.pairs$ID.1,bio.pairs$ID.2,sep="_")
@@ -284,6 +282,7 @@ full.data<-left_join(full.data,bio.pairs[,c(1,22)])
 full.data$dist[which(full.data$ID1==full.data$ID2)]<-0
 
 saveRDS(full.data,"data/preprocessing/log.prop.change.full.data.RDS")
+
 
 full.data=readRDS("data/preprocessing/log.prop.change.full.data.RDS")
 
