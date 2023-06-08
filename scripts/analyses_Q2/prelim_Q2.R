@@ -264,7 +264,7 @@ pp_check(mod, ndraws = 100) #posterior predictive checks - are predicted values 
 pairs(mod)
 
 # Skewness: observed (black line) and simulated (grey distribution) SKEW metric (1000 simulated datasets)
-ppc_stat(y = dat1perc$fake.pred.acc,
+ppc_stat(y = data_model$fake.pred.acc,
          yrep = posterior_predict(mod, ndraws = 1000),
          stat = "skew")
 
