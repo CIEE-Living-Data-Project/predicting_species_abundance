@@ -39,7 +39,7 @@ dat_terr<-subset(x = dat, subset = REALM1=="Terrestrial" & REALM2=="Terrestrial"
 
 dat_marine<-subset(x = dat, subset = REALM1!="Terrestrial" & REALM2!="Terrestrial")
 
-
+#meta-model----
 #run intercept only models for each genus x pairID x unique pairID combination
 intmods_terr1=dat_terr%>%group_by(
   PairID, UNIQUE.PAIR.ID)%>%
@@ -102,14 +102,11 @@ mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
                          control = list(adapt_delta=0.99, max_treedepth = 12),    
                          chains = 3, iter = 2000, warmup = 500, cores = 4) 
          
-save(mod, file = 'outputs/brms_April2023/meta_mod_q1.terrestrial_withinstudies.rds') #save          
+save(mod, file = 'outputs/brms_June2023/meta_mod_q1.terrestrial_withinstudies.rds') #save          
 
 
 #model outputs 
 summary(mod)
-
-
-
 ranef<-ranef(mod)
 
 ranef_terr=as.data.frame(ranef$PairID)
@@ -125,6 +122,33 @@ loo(mod, moment_match = T, )
 
 #ppchecks 
 pp_check(mod, ndraws = 100) #this doesn't look great 
+
+
+#full model----
+#going to remove the cross metrics for now as unique pair IDs seem duplicated on this 
+dat_terrx<-subset(dat_terr, Metric!="CROSS") %>%
+  distinct(.)#
+
+#only 10% of data are between studies- filter out 
+dat_terry<-subset(dat_terrx, Type!="Between") %>%
+  distinct(.)
+
+MODDAT<-  dat_terry
+FAM <- gaussian(link = 'identity')
+
+library(cmdstanr)
+set_cmdstan_path("C:/Users/court/Documents/.cmdstan/cmdstan-2.32.2")
+MODFORM<-bf(Prop.Change.Gn1~ Prop.Change.Gn2 + 
+              (Prop.Change.Gn2 | PairID) +    
+              (Prop.Change.Gn2 | SERIES.l)+
+              (Prop.Change.Gn2 | UNIQUE.PAIR.ID)) 
+
+
+mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
+         control = list(adapt_delta=0.99, max_treedepth = 12),    
+         chains = 3, iter = 2000, warmup = 500, cores = 4, 
+         backend = "cmdstanr") 
+
 
 
 
