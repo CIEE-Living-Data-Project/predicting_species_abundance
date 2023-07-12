@@ -64,11 +64,19 @@ table(dat$REALM2)
 
 # visualize pairs across realm and climate
 ggplot(dat, 
-       aes(Prop.Change.Gn1, Prop.Change.Gn2, colour=UNIQUE.PAIR.ID)) +
-  geom_point(pch=1) +
+       aes(Prop.Change.Gn1, Prop.Change.Gn2, 
+           colour=UNIQUE.PAIR.ID)) +
+  geom_point(pch=1, alpha=.3) +
   facet_wrap(REALM1~CLIMATE1) +
-  theme_base() +
-  theme(legend.position = "none")
+  theme_base(base_size = 25) +
+  labs(y="log proportion change in genus 2", 
+       x="log proportion change in genus 1") +
+  theme(plot.background = element_blank(),
+        strip.background = element_rect(color="white"),
+        strip.text.x = element_text(size = 14, face = "bold"),
+        legend.position = "none",
+        plot.margin = unit(c(1, 1, 1, 1), "cm")) +
+  scale_colour_hue(l = 45)
 
 # how many data points per panel?
 dat %>% 
@@ -264,7 +272,7 @@ pp_check(mod, ndraws = 100) #posterior predictive checks - are predicted values 
 pairs(mod)
 
 # Skewness: observed (black line) and simulated (grey distribution) SKEW metric (1000 simulated datasets)
-ppc_stat(y = dat1perc$fake.pred.acc,
+ppc_stat(y = data_model$fake.pred.acc,
          yrep = posterior_predict(mod, ndraws = 1000),
          stat = "skew")
 
