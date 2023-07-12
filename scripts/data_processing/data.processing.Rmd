@@ -312,10 +312,11 @@ meta.data<-make.meta(results,collated.pairs_standardized_summary)
 
 
 
-join meta data with results df:
+log.prop.change.with.meta rename it for log.prop.change.with.meta.BETWEEN
 
-! [[[ DOUBT: in the code below, where "log.prop.change.with.meta" comes from? -- Clarify with **Isaac** ]]]
+The code is the same for both Between and Within.
 
+Run it twice for each and then merge them
 
 ```{r}
 

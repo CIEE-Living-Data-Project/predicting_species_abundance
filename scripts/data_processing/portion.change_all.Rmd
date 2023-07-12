@@ -1,0 +1,224 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+load("C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/outdated/cleaned_collated_standardized_MSF.Rdata")
+between.studies.overlap<-readRDS("C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/between.studies.overlap.RDS")
+within.studies.overlap<-readRDS("C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/within.studies.overlap.RDS")
+
+bio.pairs <- read.csv("C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/prep_biotime/bio_pairs_10km.csv")
+bio.pairs <- bio_pairs_10km
+meta.pairs <- read.csv("C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/prep_biotime/meta_pairs_10km.csv")
+
+meta.pairs <- meta_pairs_10km
+```
+
+
+
+For within or between studies:
+
+```{r}
+
+pairs.keep=between.studies.overlap[which(between.studies.overlap$Max.Overlap>9),] #this is generated in the Overlap script
+#pairs.keep=within.studies.overlap[which(within.studies.overlap$Max.Overlap>9),]
+
+pairs.keep
+
+```
+
+
+
+
+
+```{r}
+source("functions_portion_change.R")
+```
+
+
+
+
+```{r}
+library(dplyr) 
+library(tibble) 
+library(progress)
+library(stringr)
+library(corrplot)
+library(PerformanceAnalytics)
+library(GGally)
+```
+
+
+
+CoV, mean of lowest 5%, max of highest 5%, median
+
+
+
+# Abundance
+
+
+```{r}
+
+results = data.frame(matrix(ncol=21,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", 
+                                                                  "log_prop_change_gn1_mean",
+                                                                  "log_prop_change_gn2_mean",
+                                                                  "log_prop_change_gn1_sd",
+                                                                  "log_prop_change_gn2_sd",
+                                                                  "log_prop_change_gn1_median",
+                                                                  "log_prop_change_gn2_median",
+                                                                  "log_prop_change_gn1_min",
+                                                                  "log_prop_change_gn2_min",
+                                                                  "log_prop_change_gn1_max",
+                                                                  "log_prop_change_gn2_max",
+                                                                  "log_prop_change_gn1_CoV",
+                                                                  "log_prop_change_gn2_CoV",
+                                                                  "PairID",
+                                                                  "Type",
+                                                                  "SERIES.n",
+                                                                  "SERIES.start",
+                                                                  "SERIES.end",
+                                                                  "YEAR.T",
+                                                                  "YEAR.T1"))))
+
+pb<-set.prog.bar(nrow(pairs.keep))
+
+for (i in 1:nrow(pairs.keep)){
+
+  pb$tick()
+  wk<-get.log.prop.change_abund(x = i,collated.pairs_standardized_summary,pairs.keep)
+  results<-rbind(results,wk)
+  
+} #get prop change for every genera pair
+
+
+results
+
+
+```
+
+
+## Analyze colinearity
+
+
+```{r}
+
+metrics_g1 <- results[,c("Gn1", 
+                        "log_prop_change_gn1_mean",
+                        "log_prop_change_gn1_min",
+                        "log_prop_change_gn1_max",
+                        "log_prop_change_gn1_sd",
+                        "log_prop_change_gn1_median",
+                        "log_prop_change_gn1_CoV")]
+
+colnames(metrics_g1) <- c("Gn1", "mean", "min", "max", "sd", "median", "CoV")
+
+# eliminate NA and Inf values
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$sd)),]
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$CoV)),]
+
+
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == Inf),]
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == -Inf),]
+
+df_trimmed
+
+```
+
+
+
+
+```{r}
+install.packages("GGally")
+library(GGally)
+
+corrgram <- ggpairs(df_trimmed[,-1], title="correlation between biomass measurements") 
+
+corrgram
+
+#ggsave("corrgram_between_abundance.png", height = 7, width = 7)
+
+
+```
+
+
+
+# Biomass
+
+
+
+```{r}
+
+results = data.frame(matrix(ncol=21,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", 
+                                                                  "log_prop_change_gn1_mean","log_prop_change_gn2_mean",
+                                                                  "log_prop_change_gn1_sd","log_prop_change_gn2_sd",
+                                                                  "log_prop_change_gn1_median","log_prop_change_gn2_median",
+                                                                  "log_prop_change_gn1_min","log_prop_change_gn2_min",
+                                                                  "log_prop_change_gn1_max","log_prop_change_gn2_max",
+                                                                  "log_prop_change_gn1_CoV","log_prop_change_gn2_CoV",
+                                                                  "PairID","Type","SERIES.n","SERIES.start","SERIES.end","YEAR.T","YEAR.T1"))))
+
+pb<-set.prog.bar(nrow(pairs.keep))
+
+for (i in 1:nrow(pairs.keep)){
+  
+  pb$tick()
+  wk<-get.log.prop.change_biomass(i,collated.pairs_standardized_summary,pairs.keep)
+  results<-rbind(results,wk)
+  
+} #get prop change for every genera pair
+
+
+
+results
+
+
+```
+
+
+## Analyze colinearity
+
+
+```{r}
+
+metrics_g1 <- results[,c("Gn1", 
+                        "log_prop_change_gn1_mean",
+                        "log_prop_change_gn1_min",
+                        "log_prop_change_gn1_max",
+                        "log_prop_change_gn1_sd",
+                        "log_prop_change_gn1_median",
+                        "log_prop_change_gn1_CoV")]
+
+colnames(metrics_g1) <- c("Gn1", "mean", "min", "max", "sd", "median", "CoV")
+
+
+# eliminate NA and Inf values
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$sd)),]
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$CoV)),]
+
+
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == Inf),]
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == -Inf),]
+
+df_trimmed
+
+```
+
+
+```{r}
+
+
+
+corrgram <- ggpairs(df_trimmed[,-1], title="correlation between biomass measurements") 
+
+corrgram
+
+#ggsave("corrgram_between_biomass.png", height = 7, width = 7)
+
+
+```
