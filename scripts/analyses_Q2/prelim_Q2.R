@@ -137,7 +137,7 @@ table(dat$resolved.taxa.taxa)
 
 ####################################################################################################
 
-#### FRAMEWORK FOR DATA ANALYSIS ####
+#### FRAMEWORK FOR BETA GLM DATA ANALYSIS ON FULL SIMULATED DISTRIBUTION ####
 
 ####################################################################################################
 
@@ -352,7 +352,22 @@ lapply(split.data, fitting.model)
 
 
 
-######### Test (AF)
+####################################################################################################
+
+#### FRAMEWORK FOR GLM & BRT DATA ANALYSIS ON TRUNCATED PORTION OF SIMULATED DISTRIBUTOIN ####
+
+####################################################################################################
+
+# Simulate Gaussian distribution
+x <- rnorm(n=10000) 
+hist(x)
+dat$fake.pred.acc <- out #add to dataframe
+
+####################################################################################################
+
+#### Test (AF) ####
+
+####################################################################################################
 
 # Create conceptual plots for the idea of comparing taxa correlations in proportion change
 
