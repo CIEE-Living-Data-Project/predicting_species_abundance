@@ -21,8 +21,8 @@ rm(list=ls())
 
 
 #### INPUT FILES ####
-dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
-
+dat <- readRDS('C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/log.prop.change.full.data.UPDATED.RDS')
+str(dat)
 
 # # OUTPUT FILES # #
 
@@ -51,7 +51,7 @@ skew <- function(y){ # Fisher-Pearson Skew function based on NIST definition
 # https://docs.google.com/document/d/1XvBeeiNZJZmDtivf1hJX9zN3PND9AgM6GxQeh-LpVY4/edit#heading=h.ebszuu9ld6v2
 
 dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
-dat.int <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
+dat.int <- readRDS('C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/log.prop.change.interactions.RDS')
 
 # CLIMATE
 table(dat$CLIMATE1) # climate1 and climate2 are the same
@@ -350,3 +350,175 @@ lapply(split.data, fitting.model)
 # and update model specs to reflect this, make sure statistical distribution etc is accurate for distribution of Y data
 
 
+
+
+######### Test (AF)
+
+# Create conceptual plots for the idea of comparing taxa correlations in proportion change
+
+
+
+vec_taxa <- unique(dat.int$TAXA2)
+plot_list <- list()
+
+for (i in 1:length(vec_taxa)) {
+  
+  df <- dat.int[dat.int$TAXA1 == vec_taxa[i] & dat.int$TAXA2 == vec_taxa[i],]
+  
+  taxa_name <-  gsub(" ", "", vec_taxa[i])
+  
+  name_plot <- paste("plot", taxa_name)
+  
+  plot <- ggplot(df, aes(x=Prop.Change.Gn1, y=Prop.Change.Gn2)) + 
+    geom_point(alpha = 0.1)+
+    geom_smooth(method=lm, color = "red") +
+    ggtitle(taxa_name)+
+    annotate('text', 
+             x = max(df$Prop.Change.Gn1) - 0.4, 
+             y = max(df$Prop.Change.Gn2) - 0.4, 
+             label = round(cor(df$Prop.Change.Gn1, df$Prop.Change.Gn2),3), 
+             size = 6, 
+             col = 'red')
+    #stat_density_2d(aes(fill = ..level..), geom="polygon")+
+    #scale_fill_gradient(low="blue", high="red")
+  
+  
+  plot_list[[i]] <- plot
+  
+}
+
+
+plots_arranged <- ggarrange(
+  
+  plot_list[[1]] + remove("xlab"), 
+  plot_list[[2]]+ remove("xlab") + remove("ylab"),
+  plot_list[[3]]+ remove("xlab") + remove("ylab"),
+  plot_list[[4]]+ remove("xlab") + remove("ylab"),
+  plot_list[[5]],
+  plot_list[[6]]+ remove("ylab"),
+  plot_list[[7]]+ remove("ylab"),
+  plot_list[[8]]+ remove("ylab"),
+  
+  nrow = 4,
+  ncol = 2
+  
+)
+
+plots_arranged
+
+#ggsave("plots_arranged.png", height = 15, width = 9)
+
+
+
+unique(dat.int$CLIMATE1)
+
+
+## For temperate
+
+dat.int_temperate <- dat.int[dat.int$CLIMATE1 == "Temperate" & dat.int$CLIMATE2 == "Temperate",]
+
+vec_taxa <- unique(dat.int$TAXA2)
+plot_list <- list()
+
+for (i in 1:length(vec_taxa)) {
+  
+  df <- dat.int_temperate[dat.int_temperate$TAXA1 == vec_taxa[i] & dat.int_temperate$TAXA2 == vec_taxa[i],]
+  
+  taxa_name <-  gsub(" ", "", vec_taxa[i])
+  
+  name_plot <- paste("plot", taxa_name)
+  
+  plot <- ggplot(df, aes(x=Prop.Change.Gn1, y=Prop.Change.Gn2)) + 
+    geom_point(alpha = 0.1)+
+    geom_smooth(method=lm, color = "blue") +
+    ggtitle(taxa_name)+
+    annotate('text', 
+             x = max(df$Prop.Change.Gn1) - 0.4, 
+             y = max(df$Prop.Change.Gn2) - 0.4, 
+             label = round(cor(df$Prop.Change.Gn1, df$Prop.Change.Gn2),3), 
+             size = 6, 
+             col = 'blue')
+  #stat_density_2d(aes(fill = ..level..), geom="polygon")+
+  #scale_fill_gradient(low="blue", high="red")
+  
+  
+  plot_list[[i]] <- plot
+  
+}
+
+
+plots_arranged_temp <- ggarrange(
+  
+  plot_list[[1]] + remove("xlab"), 
+  plot_list[[2]]+ remove("xlab") + remove("ylab"),
+  plot_list[[3]]+ remove("xlab") + remove("ylab"),
+  plot_list[[4]]+ remove("xlab") + remove("ylab"),
+  plot_list[[5]],
+  plot_list[[6]]+ remove("ylab"),
+  plot_list[[7]]+ remove("ylab"),
+  plot_list[[8]]+ remove("ylab"),
+  
+  nrow = 4,
+  ncol = 2
+  
+)
+
+plots_arranged_temp
+
+#ggsave("plots_arranged_temp.png", height = 15, width = 9)
+
+
+
+## For tropical
+
+dat.int_trop <- dat.int[dat.int$CLIMATE1 == "Tropical" & dat.int$CLIMATE2 == "Tropical",]
+
+vec_taxa <- unique(dat.int$TAXA2)
+plot_list <- list()
+
+for (i in 1:length(vec_taxa)) {
+  
+  df <- dat.int_trop[dat.int_trop$TAXA1 == vec_taxa[i] & dat.int_trop$TAXA2 == vec_taxa[i],]
+  
+  taxa_name <-  gsub(" ", "", vec_taxa[i])
+  
+  name_plot <- paste("plot", taxa_name)
+  
+  plot <- ggplot(df, aes(x=Prop.Change.Gn1, y=Prop.Change.Gn2)) + 
+    geom_point(alpha = 0.1)+
+    geom_smooth(method=lm, color = "green") +
+    ggtitle(taxa_name)+
+    annotate('text', 
+             x = max(df$Prop.Change.Gn1) - 0.4, 
+             y = max(df$Prop.Change.Gn2) - 0.4, 
+             label = round(cor(df$Prop.Change.Gn1, df$Prop.Change.Gn2),3), 
+             size = 6, 
+             col = 'green')
+  #stat_density_2d(aes(fill = ..level..), geom="polygon")+
+  #scale_fill_gradient(low="blue", high="red")
+  
+  
+  plot_list[[i]] <- plot
+  
+}
+
+
+plots_arranged_trop <- ggarrange(
+  
+  plot_list[[1]] + remove("xlab"), 
+  plot_list[[2]]+ remove("xlab") + remove("ylab"),
+  plot_list[[3]]+ remove("xlab") + remove("ylab"),
+  plot_list[[4]]+ remove("xlab") + remove("ylab"),
+  plot_list[[5]],
+  plot_list[[6]]+ remove("ylab"),
+  plot_list[[7]]+ remove("ylab"),
+  plot_list[[8]]+ remove("ylab"),
+  
+  nrow = 4,
+  ncol = 2
+  
+)
+
+plots_arranged_trop
+
+#ggsave("plots_arranged_trop.png", height = 15, width = 9)

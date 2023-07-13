@@ -39,10 +39,10 @@ get.log.prop.change_abund <-function(x,data,pairs.keep){
     res=data.frame(matrix(ncol=21,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", 
                                                                 "log_prop_change_gn1_mean","log_prop_change_gn2_mean",
                                                                 "log_prop_change_gn1_sd","log_prop_change_gn2_sd",
-                                                                "log_prop_change_gn1_median","log_prop_change_gn1_median",
-                                                                "log_prop_change_gn1_min","log_prop_change_gn1_min",
-                                                                "log_prop_change_gn1_max","log_prop_change_gn1_max",
-                                                                "log_prop_change_gn1_CoV","log_prop_change_gn1_CoV",
+                                                                "log_prop_change_gn1_median","log_prop_change_gn2_median",
+                                                                "log_prop_change_gn1_min","log_prop_change_gn2_min",
+                                                                "log_prop_change_gn1_max","log_prop_change_gn2_max",
+                                                                "log_prop_change_gn1_CoV","log_prop_change_gn2_CoV",
                                                                 "PairID","Type","SERIES.n","SERIES.start","SERIES.end","YEAR.T","YEAR.T1")))) #makes an empty dataframe
     
     
@@ -175,13 +175,13 @@ get.log.prop.change_abund <-function(x,data,pairs.keep){
                           "log_prop_change_gn1_sd" = log_prop_change_gn1_sd,
                           "log_prop_change_gn2_sd" = log_prop_change_gn2_sd,
                           "log_prop_change_gn1_median" = log_prop_change_gn1_median,
-                          "log_prop_change_gn1_median" = log_prop_change_gn1_median,
+                          "log_prop_change_gn2_median" = log_prop_change_gn1_median,
                           "log_prop_change_gn1_min" = log_prop_change_gn1_min,
-                          "log_prop_change_gn1_min" = log_prop_change_gn1_min,
+                          "log_prop_change_gn2_min" = log_prop_change_gn1_min,
                           "log_prop_change_gn1_max" = log_prop_change_gn1_max,
-                          "log_prop_change_gn1_max" = log_prop_change_gn1_max,
+                          "log_prop_change_gn2_max" = log_prop_change_gn1_max,
                           "log_prop_change_gn1_CoV" = log_prop_change_gn1_CoV,
-                          "log_prop_change_gn1_CoV" = log_prop_change_gn1_CoV,
+                          "log_prop_change_gn2_CoV" = log_prop_change_gn1_CoV,
                           
                           "PairID"=genera.pair$PAIR.ID,
                           "Type"=genera.pair$Type,
