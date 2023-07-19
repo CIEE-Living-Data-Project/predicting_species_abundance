@@ -15,6 +15,8 @@ library(ggthemes)
 library(brms)
 library(priorsense)
 library(bayesplot)
+library(gbm) #boosted regression trees
+library(dismo)
 
 
 rm(list=ls()) 
@@ -358,10 +360,51 @@ lapply(split.data, fitting.model)
 
 ####################################################################################################
 
+## SET UP DATA
+dat <- readRDS('data/preprocessing/log.change.interactions.RDS')
+
 # Simulate Gaussian distribution
-x <- rnorm(n=10000) 
+x <- rnorm(n = nrow(dat))
 hist(x)
-dat$fake.pred.acc <- out #add to dataframe
+dat$fake.pred.acc <- x #add to dataframe
+
+# fixed effects as factor
+dat <- dat %>% 
+  mutate(CLIMATE1 = factor(CLIMATE1)) %>% 
+  mutate(REALM1 = factor(REALM1)) # add treatment and interaction once ready
+
+# NOTE: assumes that REALM1 is always the realm of the response variable, and currently analyses only 
+# done for Gn1 ~ Gn2. Need to switch when reverse direction is analyzed.
+
+# check structure of variables
+str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist')])
+
+# Calculate lower and upper quartiles (25th and 75th percentile) of pred accuracy distribution
+lower_quantile <- quantile(dat$fake.pred.acc, 0.25)
+upper_quantile <- quantile(dat$fake.pred.acc, 0.75)
+
+# Now filter the dataframe to keep only the data from the outer 25%
+dat.quant <- dat[(dat$fake.pred.acc <= lower_quantile) | (dat$fake.pred.acc >= upper_quantile), ]
+hist(dat.quant$fake.pred.acc)
+
+
+## RUN BOOSTED REGRESSION TREE
+# Define variables and parameters
+yy <- 'fake.pred.acc' #response variable
+xx <- c('CLIMATE1', 'REALM1', 'dist') #predictor variables
+lr <- 0.01 #learning rate = weight applied to inidivudal trees
+bf <- 0.75 #bag fraction = proportion of observations used in selecting variables
+nt <- 50 #increase trees to start at & add to each cycle to prevent nonconvergece 
+
+# Run BRT
+mod <- gbm.step(data=dat_train, gbm.x = xx,
+                   gbm.y = yy, family = 'gaussian', tree.complexity = 3, 
+                   learning.rate = lr, bag.fraction = bf, n.trees = nt) 
+
+summary(mod)
+
+
+
 
 ####################################################################################################
 
