@@ -397,7 +397,7 @@ bf <- 0.75 #bag fraction = proportion of observations used in selecting variable
 nt <- 50 #increase trees to start at & add to each cycle to prevent nonconvergece 
 
 # Run BRT
-mod <- gbm.step(data=dat_train, gbm.x = xx,
+mod <- gbm.step(data = dat, gbm.x = xx,
                    gbm.y = yy, family = 'gaussian', tree.complexity = 3, 
                    learning.rate = lr, bag.fraction = bf, n.trees = nt) 
 
