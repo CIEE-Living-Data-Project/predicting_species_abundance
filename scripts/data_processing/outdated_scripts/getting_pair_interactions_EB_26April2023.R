@@ -408,8 +408,10 @@ saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
 #Write new log change interaction: 
-saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(log_change_interaction_hyphenated, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
 log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+log_change_interaction_hyphenated <- readRDS("data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
+
 
 #do interaction type detailed
 pb<-set.prog.bar(nrow(log_change_interaction)) #sets progress bar
@@ -448,7 +450,7 @@ for (i in 1:nrow(log_change_interaction)) {
 unique(log_change_interaction$interaction_type)
 
 #remove the "detailed" column
+log_change_interaction$interaction_benefit <- log_change_interaction_hyphenated$interaction_benefit
 
-
-saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
+saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.RDS")
 
