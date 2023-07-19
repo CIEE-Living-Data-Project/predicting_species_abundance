@@ -394,9 +394,9 @@ hist(dat.quant$fake.pred.acc)
 # Define variables and parameters
 yy <- 'fake.pred.acc' #response variable
 xx <- c('CLIMATE1', 'REALM1', 'dist') #predictor variables
-lr <- 0.01 #learning rate = weight applied to individual trees
+lr <- 0.00001 #learning rate = weight applied to individual trees
 bf <- 0.75 #bag fraction = proportion of observations used in selecting variables
-nt <- 50 #increase trees to start at & add to each cycle to prevent nonconvergece 
+nt <- 1 #number of trees, decrease for smaller step size
 
 # Run BRT
 mod <- gbm.step(data = dat, gbm.x = xx,
@@ -404,6 +404,10 @@ mod <- gbm.step(data = dat, gbm.x = xx,
                    learning.rate = lr, bag.fraction = bf, n.trees = nt) 
 
 summary(mod)
+
+## IN PROGRESS: need to troubleshoot 'folds are unstratified' 
+## --> restart model with a smaller learning rate or smaller step size
+## --> could be due to low variability in predictor data
 
 
 
