@@ -4,7 +4,7 @@
 
 # Authors: Nathalie Chardon, GLL
 # Date created: 12 May 2023
-# Date updated: 22 May 2023 (GLL)
+# Date updated: 19 July 2023 (NC)
 
 
 #### LIBRARIES ####
@@ -24,6 +24,7 @@ rm(list=ls())
 
 #### INPUT FILES ####
 dat <- readRDS('C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/log.prop.change.full.data.UPDATED.RDS')
+dat <- readRDS('data/preprocessing/log.prop.change.interactions.RDS')
 str(dat)
 
 # # OUTPUT FILES # #
@@ -361,7 +362,7 @@ lapply(split.data, fitting.model)
 ####################################################################################################
 
 ## SET UP DATA
-dat <- readRDS('data/preprocessing/log.change.interactions.RDS')
+dat <- readRDS('data/preprocessing/log.prop.change.interactions.RDS')
 
 # Simulate Gaussian distribution
 x <- rnorm(n = nrow(dat))
@@ -371,13 +372,14 @@ dat$fake.pred.acc <- x #add to dataframe
 # fixed effects as factor
 dat <- dat %>% 
   mutate(CLIMATE1 = factor(CLIMATE1)) %>% 
-  mutate(REALM1 = factor(REALM1)) # add treatment and interaction once ready
+  mutate(REALM1 = factor(REALM1)) %>%  # add treatment
+  mutate(interaction_present = factor(interaction_present))
 
 # NOTE: assumes that REALM1 is always the realm of the response variable, and currently analyses only 
 # done for Gn1 ~ Gn2. Need to switch when reverse direction is analyzed.
 
 # check structure of variables
-str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist')])
+str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist', 'interaction_present')])
 
 # Calculate lower and upper quartiles (25th and 75th percentile) of pred accuracy distribution
 lower_quantile <- quantile(dat$fake.pred.acc, 0.25)
@@ -392,7 +394,7 @@ hist(dat.quant$fake.pred.acc)
 # Define variables and parameters
 yy <- 'fake.pred.acc' #response variable
 xx <- c('CLIMATE1', 'REALM1', 'dist') #predictor variables
-lr <- 0.01 #learning rate = weight applied to inidivudal trees
+lr <- 0.01 #learning rate = weight applied to individual trees
 bf <- 0.75 #bag fraction = proportion of observations used in selecting variables
 nt <- 50 #increase trees to start at & add to each cycle to prevent nonconvergece 
 
