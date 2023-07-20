@@ -120,3 +120,7 @@ meta.pairs$treatment_simplified[c(8,25,48,53,54,55,56,57,58,59,61,63,65,
 meta.pairs$treatment_simplified[c(24,31, 27,28,32,33,50)] <- c(rep("other", times = 7))
 
 meta.pairs$treatment_simplified[which(meta.pairs$treatment_simplified == "")] <- NA
+
+
+save(meta.pairs, file = 'data/prep_biotime/meta_pairs_10km.RData')
+
