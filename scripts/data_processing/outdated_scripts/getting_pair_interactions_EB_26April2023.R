@@ -184,7 +184,7 @@ colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
 #dataset
 
 #Read in the completed dataset from above
-all_interactions <- read.csv("data/preprocessing/genus_interaction_list.csv")
+all_interactions <- read.csv("data/data_processing/genus_interaction_list.csv")
 all_interactions <- all_interactions %>%
   select(!X)
 
@@ -252,6 +252,38 @@ cased_interactions_filtered_2<- cased_interaction_unique %>%
   group_by(Gn1, Gn2) %>%
   mutate(num_interactions=n())
 
+
+#These need to be cut down even further
+#If the interactions contain "mutualism" and "predator_prey", clearly this is a dispersal
+#relationship 
+#And, if it contains "uncategorized interaction" and "predator_prey", clearly this is predator prey
+#So, we can remove the extra rows 
+
+
+cased_interactions_filtered_3 <- cased_interactions_filtered_2 %>%
+  group_by(Gn1, Gn2) %>%
+  filter(
+    !("dispersal" %in% interaction_type & n_distinct(interaction_type) > 1) |
+      interaction_type == "dispersal"
+  ) %>%
+  ungroup()
+
+cased_interactions_filtered_3 <- cased_interactions_filtered_3 %>%
+  group_by(Gn1, Gn2) %>%
+  filter(
+    !("predator_prey" %in% interaction_type & "uncategorized_interaction" %in% interaction_type) |
+      interaction_type == "predator_prey"
+  ) %>%
+  ungroup()
+
+#Check for new number of interactions for each pair
+cased_interactions_filtered_3<- cased_interactions_filtered_3 %>%
+  group_by(Gn1, Gn2) %>%
+  mutate(new_num_interactions=n())
+table(cased_interactions_filtered_3$new_num_interactions)
+
+#Got it all down to 1! Yay! 
+
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
@@ -266,12 +298,12 @@ cased_interactions_filtered_2<- cased_interaction_unique %>%
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #Yes/no interaction
 #Get pairs 
-distinct_pairs <- cased_interactions_filtered_2 %>%
+distinct_pairs <- cased_interactions_filtered_3 %>%
   select(Gn1, Gn2) %>%
   distinct()
 
 #Read in interactions 
-log_change <- readRDS("data/preprocessing/log.prop.change.full.data.RDS")
+log_change <- readRDS("data/data_processing/log.prop.change.full.data.RDS")
 head(log_change)
 
 # Create a new column in df2 called "interaction" and initialize all values to 0
@@ -302,7 +334,7 @@ for (i in 1:nrow(log_change)) {
 }
 
 saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
-saveRDS(cased_interactions_filtered_2, "data/preprocessing/all.interactions.genus.pairs.RDS")
+saveRDS(cased_interactions_filtered_3, "data/preprocessing/all.interactions.genus.pairs.RDS")
 
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -312,7 +344,7 @@ saveRDS(cased_interactions_filtered_2, "data/preprocessing/all.interactions.genu
 log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
 
 
-pos_neg_interactions<- cased_interactions_filtered_2%>%
+pos_neg_interactions<- cased_interactions_filtered_3%>%
   mutate(
     interaction_benefit = case_when(
       interaction_type %in%  c("predator_prey") ~ "negative",
@@ -375,18 +407,15 @@ saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
-#interaction types detailed - hyphenated
-
-#Read in hyphenated data from positive/negative code above (if starting from here)
-log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
-#Create a dummy dataset to test function below
-dummy_data <- sample_n(log_change_interaction, 10000)
+#Write new log change interaction: 
+saveRDS(log_change_interaction_hyphenated, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
+log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+log_change_interaction_hyphenated <- readRDS("data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
 
 
-pb <- set.prog.bar(nrow(log_change_interaction)) # Sets progress bar
-# Create an empty vector to store the interaction types for each row
-interaction_types_detailed <- vector("character", length = nrow(log_change_interaction))
-# Define a for loop to process each row, and assign interaction types to each pair
+#do interaction type detailed
+pb<-set.prog.bar(nrow(log_change_interaction)) #sets progress bar
+#take interaction types, and hyphenate if there are multiple
 for (i in 1:nrow(log_change_interaction)) {
   pb$tick()
   
@@ -394,27 +423,34 @@ for (i in 1:nrow(log_change_interaction)) {
   gn1 <- log_change_interaction$Gn1[i]
   gn2 <- log_change_interaction$Gn2[i]
   
-  # Find the corresponding row(s) in the cased_interactions_filtered_2 dataset (with both possible orderings)
-  match_rows <- (cased_interactions_filtered_2$Gn1 == gn1 & cased_interactions_filtered_2$Gn2 == gn2) |
-    (cased_interactions_filtered_2$Gn1 == gn2 & cased_interactions_filtered_2$Gn2 == gn1)
+  # Find the corresponding row(s) in the cased_interactions_filtered_3 dataset
+  match_rows <- (cased_interactions_filtered_3$Gn1 == gn1 & cased_interactions_filtered_3$Gn2 == gn2) |
+    (cased_interactions_filtered_3$Gn1 == gn2 & cased_interactions_filtered_3$Gn2 == gn1)
   
   if (any(match_rows)) {
-    # If matching row(s) are found, hyphenate the interaction types into a single string
-    interaction_types <- paste(cased_interactions_filtered_2$interaction_type[match_rows], collapse = "-")
+    # If matching row(s) are found, retrieve interaction types
+    interaction_type <- cased_interactions_filtered_3$interaction_type[match_rows]
+    
+    # Hyphenate multiple interaction types or assign "NA" if none
+    if (length(interaction_type) > 0) {
+      hyphenated_interaction <- paste(interaction_type, collapse = "-")
+    } else {
+      hyphenated_interaction <- "NA"
+    }
+    
+    # Assign the hyphenated interaction to the corresponding column
+    log_change_interaction$interaction_type[i] <- hyphenated_interaction
   } else {
-    # If no matching row is found, assign NA
-    interaction_types <- NA
+    # If no matching row is found, assign "NA" to the interaction type
+    log_change_interaction$interaction_type[i] <- "NA"
   }
-  
-  # Assign the interaction types to the corresponding index in the vector
-  interaction_types_detailed[i] <- interaction_types
 }
 
-# Assign the interaction types to the log_change_interaction dataset as a new column
-log_change_interaction$interaction_types_detailed <- interaction_types_detailed
+#checking everything worked
+unique(log_change_interaction$interaction_type)
 
+#remove the "detailed" column
+log_change_interaction$interaction_benefit <- log_change_interaction_hyphenated$interaction_benefit
 
-#Write new log change interaction: 
-saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
-log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.RDS")
 
