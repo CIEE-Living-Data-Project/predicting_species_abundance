@@ -85,9 +85,8 @@ intmods_terrw2<-subset(intmods_terrw2, Metric!="CROSS") %>%
   distinct(.)#cuts data in half
 
 #only 10% of data are between studies- filter out 
-#intmods_terrw2<-subset(intmods_terrw2, Type!="Between") %>%
-#  distinct(.)
-
+intmods_terrw2<-subset(intmods_terrw2, Type!="Between") %>%
+  distinct(.)
 
 #run hierarchical model with mean, sd from intercept models as joint response & predictors
 MODDAT<-  intmods_terrw2
@@ -95,14 +94,13 @@ FAM <- gaussian(link = 'identity')
 
 MODFORM<-bf(estimate_Gn1|resp_se(std.error_Gn1, sigma = TRUE)~ me(estimate_Gn2,std.error_Gn2) + 
           (estimate_Gn2 | PairID) +    
-          (estimate_Gn2 | SERIES.l)+ 
-            (estimate_Gn2 | Type)) + set_mecor(FALSE) 
+          (estimate_Gn2 | SERIES.l)) + set_mecor(FALSE) 
 
 mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
                          control = list(adapt_delta=0.99, max_treedepth = 12),    
                          chains = 3, iter = 5000, warmup = 500, cores = 4) 
          
-save(mod, file = 'outputs/brms_June2023/meta_mod_q1.terrestrial_allstudies.Rdata') #save          
+save(mod, file = 'outputs/brms_July2023/meta_mod_q1.terrestrial_withinstudies.Rdata') #save          
 
 
 #model outputs 
@@ -116,9 +114,10 @@ ranef_terr2=as.data.frame(ranef$SERIES.l)
 ranef_terr2$SERIES.l<-row.names(ranef_terr2)
 
 #leave one out cross validation 
-loo(mod)
+loo1<-loo(mod)
+save(loo1, file = 'outputs/brms_July2023/looCV_withinstudies_meta.Rdata') #save          
 
-loo(mod, moment_match = T, )
+#loo2<-loo(mod, moment_match = T )
 
 #ppchecks 
 pp_check(mod, ndraws = 100) #this doesn't look great 

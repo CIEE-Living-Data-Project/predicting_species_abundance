@@ -18,8 +18,21 @@ library("magrittr") # aids in syntax and piping
 library(progress)
 library('rglobi')
 library(taxize) # for taxon names
+library(GGally)
 
 ```
+
+
+Load Functions
+
+```{r}
+source("functions_data.processing.R")
+source("functions_portion_change.R")
+
+```
+
+
+
 
 
 ```{r}
@@ -30,8 +43,6 @@ load('data/prep_biotime/bio_pairs_10km.RData') #"key" with overlapping studies, 
 load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
 #subseted<-collated.pairs[1:10000,]
 
-#load functions
-source("functions_data.processing.R")
 
 ```
 
@@ -252,18 +263,25 @@ head(between.studies.overlap)
 
 
 
-# 4. Calculate portion change for species pairs
+# 4. Calculate portion change for species pairs BETWEEN studies
 
 Load data
 
 ```{r}
 
 load("../data/data_processing/outdated/cleaned_collated_standardized_MSF.Rdata") #NOTE WE ARE LOADING OUTDATED DATA - CHECK WHAT DATA IS REPLACING IT (Isac?)
-between.studies.overlap<-readRDS("../data/data_processing/between.studies.overlap.RDS")
-within.studies.overlap<-readRDS("data/data_processing/within.studies.overlap.RDS")
 
 bio.pairs <- read.csv("data/prep_biotime/bio_pairs_10km.csv")
 meta.pairs <- read.csv("data/prep_biotime/meta_pairs_10km.csv")
+
+# between
+
+between.studies.overlap<-readRDS("../data/data_processing/between.studies.overlap.RDS")
+
+# within
+
+# within.studies.overlap<-readRDS("data/data_processing/within.studies.overlap.RDS")
+
 
 ```
 
@@ -272,31 +290,198 @@ Select only pairs that overlap for a minimum of 10 years
 
 ```{r}
 
+# between
+
 pairs.keep=between.studies.overlap[which(between.studies.overlap$Max.Overlap>9),] #this is generated in the Overlap script
+
+
+# within
+
+#pairs.keep=within.studies.overlap[which(within.studies.overlap$Max.Overlap>9),]
 
 head(pairs.keep)
 
 ```
 
 
-### 4.1 Get proportion change for every genera pair:
+The blocks below compute the proportion change in abundance and biomass for the following measures:
+
+- mean
+- sd
+- median
+- min
+- max
+- Coefficient of variation (CoV)
+
+
+
+
+### 4.1 Get proportion change comparing BETWEEN studies:
+
+
+#### 4.1.1. ABUNDANCE
+
+using the function **get.log.prop.change_abund()**
 
 ```{r}
 
-results=data.frame(matrix(ncol=14,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Log.prop.change.abun.Gn1","Log.prop.change.abun.Gn2","Log.prop.change.bio.Gn1","Log.prop.change.bio.Gn2","PairID","Type","SERIES.n","SERIES.start","SERIES.end","SERIES.l","YEAR.T","YEAR.T1")))) #makes an empty dataframe
+results = data.frame(matrix(ncol=21,nrow=0, dimnames=list(NULL,
+                                                          c("Gn1", "Gn2", 
+                                                                  "log_prop_change_gn1_mean",
+                                                                  "log_prop_change_gn2_mean",
+                                                                  "log_prop_change_gn1_sd",
+                                                                  "log_prop_change_gn2_sd",
+                                                                  "log_prop_change_gn1_median",
+                                                                  "log_prop_change_gn2_median",
+                                                                  "log_prop_change_gn1_min",
+                                                                  "log_prop_change_gn2_min",
+                                                                  "log_prop_change_gn1_max",
+                                                                  "log_prop_change_gn2_max",
+                                                                  "log_prop_change_gn1_CoV",
+                                                                  "log_prop_change_gn2_CoV",
+                                                                  "PairID",
+                                                                  "Type",
+                                                                  "SERIES.n",
+                                                                  "SERIES.start",
+                                                                  "SERIES.end",
+                                                                  "YEAR.T",
+                                                                  "YEAR.T1"))))
 
 
 pb<-set.prog.bar(nrow(pairs.keep))
 
 for (i in 1:nrow(pairs.keep)){
+
   pb$tick()
-  wk<-get.log.prop.change(i,collated.pairs_standardized_summary,pairs.keep)
+  wk<-get.log.prop.change_abund(x = i,collated.pairs_standardized_summary,pairs.keep)
   results<-rbind(results,wk)
   
-}
+} #get prop change for every genera pair
 
 
-head(results)
+results_between_abun <- results
+
+```
+
+
+#### 4.1.2. ABUNDANCE metrics correlation
+
+
+```{r}
+
+metrics_g1 <- results_between_abun[,c("Gn1", 
+                        "log_prop_change_gn1_mean",
+                        "log_prop_change_gn1_min",
+                        "log_prop_change_gn1_max",
+                        "log_prop_change_gn1_sd",
+                        "log_prop_change_gn1_median",
+                        "log_prop_change_gn1_CoV")]
+
+colnames(metrics_g1) <- c("Gn1", "mean", "min", "max", "sd", "median", "CoV")
+
+# eliminate NA and Inf values
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$sd)),]
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$CoV)),]
+
+
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == Inf),]
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == -Inf),]
+
+
+# compute correlation
+
+
+corrgram <- ggpairs(df_trimmed[,-1], title="correlation between abundance measurements") 
+
+corrgram_abundance
+
+#ggsave("corrgram_between_abundance.png", height = 7, width = 7)
+
+```
+
+
+
+
+#### 4.1.3. BIOMASS
+
+using the function **get.log.prop.change_biomass()**
+
+```{r}
+
+results = data.frame(matrix(ncol=21,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", 
+                                                                  "log_prop_change_gn1_mean",
+                                                                  "log_prop_change_gn2_mean",
+                                                                  "log_prop_change_gn1_sd",
+                                                                  "log_prop_change_gn2_sd",
+                                                                  "log_prop_change_gn1_median",
+                                                                  "log_prop_change_gn2_median",
+                                                                  "log_prop_change_gn1_min",
+                                                                  "log_prop_change_gn2_min",
+                                                                  "log_prop_change_gn1_max",
+                                                                  "log_prop_change_gn2_max",
+                                                                  "log_prop_change_gn1_CoV",
+                                                                  "log_prop_change_gn2_CoV",
+                                                                  "PairID",
+                                                                  "Type",
+                                                                  "SERIES.n",
+                                                                  "SERIES.start",
+                                                                  "SERIES.end",
+                                                                  "YEAR.T","YEAR.T1"))))
+
+pb<-set.prog.bar(nrow(pairs.keep))
+
+for (i in 1:nrow(pairs.keep)){
+  
+  pb$tick()
+  wk<-get.log.prop.change_biomass(i,collated.pairs_standardized_summary,pairs.keep)
+  results<-rbind(results,wk)
+  
+} #get prop change for every genera pair
+
+
+
+results_between_bio <- results
+
+```
+
+
+
+#### 4.1.4. BIOMASS metrics correlation
+
+```{r}
+
+metrics_g1 <- results_between_bio[,c("Gn1", 
+                        "log_prop_change_gn1_mean",
+                        "log_prop_change_gn1_min",
+                        "log_prop_change_gn1_max",
+                        "log_prop_change_gn1_sd",
+                        "log_prop_change_gn1_median",
+                        "log_prop_change_gn1_CoV")]
+
+colnames(metrics_g1) <- c("Gn1", "mean", "min", "max", "sd", "median", "CoV")
+
+
+# eliminate NA and Inf values
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$sd)),]
+
+df_trimmed <- metrics_g1[-which(is.na(metrics_g1$CoV)),]
+
+
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == Inf),]
+df_trimmed <- df_trimmed[-which(df_trimmed$CoV == -Inf),]
+
+
+# compute correlation
+
+
+corrgram <- ggpairs(df_trimmed[,-1], title="correlation between biomass measurements") 
+
+corrgram_biomass
+
+#ggsave("corrgram_between_biomass.png", height = 7, width = 7)
+
 
 ```
 
@@ -306,45 +491,59 @@ head(results)
 
 ```{r}
 
-meta.data<-make.meta(results,collated.pairs_standardized_summary)
+# abundance
+meta.data_between_abun <-make.meta(results_between_abun,collated.pairs_standardized_summary)
+
+
+# biomass
+
+meta.data_between_bio <-make.meta(results_between_bio,collated.pairs_standardized_summary)
 
 ```
 
 
 
-join meta data with results df:
-
-! [[[ DOUBT: in the code below, where "log.prop.change.with.meta" comes from? -- Clarify with **Isaac** ]]]
-
-
 ```{r}
 
-log.prop.change.with.meta.WITHIN<-left_join(results,meta.data) #join meta data with results df
+# abundance
+
+prop_change_meta_between_abun <-left_join(results_between_abun,meta.data_between_abun) #join meta data with results df
 
 #add unique genera ID col
-log.prop.change.with.meta$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta$Gn1,log.prop.change.with.meta$Gn2,log.prop.change.with.meta$PairID,sep="_")
-log.prop.change.with.meta.WITHIN$UNIQUE.PAIR.ID=paste(log.prop.change.with.meta.WITHIN$Gn1,log.prop.change.with.meta.WITHIN$Gn2,log.prop.change.with.meta.WITHIN$PairID,sep="_")
+prop_change_meta_between_abun$UNIQUE.PAIR.ID=paste(prop_change_meta_between_abun$Gn1,prop_change_meta_between_abun$Gn2,prop_change_meta_between_abun$PairID,sep="_")
 
-#saveRDS(log.prop.change.with.meta,"data/log.prop.change.with.meta.RDS")
-#saveRDS(log.prop.change.with.meta.WITHIN,"data/preprocessing/log.prop.change.with.meta.WITHIN.RDS")
+
+
+# biomass
+
+prop_change_meta_between_bio <-left_join(results_between_bio,meta.data_between_bio) #join meta data with results df
+
+#add unique genera ID col
+prop_change_meta_between_bio$UNIQUE.PAIR.ID=paste(prop_change_meta_between_bio$Gn1,prop_change_meta_between_bio$Gn2,prop_change_meta_between_bio$PairID,sep="_")
+
+
 
 
 ```
 
 
 ```{r}
-log.prop.change.with.meta<-readRDS("data/log.prop.change.with.meta.RDS")
+#prop_change_meta_between_abun<-readRDS("data/prop_change_meta_between_abun.RDS")
+#prop_change_meta_between_bio<-readRDS("data/prop_change_meta_between_bio.RDS")
 ```
 
 
 
 
-Add better taxa cols
+### 4.3. Add better taxa cols:
 
 ```{r}
 
-taxa1<-tax_name(query = unique(log.prop.change.with.meta$Gn1), get = "class", db = "itis")
-taxa2<-tax_name(query = unique(log.prop.change.with.meta$Gn2)[-which(unique(log.prop.change.with.meta$Gn2)%in%unique(log.prop.change.with.meta$Gn1))], get = "class", db = "itis")
+
+# abundance
+
+taxa1<-tax_name(query = unique(prop_change_meta_between_abun$Gn1), get = "class", db = "itis")
+taxa2<-tax_name(query = unique(prop_change_meta_between_abun$Gn2)[-which(unique(prop_change_meta_between_abun$Gn2)%in%unique(prop_change_meta_between_abun$Gn1))], get = "class", db = "itis")
 taxa<-rbind(taxa1,taxa2)
 #add new taxa col
 taxa<-readRDS("data/class.assignment.RDS")
@@ -353,26 +552,48 @@ taxa$Gn2=taxa$query
 names(taxa)[which(names(taxa)=="class")]<-"RESOLVED.TAXA1"
 taxa$RESOLVED.TAXA2=taxa$RESOLVED.TAXA1
 
-log.prop.change.with.meta.taxa<-left_join(log.prop.change.with.meta,taxa[,c("Gn1","RESOLVED.TAXA1")])
-log.prop.change.with.meta.taxa<-left_join(log.prop.change.with.meta.taxa,taxa[,c("Gn2","RESOLVED.TAXA2")])
-
-log.prop.change.with.meta.WITHIN<-left_join(log.prop.change.with.meta.WITHIN,taxa[,c("Gn1","RESOLVED.TAXA1")])
-log.prop.change.with.meta.WITHIN<-left_join(log.prop.change.with.meta.WITHIN,taxa[,c("Gn2","RESOLVED.TAXA2")])
+prop_change_meta_between_abun.taxa<-left_join(prop_change_meta_between_abun,taxa[,c("Gn1","RESOLVED.TAXA1")])
+prop_change_meta_between_abun.taxa<-left_join(prop_change_meta_between_abun.taxa,taxa[,c("Gn2","RESOLVED.TAXA2")])
 
 
-#saveRDS(log.prop.change.with.meta.taxa,"data/preprocessing/log.prop.change.with.meta.w.taxa.RDS")
-#saveRDS(log.prop.change.with.meta.WITHIN,"data/preprocessing/log.prop.change.with.meta.WITHIN.w.taxa.RDS")
+#saveRDS(prop_change_meta_between_abun.taxa,"data/preprocessing/prop_change_meta_between_abun.taxa.RDS")
+
+
+
+
+
+# biomass
+
+
+taxa1<-tax_name(query = unique(prop_change_meta_between_bio$Gn1), get = "class", db = "itis")
+taxa2<-tax_name(query = unique(prop_change_meta_between_bio$Gn2)[-which(unique(prop_change_meta_between_bio$Gn2)%in%unique(prop_change_meta_between_bio$Gn1))], get = "class", db = "itis")
+taxa<-rbind(taxa1,taxa2)
+#add new taxa col
+taxa<-readRDS("data/class.assignment.RDS")
+taxa$Gn1=taxa$query
+taxa$Gn2=taxa$query
+names(taxa)[which(names(taxa)=="class")]<-"RESOLVED.TAXA1"
+taxa$RESOLVED.TAXA2=taxa$RESOLVED.TAXA1
+
+prop_change_meta_between_bio.taxa<-left_join(prop_change_meta_between_bio,taxa[,c("Gn1","RESOLVED.TAXA1")])
+prop_change_meta_between_bio.taxa<-left_join(prop_change_meta_between_bio.taxa,taxa[,c("Gn2","RESOLVED.TAXA2")])
+
+
+#saveRDS(prop_change_meta_between_bio.taxa,"data/preprocessing/prop_change_meta_between_bio.taxa.RDS")
 
 ```
 
 
-```{r}
 
-table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA1)
-table(log.prop.change.with.meta.WITHIN$RESOLVED.TAXA2)
+# 5. Calculate portion change for species pairs WITHIN studies
 
-```
+---------------------------------- [TODO]
 
+
+
+# 6. Combine within and between
+
+[TODO]
 
 Combine both and split for biomass and abundance
 

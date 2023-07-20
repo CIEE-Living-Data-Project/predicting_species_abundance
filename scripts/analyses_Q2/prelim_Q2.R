@@ -4,7 +4,7 @@
 
 # Authors: Nathalie Chardon, GLL
 # Date created: 12 May 2023
-# Date updated: 22 May 2023 (GLL)
+# Date updated: 19 July 2023 (NC)
 
 
 #### LIBRARIES ####
@@ -15,14 +15,17 @@ library(ggthemes)
 library(brms)
 library(priorsense)
 library(bayesplot)
+library(gbm) #boosted regression trees
+library(dismo)
 
 
 rm(list=ls()) 
 
 
 #### INPUT FILES ####
-dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
-
+dat <- readRDS('C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/log.prop.change.full.data.UPDATED.RDS')
+dat <- readRDS('data/preprocessing/log.prop.change.interactions.RDS')
+str(dat)
 
 # # OUTPUT FILES # #
 
@@ -51,7 +54,7 @@ skew <- function(y){ # Fisher-Pearson Skew function based on NIST definition
 # https://docs.google.com/document/d/1XvBeeiNZJZmDtivf1hJX9zN3PND9AgM6GxQeh-LpVY4/edit#heading=h.ebszuu9ld6v2
 
 dat <- readRDS('data/data_processing/log.prop.change.full.data.RDS')
-dat.int <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
+dat.int <- readRDS('C:/Users/alexf/Desktop/PhD_Fuster-Calvo/WG_CIEE_interactions/predicting_species_abundance/data/data_processing/log.prop.change.interactions.RDS')
 
 # CLIMATE
 table(dat$CLIMATE1) # climate1 and climate2 are the same
@@ -137,7 +140,7 @@ table(dat$resolved.taxa.taxa)
 
 ####################################################################################################
 
-#### FRAMEWORK FOR DATA ANALYSIS ####
+#### FRAMEWORK FOR BETA GLM DATA ANALYSIS ON FULL SIMULATED DISTRIBUTION ####
 
 ####################################################################################################
 
@@ -350,3 +353,236 @@ lapply(split.data, fitting.model)
 # and update model specs to reflect this, make sure statistical distribution etc is accurate for distribution of Y data
 
 
+
+
+####################################################################################################
+
+#### FRAMEWORK FOR GLM & BRT DATA ANALYSIS ON TRUNCATED PORTION OF SIMULATED DISTRIBUTOIN ####
+
+####################################################################################################
+
+## SET UP DATA
+dat <- readRDS('data/preprocessing/log.prop.change.interactions.RDS')
+
+# Simulate Gaussian distribution
+x <- rnorm(n = nrow(dat))
+hist(x)
+dat$fake.pred.acc <- x #add to dataframe
+
+# fixed effects as factor
+dat <- dat %>% 
+  mutate(CLIMATE1 = factor(CLIMATE1)) %>% 
+  mutate(REALM1 = factor(REALM1)) %>%  # add treatment
+  mutate(interaction_present = factor(interaction_present))
+
+# NOTE: assumes that REALM1 is always the realm of the response variable, and currently analyses only 
+# done for Gn1 ~ Gn2. Need to switch when reverse direction is analyzed.
+
+# check structure of variables
+str(dat[, c('fake.pred.acc', 'CLIMATE1', 'REALM1', 'dist', 'interaction_present')])
+
+# Calculate lower and upper quartiles (25th and 75th percentile) of pred accuracy distribution
+lower_quantile <- quantile(dat$fake.pred.acc, 0.25)
+upper_quantile <- quantile(dat$fake.pred.acc, 0.75)
+
+# Now filter the dataframe to keep only the data from the outer 25%
+dat.quant <- dat[(dat$fake.pred.acc <= lower_quantile) | (dat$fake.pred.acc >= upper_quantile), ]
+hist(dat.quant$fake.pred.acc)
+
+
+## RUN BOOSTED REGRESSION TREE
+# Define variables and parameters
+yy <- 'fake.pred.acc' #response variable
+xx <- c('CLIMATE1', 'REALM1', 'dist') #predictor variables
+lr <- 0.00001 #learning rate = weight applied to individual trees
+bf <- 0.75 #bag fraction = proportion of observations used in selecting variables
+nt <- 1 #number of trees, decrease for smaller step size
+
+# Run BRT
+mod <- gbm.step(data = dat, gbm.x = xx,
+                   gbm.y = yy, family = 'gaussian', tree.complexity = 3, 
+                   learning.rate = lr, bag.fraction = bf, n.trees = nt) 
+
+summary(mod)
+
+## IN PROGRESS: need to troubleshoot 'folds are unstratified' 
+## --> restart model with a smaller learning rate or smaller step size
+## --> could be due to low variability in predictor data
+
+
+
+
+####################################################################################################
+
+#### Test (AF) ####
+
+####################################################################################################
+
+# Create conceptual plots for the idea of comparing taxa correlations in proportion change
+
+
+
+vec_taxa <- unique(dat.int$TAXA2)
+plot_list <- list()
+
+for (i in 1:length(vec_taxa)) {
+  
+  df <- dat.int[dat.int$TAXA1 == vec_taxa[i] & dat.int$TAXA2 == vec_taxa[i],]
+  
+  taxa_name <-  gsub(" ", "", vec_taxa[i])
+  
+  name_plot <- paste("plot", taxa_name)
+  
+  plot <- ggplot(df, aes(x=Prop.Change.Gn1, y=Prop.Change.Gn2)) + 
+    geom_point(alpha = 0.1)+
+    geom_smooth(method=lm, color = "red") +
+    ggtitle(taxa_name)+
+    annotate('text', 
+             x = max(df$Prop.Change.Gn1) - 0.4, 
+             y = max(df$Prop.Change.Gn2) - 0.4, 
+             label = round(cor(df$Prop.Change.Gn1, df$Prop.Change.Gn2),3), 
+             size = 6, 
+             col = 'red')
+    #stat_density_2d(aes(fill = ..level..), geom="polygon")+
+    #scale_fill_gradient(low="blue", high="red")
+  
+  
+  plot_list[[i]] <- plot
+  
+}
+
+
+plots_arranged <- ggarrange(
+  
+  plot_list[[1]] + remove("xlab"), 
+  plot_list[[2]]+ remove("xlab") + remove("ylab"),
+  plot_list[[3]]+ remove("xlab") + remove("ylab"),
+  plot_list[[4]]+ remove("xlab") + remove("ylab"),
+  plot_list[[5]],
+  plot_list[[6]]+ remove("ylab"),
+  plot_list[[7]]+ remove("ylab"),
+  plot_list[[8]]+ remove("ylab"),
+  
+  nrow = 4,
+  ncol = 2
+  
+)
+
+plots_arranged
+
+#ggsave("plots_arranged.png", height = 15, width = 9)
+
+
+
+unique(dat.int$CLIMATE1)
+
+
+## For temperate
+
+dat.int_temperate <- dat.int[dat.int$CLIMATE1 == "Temperate" & dat.int$CLIMATE2 == "Temperate",]
+
+vec_taxa <- unique(dat.int$TAXA2)
+plot_list <- list()
+
+for (i in 1:length(vec_taxa)) {
+  
+  df <- dat.int_temperate[dat.int_temperate$TAXA1 == vec_taxa[i] & dat.int_temperate$TAXA2 == vec_taxa[i],]
+  
+  taxa_name <-  gsub(" ", "", vec_taxa[i])
+  
+  name_plot <- paste("plot", taxa_name)
+  
+  plot <- ggplot(df, aes(x=Prop.Change.Gn1, y=Prop.Change.Gn2)) + 
+    geom_point(alpha = 0.1)+
+    geom_smooth(method=lm, color = "blue") +
+    ggtitle(taxa_name)+
+    annotate('text', 
+             x = max(df$Prop.Change.Gn1) - 0.4, 
+             y = max(df$Prop.Change.Gn2) - 0.4, 
+             label = round(cor(df$Prop.Change.Gn1, df$Prop.Change.Gn2),3), 
+             size = 6, 
+             col = 'blue')
+  #stat_density_2d(aes(fill = ..level..), geom="polygon")+
+  #scale_fill_gradient(low="blue", high="red")
+  
+  
+  plot_list[[i]] <- plot
+  
+}
+
+
+plots_arranged_temp <- ggarrange(
+  
+  plot_list[[1]] + remove("xlab"), 
+  plot_list[[2]]+ remove("xlab") + remove("ylab"),
+  plot_list[[3]]+ remove("xlab") + remove("ylab"),
+  plot_list[[4]]+ remove("xlab") + remove("ylab"),
+  plot_list[[5]],
+  plot_list[[6]]+ remove("ylab"),
+  plot_list[[7]]+ remove("ylab"),
+  plot_list[[8]]+ remove("ylab"),
+  
+  nrow = 4,
+  ncol = 2
+  
+)
+
+plots_arranged_temp
+
+#ggsave("plots_arranged_temp.png", height = 15, width = 9)
+
+
+
+## For tropical
+
+dat.int_trop <- dat.int[dat.int$CLIMATE1 == "Tropical" & dat.int$CLIMATE2 == "Tropical",]
+
+vec_taxa <- unique(dat.int$TAXA2)
+plot_list <- list()
+
+for (i in 1:length(vec_taxa)) {
+  
+  df <- dat.int_trop[dat.int_trop$TAXA1 == vec_taxa[i] & dat.int_trop$TAXA2 == vec_taxa[i],]
+  
+  taxa_name <-  gsub(" ", "", vec_taxa[i])
+  
+  name_plot <- paste("plot", taxa_name)
+  
+  plot <- ggplot(df, aes(x=Prop.Change.Gn1, y=Prop.Change.Gn2)) + 
+    geom_point(alpha = 0.1)+
+    geom_smooth(method=lm, color = "green") +
+    ggtitle(taxa_name)+
+    annotate('text', 
+             x = max(df$Prop.Change.Gn1) - 0.4, 
+             y = max(df$Prop.Change.Gn2) - 0.4, 
+             label = round(cor(df$Prop.Change.Gn1, df$Prop.Change.Gn2),3), 
+             size = 6, 
+             col = 'green')
+  #stat_density_2d(aes(fill = ..level..), geom="polygon")+
+  #scale_fill_gradient(low="blue", high="red")
+  
+  
+  plot_list[[i]] <- plot
+  
+}
+
+
+plots_arranged_trop <- ggarrange(
+  
+  plot_list[[1]] + remove("xlab"), 
+  plot_list[[2]]+ remove("xlab") + remove("ylab"),
+  plot_list[[3]]+ remove("xlab") + remove("ylab"),
+  plot_list[[4]]+ remove("xlab") + remove("ylab"),
+  plot_list[[5]],
+  plot_list[[6]]+ remove("ylab"),
+  plot_list[[7]]+ remove("ylab"),
+  plot_list[[8]]+ remove("ylab"),
+  
+  nrow = 4,
+  ncol = 2
+  
+)
+
+plots_arranged_trop
+
+#ggsave("plots_arranged_trop.png", height = 15, width = 9)
