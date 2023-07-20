@@ -115,7 +115,7 @@ ranef_terr2$SERIES.l<-row.names(ranef_terr2)
 
 #leave one out cross validation 
 loo1<-loo(mod)
-save(loo1, file = 'outputs/brms_July2023/looCV_withinstudies.Rdata') #save          
+save(loo1, file = 'outputs/brms_July2023/looCV_withinstudies_meta.Rdata') #save          
 
 #loo2<-loo(mod, moment_match = T )
 
