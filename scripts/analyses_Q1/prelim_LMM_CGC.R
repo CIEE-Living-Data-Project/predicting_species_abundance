@@ -114,9 +114,10 @@ ranef_terr2=as.data.frame(ranef$SERIES.l)
 ranef_terr2$SERIES.l<-row.names(ranef_terr2)
 
 #leave one out cross validation 
-loo(mod)
+loo1<-loo(mod)
+save(loo1, file = 'outputs/brms_July2023/looCV_withinstudies.Rdata') #save          
 
-loo(mod, moment_match = T, )
+#loo2<-loo(mod, moment_match = T )
 
 #ppchecks 
 pp_check(mod, ndraws = 100) #this doesn't look great 
