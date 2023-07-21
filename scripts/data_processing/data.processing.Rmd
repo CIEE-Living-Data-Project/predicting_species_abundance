@@ -4,8 +4,6 @@ output: html_notebook
 Authors: GLL, AF, EB, MW, AD, IE
 ---
 
- 
-
 ```{r}
 
 #Filtering BIOtime (collated pairs)
@@ -36,7 +34,6 @@ source("functions_portion_change.R")
 
 
 ```{r}
-
 #load data
 load("data/prep_biotime/collated_pairs.RData") #full dataset with species/abundances
 load('data/prep_biotime/bio_pairs_10km.RData') #"key" with overlapping studies, and reference to species in collated.pairs

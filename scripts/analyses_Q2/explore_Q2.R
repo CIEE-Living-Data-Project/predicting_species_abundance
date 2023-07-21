@@ -16,7 +16,7 @@ rm(list=ls())
 
 
 # # INPUT FILES # #
-dat <- readRDS('data/log.prop.change.with.meta.w.taxa.RDS')
+dat <- readRDS('data/data_processing/log.prop.change.with.meta.w.taxa.RDS')
 
 
 # # OUTPUT FILES # #

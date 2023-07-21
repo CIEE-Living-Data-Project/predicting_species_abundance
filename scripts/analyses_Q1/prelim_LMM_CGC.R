@@ -33,6 +33,8 @@ rm(list=ls())
 #dat <- readRDS('data/preprocessing/dummy.dataset.RDS') #dummy data 
 dat <- readRDS('data/data_processing/log.prop.change.full.data.UPDATED.RDS')#full cleaned 6/6/23
 names(dat)
+#data with interaction info 
+dat <- readRDS('data/preprocessing/log.prop.change.INTERACTIONS.RDS')#full cleaned 6/6/23
 
 #subset to terrestrial and marine realms 
 dat_terr<-subset(x = dat, subset = REALM1=="Terrestrial" & REALM2=="Terrestrial")
@@ -101,6 +103,36 @@ mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
                          chains = 3, iter = 5000, warmup = 500, cores = 4) 
          
 save(mod, file = 'outputs/brms_July2023/meta_mod_q1.terrestrial_withinstudies.Rdata') #save          
+
+#run models with interaction, climate info 
+intmods_terrw2<-left_join(intmods_terrw, dat_terrx)%>%distinct(.) #not sure why this has more rows
+
+#going to remove the cross metrics for now as unique pair IDs seem duplicated on this 
+intmods_terrw2<-subset(intmods_terrw2, Metric!="CROSS") %>%
+  distinct(.)#cuts data in half
+
+#interaction info only for between studies- subset 7/20/23 - Emily re-running 
+intmods_terrw3<-subset(intmods_terrw2, Type=="Between") %>%
+  distinct(.)
+
+#run hierarchical model with mean, sd from intercept models as joint response & predictors
+MODDAT<-  intmods_terrw3
+FAM <- gaussian(link = 'identity')
+
+MODFORM<-bf(estimate_Gn1|resp_se(std.error_Gn1, sigma = TRUE)~ me(estimate_Gn2,std.error_Gn2) + 
+              (estimate_Gn2 | SERIES.l) +
+              (estimate_Gn2 | CLIMATE2) +
+              (estimate_Gn2 | interaction_present)+
+              (estimate_Gn2 | interaction_benefit)+
+              (estimate_Gn2 | interaction_type)) + set_mecor(FALSE) 
+
+mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
+         control = list(adapt_delta=0.99, max_treedepth = 12),    
+         chains = 3, iter = 5000, warmup = 500, cores = 4) 
+
+save(mod, file = 'outputs/brms_July2023/meta_mod_q1.terrestrial_betweenstudies_interactions.Rdata') #save          
+
+
 
 
 #model outputs 
