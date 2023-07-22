@@ -28,7 +28,7 @@ rm(list=ls())
 
 
 #read in the full dataset used for Q1 and Q2 analysis
-log.prop.change.with.meta <- readRDS("data/preprocessing/log.prop.change.full.data.RDS")
+log.prop.change.with.meta <- readRDS("data/data_processing/log.prop.change.full.data.UPDATED.RDS")
 log_change <- log.prop.change.with.meta
 
 head(log.prop.change.with.meta)
@@ -43,8 +43,8 @@ split_pairs <- data.frame(Gn1 = sapply(strsplit(unique_pairs, "-"), "[", 1),
 #So, I split them into five pairs of roughly equal size, so
 #we can split the globi processing up 
 
-# Split into 5 groups of roughly equal size
-groups <- cut(seq_along(1:nrow(split_pairs)), breaks = 8, labels = FALSE)
+# Split into 12 groups of roughly equal size
+groups <- cut(seq_along(1:nrow(split_pairs)), breaks = 12, labels = FALSE)
 
 # Turn the splits into data frames
 df_split <- split(split_pairs, groups)
@@ -85,7 +85,7 @@ df_list[[i]] <- pairs
 }
 
 pair_interactions_1 <- do.call(rbind, df_list)
-#write.csv(pair_interactions_1, "data/pair_interactions_1.csv")
+write.csv(pair_interactions_1, "data/preprocessing/pair_interactions_1.csv")
 
 
 
@@ -106,7 +106,7 @@ for (i in 1:nrow(split_2)) {
 }
 
 pair_interactions_2 <- do.call(rbind, df_list)
-#write.csv(pair_interactions_2, "data/pair_interactions_2.csv")
+write.csv(pair_interactions_2, "data/preprocessing/pair_interactions_2.csv")
 
 
 
@@ -126,7 +126,7 @@ for (i in 1:nrow(split_3)) {
 }
 
 pair_interactions_3 <- do.call(rbind, df_list)
-#write.csv(pair_interactions_3, "data/pair_interactions_3.csv")
+write.csv(pair_interactions_3, "data/preprocessing/pair_interactions_3.csv")
 
 
 #Loop for assigning genera interactions: loop 4
@@ -145,7 +145,7 @@ for (i in 1:nrow(split_4)) {
 }
 
 pair_interactions_4 <- do.call(rbind, df_list)
-#write.csv(pair_interactions_4, "data/pair_interactions_4.csv")
+write.csv(pair_interactions_4, "data/preprocessing/pair_interactions_4.csv")
 
 
 
@@ -166,14 +166,111 @@ for (i in 1:nrow(split_5)) {
 }
 
 pair_interactions_5 <- do.call(rbind, df_list)
-#write.csv(pair_interactions_5, "data/pair_interactions_5.csv")
+write.csv(pair_interactions_5, "data/preprocessing/pair_interactions_5.csv")
+
+
+#Loop for assigning genera interactions: loop 6
+pb<-set.prog.bar(nrow(split_6)) #sets progress bar
+for (i in 1:nrow(split_6)) {
+  pb$tick()
+  gn1 <- split_6[i, "Gn1"]
+  gn2 <- split_6[i, "Gn2"]
+  interactions <- get_interactions_by_taxa(sourcetaxon=gn1, 
+                                           targettaxon=gn2)
+  unique <- unique(interactions$interaction_type)
+  new_df <- data.frame(genus_1 = rep(gn1, each = length(unique)), 
+                       genus_2 = rep(gn2, each = length(unique)))
+  pairs <- cbind(new_df, char = rep(unique, length.out = nrow(new_df)))
+  df_list[[i]] <- pairs
+}
+
+pair_interactions_6 <- do.call(rbind, df_list)
+write.csv(pair_interactions_6, "data/preprocessing/pair_interactions_6.csv")
+
+#Loop for assigning genera interactions: loop 7
+pb<-set.prog.bar(nrow(split_7)) #sets progress bar
+for (i in 1:nrow(split_7)) {
+  pb$tick()
+  gn1 <- split_7[i, "Gn1"]
+  gn2 <- split_7[i, "Gn2"]
+  interactions <- get_interactions_by_taxa(sourcetaxon=gn1, 
+                                           targettaxon=gn2)
+  unique <- unique(interactions$interaction_type)
+  new_df <- data.frame(genus_1 = rep(gn1, each = length(unique)), 
+                       genus_2 = rep(gn2, each = length(unique)))
+  pairs <- cbind(new_df, char = rep(unique, length.out = nrow(new_df)))
+  df_list[[i]] <- pairs
+}
+
+pair_interactions_7 <- do.call(rbind, df_list)
+write.csv(pair_interactions_7, "data/preprocessing/pair_interactions_7.csv")
+
+
+
+#Loop for assigning genera interactions: loop 8
+pb<-set.prog.bar(nrow(split_8)) #sets progress bar
+for (i in 1:nrow(split_8)) {
+  pb$tick()
+  gn1 <- split_8[i, "Gn1"]
+  gn2 <- split_8[i, "Gn2"]
+  interactions <- get_interactions_by_taxa(sourcetaxon=gn1, 
+                                           targettaxon=gn2)
+  unique <- unique(interactions$interaction_type)
+  new_df <- data.frame(genus_1 = rep(gn1, each = length(unique)), 
+                       genus_2 = rep(gn2, each = length(unique)))
+  pairs <- cbind(new_df, char = rep(unique, length.out = nrow(new_df)))
+  df_list[[i]] <- pairs
+}
+
+pair_interactions_8 <- do.call(rbind, df_list)
+write.csv(pair_interactions_8, "data/preprocessing/pair_interactions_8.csv")
+
+
+#Loop for assigning genera interactions: loop 9
+pb<-set.prog.bar(nrow(split_9)) #sets progress bar
+for (i in 1:nrow(split_9)) {
+  pb$tick()
+  gn1 <- split_9[i, "Gn1"]
+  gn2 <- split_9[i, "Gn2"]
+  interactions <- get_interactions_by_taxa(sourcetaxon=gn1, 
+                                           targettaxon=gn2)
+  unique <- unique(interactions$interaction_type)
+  new_df <- data.frame(genus_1 = rep(gn1, each = length(unique)), 
+                       genus_2 = rep(gn2, each = length(unique)))
+  pairs <- cbind(new_df, char = rep(unique, length.out = nrow(new_df)))
+  df_list[[i]] <- pairs
+}
+
+pair_interactions_9 <- do.call(rbind, df_list)
+write.csv(pair_interactions_9, "data/preprocessing/pair_interactions_9.csv")
+
+
+
+#Loop for assigning genera interactions: loop 10
+pb<-set.prog.bar(nrow(split_10)) #sets progress bar
+for (i in 1:nrow(split_10)) {
+  pb$tick()
+  gn1 <- split_10[i, "Gn1"]
+  gn2 <- split_10[i, "Gn2"]
+  interactions <- get_interactions_by_taxa(sourcetaxon=gn1, 
+                                           targettaxon=gn2)
+  unique <- unique(interactions$interaction_type)
+  new_df <- data.frame(genus_1 = rep(gn1, each = length(unique)), 
+                       genus_2 = rep(gn2, each = length(unique)))
+  pairs <- cbind(new_df, char = rep(unique, length.out = nrow(new_df)))
+  df_list[[i]] <- pairs
+}
+
+pair_interactions_10 <- do.call(rbind, df_list)
+write.csv(pair_interactions_10, "data/preprocessing/pair_interactions_10.csv")
+
 
 #Bind the results of all five loops together 
 all_interactions <- rbind(pair_interactions_1, pair_interactions_2, pair_interactions_3, 
-                          pair_interactions_4, pair_interactions_5)
+                          pair_interactions_4, pair_interactions_5 ,pair_interactions_6, 
+                          pair_interactions_7, pair_interactions_8, pair_interactions_9, pair_interactions_10)
 colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
-#write.csv(all_interactions, "data/genus_interaction_list.csv")
-
+write.csv(all_interactions, "data/preprocessing/genus_interaction_list.csv")
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -184,18 +281,30 @@ colnames(all_interactions) <- c("Gn1", "Gn2", "interaction")
 #dataset
 
 #Read in the completed dataset from above
-all_interactions <- read.csv("data/data_processing/genus_interaction_list.csv")
+all_interactions <- read.csv("data/preprocessing/genus_interaction_list.csv")
 all_interactions <- all_interactions %>%
   select(!X)
 
+#manually inspect the types of interactions
+unique(all_interactions$interaction)
+
 #Upon manual inspection, some interactions are clearly mistakes due to
 #ambiguity in the genera
-#these steps remove those mistakes 
-
+#will manually inspect
+#Unfortunately, pollination also seems to be a mistake - it's always plant to plant
 mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', 'pathogenOf', 
-                          'hasVector', 'parasiteOf')
+                          'hasVector', 'parasiteOf', 'hasParasite', 'hasPathogen', "endoparasiteOf", 'pollinates')
+mistake_rows <- all_interactions %>%
+  filter(interaction %in% mistake_interactions)
+#In general, these appear to be implausible
+#EXCEPT in the case of the brown headed cowbird, Molothrus
+#so we will keep those interactions and remove all others 
 all_interactions_2<- all_interactions %>%
   filter(!interaction %in% mistake_interactions)
+#put molothrus rows back in
+molothrus <- mistake_rows %>%
+  filter(Gn1 == "Molothrus" | Gn2 == "Molothrus")
+all_interactions_2 <- rbind(all_interactions_2, molothrus)
 
 #Get number o
 summary_interactions <- all_interactions_2 %>%
@@ -217,10 +326,14 @@ unique_interactions_1 <-summary_interactions %>%
   #mutualistOf
 #dispersal 
   #hasDispersalVector, dispersalVectorOf
-#visits
-  #flowersVisitedBy, #visits, #visitsFlowersOf, #visitedBy
+#pollination
+  #pollinates
+#parasitism
+  #hostOf, "hhemiparasiteOf, #hasParasite, #parasiteOf
 #uncategorized_interaction
-  #interactsWith
+  #interactsWith, "ecologicallyRelatedTo",   flowersVisitedBy, #visits, #visitsFlowersOf, #visitedBy
+
+
 
 
 # Use case_when to classify the columns
@@ -230,11 +343,15 @@ cased_interactions<- all_interactions_2%>%
       interaction %in%  c("preysOn", "preyedUponBy", "eatenBy", "eats") ~ "predator_prey",
       interaction %in% c("mutualistOf") ~ "mutualism",
       interaction %in% c("hasDispersalVector", "dispersalVectorOf") ~ "dispersal",
-      interaction %in% c("interactsWith", "flowersVisitedBy", "visits", "visitsFlowersOf", "visitedBy") ~ "uncategorized_interaction",
-      TRUE ~ NA_character_
+      interaction %in% c("pollinates") ~ "pollination", 
+      interaction %in% c("hostOf", "hemiparasiteOf", "hasParasite", "parasiteOf", "hasHost") ~ "parasitism", 
+      interaction %in% c("interactsWith", "flowersVisitedBy", "visits", "visitsFlowersOf", "visitedBy", "adjacentTo", 
+                         "ecologicallyRelatedTo") ~ "uncategorized_interaction",
+      TRUE ~ interaction
     ),
     .keep = "unused"
   )
+unique(cased_interactions$interaction_type)
 
 # Remove pairs whose characters don't match anything
 cased_interactions <- cased_interactions %>%
@@ -276,6 +393,22 @@ cased_interactions_filtered_3 <- cased_interactions_filtered_3 %>%
   ) %>%
   ungroup()
 
+cased_interactions_filtered_3 <- cased_interactions_filtered_3 %>%
+  group_by(Gn1, Gn2) %>%
+  filter(
+    !("parasitism" %in% interaction_type & "uncategorized_interaction" %in% interaction_type) |
+      interaction_type == "parasitism"
+  ) %>%
+  ungroup()
+
+cased_interactions_filtered_3 <- cased_interactions_filtered_3 %>%
+  group_by(Gn1, Gn2) %>%
+  filter(
+    !("mutualism" %in% interaction_type & "uncategorized_interaction" %in% interaction_type) |
+      interaction_type == "mutualism"
+  ) %>%
+  ungroup()
+
 #Check for new number of interactions for each pair
 cased_interactions_filtered_3<- cased_interactions_filtered_3 %>%
   group_by(Gn1, Gn2) %>%
@@ -303,7 +436,7 @@ distinct_pairs <- cased_interactions_filtered_3 %>%
   distinct()
 
 #Read in interactions 
-log_change <- readRDS("data/data_processing/log.prop.change.full.data.RDS")
+log_change <- readRDS("data/data_processing/log.prop.change.full.data.UPDATED.RDS")
 head(log_change)
 
 # Create a new column in df2 called "interaction" and initialize all values to 0
@@ -333,7 +466,7 @@ for (i in 1:nrow(log_change)) {
   }
 }
 
-saveRDS(log_change, "data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(log_change, "data/data_processing/log.prop.change.interactions.RDS")
 saveRDS(cased_interactions_filtered_3, "data/preprocessing/all.interactions.genus.pairs.RDS")
 
 
@@ -347,7 +480,7 @@ log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactio
 pos_neg_interactions<- cased_interactions_filtered_3%>%
   mutate(
     interaction_benefit = case_when(
-      interaction_type %in%  c("predator_prey") ~ "negative",
+      interaction_type %in%  c("predator_prey", "parasitism") ~ "negative",
       interaction_type %in% c("mutualism", "dispersal") ~ "positive",
       interaction_type %in% c("uncategorized_interaction") ~ "neutral",
       TRUE ~ NA_character_
