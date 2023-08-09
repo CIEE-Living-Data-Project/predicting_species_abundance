@@ -1,6 +1,6 @@
 # Date created: 26 Apr 2023
 # Date updated: 26 Apr 2023 (NC)
-# Date updated: 22 May 2023 (ENB)
+# Date updated: 21 Jul 2023 (ENB)
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -474,7 +474,7 @@ saveRDS(cased_interactions_filtered_3, "data/preprocessing/all.interactions.genu
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #Positive negative neutral (hyphenated)
 
-log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
+log_change_interaction <- readRDS("data/data_processing/log.prop.change.interactions.RDS")
 
 
 pos_neg_interactions<- cased_interactions_filtered_3%>%
@@ -534,16 +534,14 @@ for (i in 1:nrow(log_change_interaction)) {
 }
 
 
-saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
+saveRDS(log_change_interaction, "data/data_processing/log.prop.change.interactions.RDS")
 
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
 #Write new log change interaction: 
-saveRDS(log_change_interaction_hyphenated, "data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
-log_change_interaction <- readRDS("data/preprocessing/log.prop.change.interactions.RDS")
-log_change_interaction_hyphenated <- readRDS("data/preprocessing/log.prop.change.interactions.hyphenated.RDS")
+log_change_interaction <- readRDS("data/data_processing/log.prop.change.interactions.RDS")
 
 
 #do interaction type detailed
@@ -585,5 +583,11 @@ unique(log_change_interaction$interaction_type)
 #remove the "detailed" column
 log_change_interaction$interaction_benefit <- log_change_interaction_hyphenated$interaction_benefit
 
-saveRDS(log_change_interaction, "data/preprocessing/log.prop.change.interactions.RDS")
+saveRDS(log_change_interaction, "data/data_processing/log.prop.change.interactions.RDS")
 
+
+#non-na rows with interactions
+summarize_rows <- log_change_interaction %>%
+  filter(interaction_present==1)
+nrow(summarize_rows)/nrow(log_change_interaction)
+unique(log_change_interaction$Gn1, log_change_interaction$Gn2)
