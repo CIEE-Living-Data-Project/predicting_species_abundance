@@ -33,10 +33,10 @@ rm(list=ls())
 
 # Data
 #dat <- readRDS('data/preprocessing/dummy.dataset.RDS') #dummy data 
-dat <- readRDS('data/data_processing/log.prop.change.full.data.UPDATED.RDS')#full cleaned 6/6/23
-names(dat)
+#dat <- readRDS('data/data_processing/log.prop.change.full.data.UPDATED.RDS')#full cleaned 6/6/23
+#names(dat)
 #data with interaction info 
-dat <- readRDS('data/preprocessing/log.prop.change.INTERACTIONS.RDS')#full cleaned 6/6/23
+dat <- readRDS('data/data_processing/log.prop.change.interactions.RDS')#full cleaned 6/6/23
 
 #subset to terrestrial and marine realms 
 dat_terr<-subset(x = dat, subset = REALM1=="Terrestrial" & REALM2=="Terrestrial")
@@ -69,6 +69,10 @@ intmods_terr2=intmods_terr2%>%
   mutate(genus="Gn2")
 
 intmods_terr<-rbind(intmods_terr1, intmods_terr2) #82584
+
+#save these so don't have to re-run 
+save(intmods_terr, file = 'outputs/Aug2023/intercept_only_models.Rdata')
+
 
 #filter anything with se=0, means only 1 value or all same values measured (i.e. no variation)
 intmods_terr<-subset(intmods_terr, std.error>0) #81216
@@ -135,56 +139,6 @@ mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
 save(mod, file = 'outputs/brms_July2023/meta_mod_q1.terrestrial_betweenstudies_interactions.Rdata') #save          
 
 
-
-
-#meta model outputs---- 
-summary(mod)
-posterior_summary(mod)
-get_variables(mod)
-draws<-spread_draws(mod,b_Intercept, bsp_meestimate_Gn2std.error_Gn2, sdme_meestimate_Gn2, sigma) 
-
-#
-slopes<-coef(object = mod)
-slopes<-as.data.frame(slopes$PairID)
-slopes$PairID<-row.names(slopes)
-slopes<-select(slopes, contains("Gn2"))
-
-ranef<-ranef(mod)
-
-ranef_terr=as.data.frame(ranef$PairID)
-ranef_terr$PairID<-row.names(ranef_terr)
-
-ranef_terr2=as.data.frame(ranef$SERIES.l)
-ranef_terr2$SERIES.l<-row.names(ranef_terr2)
-
-#leave one out cross validation 
-loo1<-loo(mod)
-save(loo1, file = 'outputs/brms_July2023/looCV_withinstudies_meta.Rdata') #save          
-
-#loo2<-loo(mod, moment_match = T )
-
-#ppchecks 
-ppcheck<-pp_check(mod, ndraws = 100) #this doesn't look great 
-
-ppcheck<-pp_check(mod,type = "error_hist", ndraws = 100) #this doesn't look great 
-
-MCMCvis::MCMCtrace(mod)
-
-
-#predictive accuracy 
-load("outputs/brms_July2023/meta_mod_q1.terrestrial_withinstudies.Rdata")
-
-# Extract the posterior samples of the random slopes
-random_slopes <- posterior_samples(mod, pars = "r_PairID")
-
-# Make predictions using the posterior samples
-predictions <- posterior_predict(model, newdata = your_data)
-
-# Calculate the predictive accuracy for each observation
-accuracy <- abs(predictions - your_data$y)
-
-
-
 #full model----
 #going to remove the cross metrics for now as unique pair IDs seem duplicated on this 
 dat_terrx<-subset(dat_terr, Metric!="CROSS") %>%
@@ -197,18 +151,58 @@ dat_terry<-subset(dat_terrx, Type!="Between") %>%
 MODDAT<-  dat_terry
 FAM <- gaussian(link = 'identity')
 
-library(cmdstanr)
-set_cmdstan_path("C:/Users/court/Documents/.cmdstan/cmdstan-2.32.2")
+#library(cmdstanr)
+#set_cmdstan_path("C:/Users/court/Documents/.cmdstan/cmdstan-2.32.2")
 MODFORM<-bf(Prop.Change.Gn1~ Prop.Change.Gn2 + 
-              (Prop.Change.Gn2 | PairID) +    
-              (Prop.Change.Gn2 | SERIES.l)+
               (Prop.Change.Gn2 | UNIQUE.PAIR.ID)) 
-
 
 mod<-brm(MODFORM, MODDAT, FAM, #seed = 042023, #set seed
          control = list(adapt_delta=0.99, max_treedepth = 12),    
-         chains = 3, iter = 2000, warmup = 500, cores = 4, 
-         backend = "cmdstanr") 
+         chains = 3, iter = 5000, warmup = 500, cores = 4) 
+        # backend = "cmdstanr") 
+
+save(mod, file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata') #save          
+
+
+
+#try in lme4----
+library(lme4)
+library(optimx)
+
+dat <- readRDS('data/data_processing/log.prop.change.interactions.RDS')
+dat_terr<-subset(x = dat, subset = REALM1=="Terrestrial" & REALM2=="Terrestrial")
+dat_terr<-subset(dat_terr, Metric!="CROSS" &  Type!="Between") %>%
+  distinct(.)
+
+#filter out any unique Pair IDs where se=0, means only 1 value or all same values measured (i.e. no variation at group level) 
+load(file = 'outputs/Aug2023/intercept_only_models.Rdata')
+filterpairs<-subset(intmods_terr, std.error==0)%>%select(UNIQUE.PAIR.ID)
+
+dat_terrx<-anti_join(dat_terr, filterpairs)
+
+lmermod<-lmer(Prop.Change.Gn1~ Prop.Change.Gn2 + 
+                (Prop.Change.Gn2 | UNIQUE.PAIR.ID), dat_terrx, control=lmerControl(optimizer="optimx", optCtrl=list(method="nlminbwrap"))) 
+
+#singular fit
+#trying all optimizers 
+glmm_all = allFit(lmermod)
+
+
+#filter out any unique Pair IDs where n<10 obs
+
+intmods_terr_ct=dat_terr%>%group_by(
+  PairID, UNIQUE.PAIR.ID)%>%summarize(count=n())
+intmods_terr_ct_filt<-subset(intmods_terr_ct, count<10)%>%select(UNIQUE.PAIR.ID)
+intmods_terr_ct_filt$PairID<-NULL
+
+dat_terry<-anti_join(dat_terrx, intmods_terr_ct_filt)
+
+#now re-try
+lmermod<-lmer(Prop.Change.Gn1~ Prop.Change.Gn2 + 
+                (Prop.Change.Gn2 | UNIQUE.PAIR.ID), dat_terry, control=lmerControl(optimizer="optimx", optCtrl=list(method="nlminb"))) 
+rslopes<-ranef(lmermod_optx)
+rslopesdf<-as.data.frame(rslopes$UNIQUE.PAIR.ID$Prop.Change.Gn2)
+
 
 
 
