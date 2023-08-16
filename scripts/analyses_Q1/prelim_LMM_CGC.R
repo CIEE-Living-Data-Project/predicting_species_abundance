@@ -13,6 +13,8 @@ library(tidyverse)
 library(dplyr)
 library(brms)
 library(MCMCvis)
+library(tidybayes)
+library(ggdist)
 
 rm(list=ls()) 
 
@@ -135,8 +137,18 @@ save(mod, file = 'outputs/brms_July2023/meta_mod_q1.terrestrial_betweenstudies_i
 
 
 
-#model outputs 
+#meta model outputs---- 
 summary(mod)
+posterior_summary(mod)
+get_variables(mod)
+draws<-spread_draws(mod,b_Intercept, bsp_meestimate_Gn2std.error_Gn2, sdme_meestimate_Gn2, sigma) 
+
+#
+slopes<-coef(object = mod)
+slopes<-as.data.frame(slopes$PairID)
+slopes$PairID<-row.names(slopes)
+slopes<-select(slopes, contains("Gn2"))
+
 ranef<-ranef(mod)
 
 ranef_terr=as.data.frame(ranef$PairID)
@@ -152,9 +164,27 @@ save(loo1, file = 'outputs/brms_July2023/looCV_withinstudies_meta.Rdata') #save
 #loo2<-loo(mod, moment_match = T )
 
 #ppchecks 
-pp_check(mod, ndraws = 100) #this doesn't look great 
+ppcheck<-pp_check(mod, ndraws = 100) #this doesn't look great 
+
+ppcheck<-pp_check(mod,type = "error_hist", ndraws = 100) #this doesn't look great 
 
 MCMCvis::MCMCtrace(mod)
+
+
+#predictive accuracy 
+load("outputs/brms_July2023/meta_mod_q1.terrestrial_withinstudies.Rdata")
+
+# Extract the posterior samples of the random slopes
+random_slopes <- posterior_samples(mod, pars = "r_PairID")
+
+# Make predictions using the posterior samples
+predictions <- posterior_predict(model, newdata = your_data)
+
+# Calculate the predictive accuracy for each observation
+accuracy <- abs(predictions - your_data$y)
+
+
+
 #full model----
 #going to remove the cross metrics for now as unique pair IDs seem duplicated on this 
 dat_terrx<-subset(dat_terr, Metric!="CROSS") %>%
