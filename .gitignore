@@ -15,3 +15,6 @@ data/prep_biotime/BioTIMEQuery_24_06_2021.csv
 
 #don't push Rmd htmls
 *.html
+
+#full Q1 model output 
+output/Aug2023/mod_q1.terrestrial_withinstudies.Rdata
