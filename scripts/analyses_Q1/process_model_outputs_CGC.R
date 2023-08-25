@@ -7,10 +7,31 @@ library(MCMCvis)
 library(tidybayes)
 library(ggdist)
 
+#full model----
+load(file = "outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata") 
+
+#assess convergence issues 
+summary(mod)
+#convergence issue only on 'cor' term - re-run without 
+MCMCtrace(mod) #this takes a while- but mostly looks good!
+
+#Unique study ID
+slopes<-coef(object = mod)
+slopes<-as.data.frame(slopes$UNIQUE.PAIR.ID)
+slopes<-select(slopes, contains("Gn2"))
+slopes$UniquePairID<-row.names(slopes)
+
+save(slopes, file = "outputs/Aug2023/randomslopes_q1model.Rdata")
+
+pp_check(mod) #captures mean and variance ok but misses magnitude of mean
+loox<-loo(mod)
+
+
+#meta model ---- 
 load(file = "outputs/brms_July2023/meta_mod_q1.terrestrial_withinstudies.Rdata") 
 
 
-#meta model outputs---- 
+#meta model outputs
 summary(mod)
 posterior_summary(mod)
 
@@ -75,19 +96,6 @@ ppcheck<-pp_check(mod, ndraws = 100) #this doesn't look great
 ppcheck<-pp_check(mod,type = "error_hist", ndraws = 100) #this doesn't look great 
 
 MCMCvis::MCMCtrace(mod)
-
-
-#predictive accuracy 
-load("outputs/brms_July2023/meta_mod_q1.terrestrial_withinstudies.Rdata")
-
-# Extract the posterior samples of the random slopes
-random_slopes <- posterior_samples(mod, pars = "r_PairID")
-
-# Make predictions using the posterior samples
-predictions <- posterior_predict(model, newdata = your_data)
-
-# Calculate the predictive accuracy for each observation
-accuracy <- abs(predictions - your_data$y)
 
 
 
