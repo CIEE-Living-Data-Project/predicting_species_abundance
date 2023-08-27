@@ -1,6 +1,3 @@
-# setwd("/home/ryan/predicting_species_abundance")
-# setwd("/Users/ryan/Windows/Documents/Post UCB/Research/CIEE_Workshop_TrophicInteractionsPredictAbundances/predicting_species_abundance")
-
 ## Libraries
 library("tidyverse")
 library("rglobi")
@@ -35,7 +32,7 @@ diag(interactions_data_mat)=0
 ## Convert adjacency matrix into igraph network
 net_data <- igraph::graph_from_adjacency_matrix(
   adjmatrix = interactions_data_mat,
-  mode = "undirected"
+  mode = "undirected",
   diag = FALSE
 )
 
