@@ -55,7 +55,7 @@ mod<-brm(MODFORM2, MODDAT, FAM, #seed = 042023, #set seed
 # backend = "cmdstanr") 
 
 summary(mod)
-save(mod, file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata')
+save(mod, file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata')
 
 #try in lme4----
 library(lme4)

@@ -21,7 +21,7 @@ slopes<-as.data.frame(slopes$UNIQUE.PAIR.ID)
 slopes<-select(slopes, contains("Gn2"))
 slopes$UniquePairID<-row.names(slopes)
 
-save(slopes, file = "outputs/Aug2023/randomslopes_q1model.Rdata")
+save(slopes, file = "outputs/Aug2023/randomslopes_q1modelv2.Rdata")
 
 pp_check(mod) #captures mean and variance ok but misses magnitude of mean
 loox<-loo(mod)
