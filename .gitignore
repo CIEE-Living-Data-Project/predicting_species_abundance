@@ -19,3 +19,4 @@ data/prep_biotime/BioTIMEQuery_24_06_2021.csv
 #full Q1 model outputs 
 outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata
 outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata
+outputs/Aug2023/MCMCtrace_q1model.pdf
