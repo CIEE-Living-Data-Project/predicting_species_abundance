@@ -8,6 +8,7 @@
 library(brms)
 library(dplyr)
 library(ggplot2)
+library(tidybayes)
 
 #### read in model output from Q1 ####
 # only terrestrial, only within study comparisons
@@ -46,7 +47,7 @@ slopes.meta$ORGANISMS1 <- ifelse(slopes.meta$ORGANISMS1=="Grasshoppers", "grassh
 slopes.meta$ORGANISMS2 <- ifelse(slopes.meta$ORGANISMS2=="Grasshoppers", "grasshoppers", slopes.meta$ORGANISMS2)
 
 
-#### exploratory plots ####
+##### exploratory plots ####
 # series info
 ggplot(slopes.meta, aes(SERIES.l, Estimate.Prop.Change.Gn2, 
                         colour=as.factor(interaction_present))) + geom_point()
@@ -114,24 +115,57 @@ slopes.meta2$RESOLVED.TAXA.PAIR <- paste0(slopes.meta2$RESOLVED.TAXA1, ".",slope
 # Gastropoda.Bivalvia
 # Pinopsida.Magnoliopsida
 
+#### read in centrality measures ####
+# use edge centralities  since they are immediately comparable to the slopes
+
+edge.centrality <- readRDS("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/centrality_edges.RDS")
+
+
+slopes.meta3 <- left_join(slopes.meta2, edge.centrality,
+                          by = c("Estimate.Prop.Change.Gn2", "Est.Error.Prop.Change.Gn2", "Q2.5.Prop.Change.Gn2", "Q97.5.Prop.Change.Gn2", "UniquePairID", "Gn1", "Gn2"))
+# note that if no known GLOBI interaction, edge centrality is NA, losing a lot of data
+
+
+#### read in disturbance data ####
+# last 3 columns: treatment_yn, treatment_desc, and treatment_simplified. 
+# note that not all treatments are necessarily disturbances,
+# e.g., there’s at least one fertilization treatment
+
+load("data/prep_biotime/meta_pairs_10km.RData")
+
+meta.pairs$STUDY_ID <- as.character(meta.pairs$STUDY_ID)
+
+slopes.meta4 <- left_join(slopes.meta3, meta.pairs[, c(1,46)],
+                          by=c("ID1" = "STUDY_ID"))
 
 #### fit model ####
 FAM <- gaussian(link = 'identity')
 
-# add in disturbance? treatment?
+# centrality measures
+# interaction as yes/no
 MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma = TRUE) ~ 
                 SERIES.l.new +
-                TAXA1 +
+                #TAXA1 +
                 CLIMATE1 +
+                treatment_yn +
                 interaction_type +
-                (1|RESOLVED.TAXA.PAIR) 
-                ) # update when have a centrality measures
+                #Centrality_Betweenness_Edge +
+                RESOLVED.TAXA.PAIR
+                #(1|RESOLVED.TAXA.PAIR) 
+                ) 
 
-Q2mod <- brm(MODFORM, slopes.meta2, FAM, seed = 042023, 
+Q2mod <- brm(MODFORM, slopes.meta4, FAM, seed = 042023, 
          control = list(adapt_delta=0.99, max_treedepth = 12),    
          chains = 4, iter = 5000, warmup = 1000, cores = 4) 
 
-save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.Rdata') #save          
+save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.Rdata')      
+
+
+# output models
+# Q2.model.wTaxa: ~ SERIES.l.new + TAXA1 + CLIMATE1 + interaction_type + (1|RESOLVED.TAXA.PAIR) 
+# Q2.model.wTaxa.random.wTreatment ~ SERIES.l.new + CLIMATE1 + treatment_yn + interaction_type + (1|RESOLVED.TAXA.PAIR) 
+# Q2.model.wTaxa.fixed.wTreatment ~ SERIES.l.new  + CLIMATE1 +treatment_yn + interaction_type + RESOLVED.TAXA.PAIR
+
 
 #sample size (Bulk_ESS & Tail_ESS) should > 1000 & rhat < 1.1
 summary(Q2mod)
@@ -150,7 +184,7 @@ plot(conditional_effects(Q2mod)) #fitted parameters and their CI
 # need to make sure id is reversible ie monocot.dicot is same as dicot.monocot
 
 
-#### plot random slopes ####
+##### plot random slopes ####
 mod <- Q2mod
 
 # extract the draws corresponding to posterior distributions of the overall mean and standard deviation of observations
@@ -193,8 +227,8 @@ mod %>%
   ggplot(aes(y = reorder(RESOLVED.TAXA.PAIR, condition_mean), x = condition_mean)) +
   geom_vline(xintercept = 0, color = "#839496", size = 1) +
   stat_halfeye(.width = .5, size = 2/3, fill = "#859900")+
-  labs(x = expression("Taxa mean"),
-       y = "Associations ordered by mean predicted litterfall") +
+  labs(x = expression("Estimate"),
+       y = "Associations between taxa pairs") +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y  = element_text(hjust = 0),
@@ -211,22 +245,23 @@ mod.DF.taxa <- conditional_effects(mod, re_formula = NULL)[[2]]
 
 ggplot() +
   # error
-  geom_ribbon(data=mod.DF.series.l, 
-              aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = lower__, ymax = upper__), alpha=.2) + 
-  # fit lines
-  geom_line(data=mod.DF.series.l, 
-            aes(effect1__, estimate__), 
-            size=1.2) +
-  # raw data
-  geom_point(data=slopes.meta2, 
-             aes(SERIES.l.new, Estimate.Prop.Change.Gn2, colour=TAXA1, group=TAXA1), 
+  # geom_ribbon(data=mod.DF.series.l, 
+  #             aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = lower__, ymax = upper__), alpha=.2) + 
+  # # fit lines
+  # geom_line(data=mod.DF.series.l, 
+  #           aes(effect1__, estimate__), 
+  #           size=1.2) +
+  # # raw data
+  geom_point(data=slopes.meta4, 
+             aes(SERIES.l.new, Estimate.Prop.Change.Gn2, colour=treatment_yn, group=treatment_yn), 
              size=4, alpha=.8) +
+  facet_wrap(~interaction_type) +
   theme_classic(base_size = 25) +
   labs(y="Length of time series", 
        x="Estimate of association",
        col="", group="") +
   theme(plot.background = element_blank(),
-        strip.text.x = element_text(size=0),
+        strip.text.x = element_text(size=25),
         plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
         legend.position="none") 
 
