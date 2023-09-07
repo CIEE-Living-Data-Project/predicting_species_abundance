@@ -138,19 +138,22 @@ meta.pairs$STUDY_ID <- as.character(meta.pairs$STUDY_ID)
 slopes.meta4 <- left_join(slopes.meta3, meta.pairs[, c(1,46)],
                           by=c("ID1" = "STUDY_ID"))
 
+slopes.meta4$interaction_present <- as.factor(slopes.meta4$interaction_present)
+
 #### fit model ####
 FAM <- gaussian(link = 'identity')
 
 # centrality measures
 # interaction as yes/no
 MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma = TRUE) ~ 
-                SERIES.l.new +
+                SERIES.l.new + # if two disjoint time series, adding the together to get total length
                 #TAXA1 +
-                CLIMATE1 +
-                treatment_yn +
-                interaction_type +
+                CLIMATE1 + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
+                treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
+                interaction_present + #does GLOBI record these genera as potentially interacting
+                #interaction_type #no effect here, so removing bc adds unneseccary complexity. also small sample sizes (eg 1) within some categories reduce power
                 #Centrality_Betweenness_Edge +
-                RESOLVED.TAXA.PAIR
+                RESOLVED.TAXA.PAIR 
                 #(1|RESOLVED.TAXA.PAIR) 
                 ) 
 
@@ -158,14 +161,27 @@ Q2mod <- brm(MODFORM, slopes.meta4, FAM, seed = 042023,
          control = list(adapt_delta=0.99, max_treedepth = 12),    
          chains = 4, iter = 5000, warmup = 1000, cores = 4) 
 
-save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.Rdata')      
+save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYN.Rdata')      
 
 
 # output models
 # Q2.model.wTaxa: ~ SERIES.l.new + TAXA1 + CLIMATE1 + interaction_type + (1|RESOLVED.TAXA.PAIR) 
 # Q2.model.wTaxa.random.wTreatment ~ SERIES.l.new + CLIMATE1 + treatment_yn + interaction_type + (1|RESOLVED.TAXA.PAIR) 
 # Q2.model.wTaxa.fixed.wTreatment ~ SERIES.l.new  + CLIMATE1 +treatment_yn + interaction_type + RESOLVED.TAXA.PAIR
+# Q2.model.wTaxa.fixed.wTreatment.interactionYN ~ SERIES.l.new  + CLIMATE1 + treatment_yn + interaction_present + RESOLVED.TAXA.PAIR
 
+
+# notes on models
+# all converge, diagnostics look good
+# seems like resolved taxa matters for prediction, so using as fixed effects
+# interaction type does not, so simplifying things just to include interaction yes/no
+# series length, climate, treatment all have an effect on strength of genera associations,
+# regardless of what else include in model
+# intercept CI cross zero except in models with resolved taxa as fixed effect
+# incorporating centrality will require subsetting data, so waiting to do this
+# prediction vs inference? were we gonna compare results? 
+
+load("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYN.Rdata")
 
 #sample size (Bulk_ESS & Tail_ESS) should > 1000 & rhat < 1.1
 summary(Q2mod)
@@ -195,30 +211,41 @@ mod %>%
 # median and 95% quantile interval of the variables, we can apply median_qi()
 mod %>%
   #spread_draws(b_Intercept, sigma) %>% #wide
-  gather_draws(b_Intercept, sigma) %>% #long
+  gather_draws(b_Intercept, b_SERIES.l.new, b_CLIMATE1Tropical, 
+               b_treatment_ynyes, b_interaction_present1,
+               sigma) %>% #long
   median_qi()
 
-# summary for all regions
+# summary for all regions [only when have random effect]
 mod %>%
   spread_draws(r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR, ]) %>%
   median_qi()
 
 # convergence diagnostics
 mod %>%
-  spread_draws(r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR, ]) %>%
+  #spread_draws(r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR, ]) %>%
+  spread_draws(b_Intercept, b_SERIES.l.new, b_CLIMATE1Tropical, 
+               b_treatment_ynyes, b_interaction_present1, sigma) %>% 
   summarise_draws()
 
 # maybe we want to know what the overall effect is, ie the global mean as expressed in each region
 mod %>%
-  spread_draws(b_Intercept, r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR,]) %>%
-  median_qi(condition_mean = b_Intercept + r_RESOLVED.TAXA.PAIR) # can change the width of the credible interval
-
+  #spread_draws(b_Intercept, r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR,]) %>%
+  #median_qi(condition_mean = b_Intercept + r_RESOLVED.TAXA.PAIR) # can change the width of the credible interval
+  spread_draws(b_Intercept, b_CLIMATE1Tropical, 
+               b_treatment_ynyes, b_interaction_present1) %>%
+  median_qi(tropical_mean = b_Intercept + b_CLIMATE1Tropical,
+            treatmentYES_mean = b_Intercept + b_CLIMATE1Tropical,
+            interactionYES_mean = b_Intercept + b_CLIMATE1Tropical) # can change the width of the credible interval
+  
 # and plot conditional effects
 mod %>%
-  spread_draws(b_Intercept, r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR,]) %>%
-  median_qi(condition_mean = b_Intercept + r_RESOLVED.TAXA.PAIR, .width = c(.95, .66)) %>%
-  ggplot(aes(y = RESOLVED.TAXA.PAIR, x = condition_mean, xmin = .lower, xmax = .upper)) +
-  geom_pointinterval() 
+  #spread_draws(b_Intercept, r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR,]) %>%
+  spread_draws(b_Intercept, b_CLIMATE1Tropical) %>%
+  median_qi(condition_mean = b_Intercept + b_CLIMATE1Tropical, .width = c(.95, .66)) %>%
+  ggplot(aes(y = reorder(b_CLIMATE1, condition_mean), x = condition_mean, xmin = .lower, xmax = .upper)) +
+  geom_pointinterval() +
+  geom_vline(xintercept = 0, color = "#839496", size = 1) 
 
 # and with density distribution
 mod %>%
