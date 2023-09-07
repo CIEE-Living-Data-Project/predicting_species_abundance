@@ -57,6 +57,7 @@ mod<-brm(MODFORM2, MODDAT, FAM, #seed = 042023, #set seed
 summary(mod)
 save(mod, file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata')
 
+#OTHER CODE NOT USING----
 #try in lme4----
 library(lme4)
 library(optimx)
