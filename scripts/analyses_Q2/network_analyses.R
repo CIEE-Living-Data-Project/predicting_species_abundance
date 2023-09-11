@@ -60,6 +60,12 @@ net_data <- igraph::graph_from_adjacency_matrix(
 # plot(net_data)
 
 ## Quantify node importance
+centrality_degree_out <- igraph::degree(net_data, mode = "out") %>% tibble::enframe()
+colnames(centrality_degree_out) = c("Name", "Centrality_Degree_Out")
+
+centrality_degree_in <- igraph::degree(net_data, mode = "in") %>% tibble::enframe()
+colnames(centrality_degree_in) = c("Name", "Centrality_Degree_In")
+
 centrality_betweenness <- igraph::estimate_betweenness(net_data, cutoff = -1) %>% tibble::enframe() ## cutoff = zero or negative = no limit to length of paths being considered
 colnames(centrality_betweenness) = c("Name", "Centrality_Betweenness")
 
@@ -72,7 +78,16 @@ colnames(centrality_closeness) = c("Name", "Centrality_Closeness")
 centrality_harmonic <- igraph::harmonic_centrality(net_data, cutoff = -1) %>% tibble::enframe() ## cutoff = zero or negative = no limit to length of paths being considered
 colnames(centrality_harmonic) = c("Name", "Centrality_Harmonic")
 
-centrality_nodes <- centrality_betweenness %>%
+
+
+
+
+
+
+
+centrality_nodes <- centrality_degree_out %>%
+  dplyr::full_join(centrality_degree_in, by = "Name") %>%
+  dplyr::full_join(centrality_betweenness, by = "Name") %>%
   dplyr::full_join(centrality_eigenvector, by = "Name") %>%
   dplyr::full_join(centrality_closeness, by = "Name") %>%
   dplyr::full_join(centrality_harmonic, by = "Name")
@@ -112,9 +127,26 @@ for (group in seq_along(communities_betweenness)) {
 }
 
 
-
 ## Save all output
 setwd("outputs/Aug2023")
 saveRDS(object = centrality_nodes, file = "centrality_nodes.RDS")
 saveRDS(object = centrality_edges, file = "centrality_edges.RDS")
 saveRDS(object = communities, file = "communities.RDS")
+
+
+## Plot node centrality vs average slope for a taxa
+avg_slopes <- slopes %>%
+  dplyr::group_by(Gn1) %>%
+  dplyr::summarize(Average_Slope = mean(Estimate.Prop.Change.Gn2))
+colnames(avg_slopes) = c("Name", "Average_Slope")
+
+dplyr::full_join(centrality_nodes, avg_slopes, by = "Name") %>%
+  ggplot(
+    aes(
+      x = Centrality_Degree_In, ## Can change to other centralities
+      y = Average_Slope
+    )
+  ) +
+  theme_minimal() +
+  geom_point() +
+  geom_smooth(method = "lm")
