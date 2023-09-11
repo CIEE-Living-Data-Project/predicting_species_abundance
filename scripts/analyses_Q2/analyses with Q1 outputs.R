@@ -261,7 +261,7 @@ mod %>%
         axis.text.y  = element_text(hjust = 0),
         text = element_text(family = "Ubuntu")) 
 
-##### plot conditional effects ####
+##### plot conditional effects with random effects incorporated ####
 # series
 # taxa
 # climate
@@ -272,13 +272,13 @@ mod.DF.taxa <- conditional_effects(mod, re_formula = NULL)[[2]]
 
 ggplot() +
   # error
-  # geom_ribbon(data=mod.DF.series.l, 
-  #             aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = lower__, ymax = upper__), alpha=.2) + 
-  # # fit lines
-  # geom_line(data=mod.DF.series.l, 
-  #           aes(effect1__, estimate__), 
-  #           size=1.2) +
-  # # raw data
+  geom_ribbon(data=mod.DF.series.l,
+              aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = lower__, ymax = upper__), alpha=.2) +
+  # fit lines
+  geom_line(data=mod.DF.series.l,
+            aes(effect1__, estimate__),
+            size=1.2) +
+  # raw data
   geom_point(data=slopes.meta4, 
              aes(SERIES.l.new, Estimate.Prop.Change.Gn2, colour=treatment_yn, group=treatment_yn), 
              size=4, alpha=.8) +
@@ -292,3 +292,154 @@ ggplot() +
         plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
         legend.position="none") 
 
+
+#### plot conditional effects when no random effects structure ####
+
+##### coefficient plots ####
+color_scheme_set("blue")
+mcmc_intervals(as.matrix(mod),
+           pars = c("b_Intercept", "b_SERIES.l.new","b_CLIMATE1Tropical", "b_treatment_ynyes", "b_interaction_present1"),
+           prob = 0.8, 
+           prob_outer = .9,
+           point_est = "mean", 
+           point_size = 3) +
+  scale_y_discrete(
+    labels = c("b_Intercept" = "Intercept",
+               "b_SERIES.l.new" = "Time series length",
+               "b_CLIMATE1Tropical" = "Climate:tropical",
+               "b_treatment_ynyes" = "Treatment:yes",
+               "b_interaction_present1" = "Interaction:yes"),
+    limits = c("b_interaction_present1",
+               "b_treatment_ynyes",
+               "b_CLIMATE1Tropical", 
+               "b_SERIES.l.new", 
+               "b_Intercept"
+               ))
+
+# just time series length, hard to see on previous
+mcmc_areas(as.matrix(mod),
+           pars = c( "b_SERIES.l.new")) +
+  scale_y_discrete(
+    labels = c("b_SERIES.l.new" = "Time series length"))
+
+
+# just taxa
+# baseline is Aves.Aves
+color_scheme_set("blue")
+mod.taxa.coefs <- as.matrix(mod)[,6:40]
+colnames(mod.taxa.coefs) <- gsub(".*PAIR","", colnames(mod.taxa.coefs)) # rename
+colnames(mod.taxa.coefs) <- gsub("NA","Unclassified", colnames(mod.taxa.coefs)) 
+
+mcmc_intervals(mod.taxa.coefs,
+               prob = 0.8, 
+               prob_outer = .9,
+               point_est = "mean")
+
+##### plots with fitted lines ####
+# cool, holds everything at intercept value
+# but not what we want in this case. want to be able to specify value combinations that
+# actually exist in the data
+series.lengthDF <- conditional_effects(mod, 
+                                     re_formula = NULL)[[1]]
+
+ggplot() +
+  # error
+  geom_ribbon(data=series.lengthDF, 
+              aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = lower__, ymax = upper__,
+                  group = CLIMATE1, fill = CLIMATE1), alpha=.2) + 
+  # fit lines
+  geom_line(data=series.lengthDF, 
+            aes(effect1__, estimate__), 
+            size=1.2) +
+  # raw data
+  #geom_point(data=site.alpha.intraDF, 
+             #aes(elev, convex.vol, pch=habitat, colour=habitat, group=habitat), 
+             #size=4, alpha=.8) +
+  # manual colour scheme
+  #scale_color_manual(values=c( "#877800", "#004A39")) + 
+  #scale_fill_manual(values=c( "#877800", "#004A39"))  +
+  #scale_shape_manual(values=c(17, 19))+
+  theme_classic(base_size = 25) +
+  labs(y="Association", 
+       x="Series length"#,
+       #col="", group=""
+       ) +
+  theme(plot.background = element_blank(),
+        strip.text.x = element_text(size=0),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none") 
+
+
+# want to be able to specify data
+predict.Q2 <- predict(mod) # same as posterior_predict (?) equiv to random draws from posterior normal, not what we want
+predict.Q2B <- posterior_epred(mod) # expectation of posterior
+predict.Q2C <- posterior_linpred(mod) # expectation of linear predictor. identical to expectation of posterior bc gaussian model
+
+library(emmeans)
+rg <- ref_grid(mod)
+# marginal effects calculated for us
+em <- emmeans(rg, specs=c("CLIMATE1", "treatment_yn", "interaction_present", "RESOLVED.TAXA.PAIR"))
+summary(em, point.est = mean)
+plot(em) # gives coefficient plot, note that not all these conditions actually exist in the data
+
+
+epred <- emmeans(mod, 
+                 specs=c("CLIMATE1", "treatment_yn", "interaction_present", "RESOLVED.TAXA.PAIR"), 
+                 epred = TRUE)
+summary(epred, point.est = mean)
+
+
+new_data <- expand.grid(elev = seq(min(subset(site.alpha.intraDF, island=="Hispaniola")$elev), 
+                                   max(subset(site.alpha.intraDF, island=="Hispaniola")$elev), 
+                                   by = 5),
+                        habitat = c("Forest", "Anthro"))
+
+
+
+ggplot(subset(slopes.meta5, CLIMATE1=="Temperate")) +
+  # error
+  geom_ribbon(aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = Q2.5, ymax = Q97.5,
+                  group = RESOLVED.TAXA.PAIR, fill = RESOLVED.TAXA.PAIR), alpha=.2) + 
+  # fit lines
+  geom_line(aes(SERIES.l.new, Estimate), 
+            size=1.2) +
+  facet_grid(treatment_yn~interaction_present)
+  # raw data
+  #geom_point(data=site.alpha.intraDF, 
+  #aes(elev, convex.vol, pch=habitat, colour=habitat, group=habitat), 
+  #size=4, alpha=.8) +
+  # manual colour scheme
+  #scale_color_manual(values=c( "#877800", "#004A39")) + 
+  #scale_fill_manual(values=c( "#877800", "#004A39"))  +
+  #scale_shape_manual(values=c(17, 19))+
+  theme_classic(base_size = 25) +
+  labs(y="Association", 
+       x="Series length"#,
+       #col="", group=""
+  ) +
+  theme(plot.background = element_blank(),
+        strip.text.x = element_text(size=0),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none")
+
+  
+# not quite doing what I want, but closer
+# want each marginal slope plotted for each of the taxa.taxa pairs
+slopes.meta4 |> 
+    #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
+    add_linpred_draws(mod, ndraws = 100) |> 
+    ggplot(aes(x = SERIES.l.new), group=RESOLVED.TAXA.PAIR) +
+    stat_lineribbon(aes(y = .linpred), .width = 0.95,
+                    alpha = 0.5#, color = clrs[2], fill = clrs[2]
+                    ) +
+    facet_wrap(interaction_present~treatment_yn~CLIMATE1) +
+    geom_point(data = slopes.meta4, aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
+  theme_classic(base_size = 25) +
+  labs(y="Association", 
+       x="Series length"#,
+       #col="", group=""
+  ) +
+  theme(plot.background = element_blank(),
+        #strip.text.x = element_text(size=25),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none")
