@@ -35,6 +35,13 @@ dat_terry<-subset(dat_terrx, Type!="Between") %>%
 MODDAT<-  dat_terry
 FAM <- gaussian(link = 'identity')
 
+
+# Collinearity and multi-collinearity check
+source('scripts/VIF_functions.R')
+cor(MODDAT[,c(3:4,7, 12)]) # all correlations << 0.5.
+corvif(MODDAT[,c(3:4,7, 12)])  # no issue with multicollinearity (VIF << 3)
+
+
 MODFORM<-bf(Prop.Change.Gn1~ Prop.Change.Gn2 + 
               (Prop.Change.Gn2 | UNIQUE.PAIR.ID)) 
 
