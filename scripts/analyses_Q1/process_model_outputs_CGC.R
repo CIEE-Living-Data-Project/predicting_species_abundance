@@ -7,14 +7,15 @@ library(MCMCvis)
 library(tidybayes)
 library(ggdist)
 
-#full model----
+#QA QC full model----
 #w/ corr term
 load(file = "outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata") 
 #w/o corr term 
-load(file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata')
+#load(file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata')
+moddat<-mod$data
 
 #raw data from model for plotting
-load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
+#load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
 
 #assess convergence issues 
 summary(mod)
@@ -29,17 +30,40 @@ slopes$UniquePairID<-row.names(slopes)
 
 #save(slopes, file = "outputs/Aug2023/randomslopes_q1modelv2.Rdata")
 
-pp_check(mod) #captures mean and variance ok but misses magnitude of mean
-#loox<-loo(mod) #too big won't work
-
+ppc<-pp_check(mod) #captures mean and variance ok but misses magnitude of mean
+#save(ppc, file='outputs/Aug2023/ppcheck_modq1.Rdata')
+pp_check(mod, type='error_scatter_avg') #not sure if this is working?
 
 # Check the normal distribution of random effect
 qqnorm(slopes$Estimate.Prop.Change.Gn2, main = "Normal Q-Q plot of random slopes",  bty="n")
 qqline(slopes$Estimate.Prop.Change.Gn2, col = 2, lwd = 3, lty = 3) # a bit off on the tails 
 
-#plot results 
+## observed and simulated metric per group  (simulated datasets) 
+library(bayesplot)
+ppc2<-ppc_stat_grouped(y = moddat$Prop.Change.Gn1,
+                 yrep = posterior_predict(mod, ndraws = 100),
+                 group = moddat$UNIQUE.PAIR.ID, 
+                 stat = "mean")
+
+pdf(width=8, height=8)
+ppc2
+dev.off
 
 
+#Kfold cross validation----
+#https://avehtari.github.io/modelselection/rats_kcv.html#5_K-fold_cross-validation
+#use kfold split grouped to preserves group structure within folds but assigns groups randomly to folds 
+grps<-loo::kfold_split_grouped(K = 10, x = moddat$UNIQUE.PAIR.ID)
+print(grps)
+tab<-table(moddat$UNIQUE.PAIR.ID, grps)
+colSums(tab)# look pretty even ~49k each 
+
+options(future.globals.maxSize = 8000 * 1024^2)# give a lot of space so kf doesn't crash 
+
+
+kf<-kfold(mod, folds = grps, save_fits = T )
+
+#plot results----
 #plot random slopes 
 bars<-ggplot(data=slopes, aes(y = UniquePairID, x=Estimate.Prop.Change.Gn2)) + 
   geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='grey')+ 
@@ -73,10 +97,5 @@ grob_hist<-ggplotGrob(hist)
 
 bars + annotation_custom(grob = grob_hist,  xmin=min(postmod2$b_Prop.Change.Gn2), xmax=max(postmod2$b_Prop.Change.Gn2))
 
-
-moddat<-mod$data
-
-moddat%>%
-add_predicted_draws(mod) 
 
 
