@@ -148,9 +148,9 @@ FAM <- gaussian(link = 'identity')
 MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma = TRUE) ~ 
                 SERIES.l.new + # if two disjoint time series, adding the together to get total length
                 #TAXA1 +
-                CLIMATE1 + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
+                CLIMATE1*interaction_present  + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
                 treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
-                interaction_present + #does GLOBI record these genera as potentially interacting
+                #does GLOBI record these genera as potentially interacting
                 #interaction_type #no effect here, so removing bc adds unneseccary complexity. also small sample sizes (eg 1) within some categories reduce power
                 #Centrality_Betweenness_Edge +
                 RESOLVED.TAXA.PAIR 
@@ -159,16 +159,18 @@ MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma 
 
 Q2mod <- brm(MODFORM, slopes.meta4, FAM, seed = 042023, 
          control = list(adapt_delta=0.99, max_treedepth = 12),    
-         chains = 4, iter = 5000, warmup = 1000, cores = 4) 
+         chains = 4, iter = 10000, warmup = 500, cores = 4) 
 
-save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYN.Rdata')      
+save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYNxClimate.Rdata')      
 
+# re-run with interaction between interaction_present*CLIMATE1 or type of interaction
 
 # output models
 # Q2.model.wTaxa: ~ SERIES.l.new + TAXA1 + CLIMATE1 + interaction_type + (1|RESOLVED.TAXA.PAIR) 
 # Q2.model.wTaxa.random.wTreatment ~ SERIES.l.new + CLIMATE1 + treatment_yn + interaction_type + (1|RESOLVED.TAXA.PAIR) 
 # Q2.model.wTaxa.fixed.wTreatment ~ SERIES.l.new  + CLIMATE1 +treatment_yn + interaction_type + RESOLVED.TAXA.PAIR
 # Q2.model.wTaxa.fixed.wTreatment.interactionYN ~ SERIES.l.new  + CLIMATE1 + treatment_yn + interaction_present + RESOLVED.TAXA.PAIR
+# Q2.model.wTaxa.fixed.wTreatment.interactionYNxClimate ~ SERIES.l.new  + CLIMATE1*interaction_present + treatment_yn  + RESOLVED.TAXA.PAIR
 
 
 # notes on models
@@ -396,14 +398,14 @@ new_data <- expand.grid(elev = seq(min(subset(site.alpha.intraDF, island=="Hispa
 
 
 
-ggplot(subset(slopes.meta5, CLIMATE1=="Temperate")) +
+ggplot(slopes.meta5) +
   # error
   geom_ribbon(aes(SERIES.l.new, Estimate.Prop.Change.Gn2, ymin = Q2.5, ymax = Q97.5,
                   group = RESOLVED.TAXA.PAIR, fill = RESOLVED.TAXA.PAIR), alpha=.2) + 
   # fit lines
   geom_line(aes(SERIES.l.new, Estimate), 
             size=1.2) +
-  facet_grid(treatment_yn~interaction_present)
+  facet_grid(treatment_yn~CLIMATE1)
   # raw data
   #geom_point(data=site.alpha.intraDF, 
   #aes(elev, convex.vol, pch=habitat, colour=habitat, group=habitat), 
@@ -425,21 +427,149 @@ ggplot(subset(slopes.meta5, CLIMATE1=="Temperate")) +
   
 # not quite doing what I want, but closer
 # want each marginal slope plotted for each of the taxa.taxa pairs
-slopes.meta4 |> 
-    #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
-    add_linpred_draws(mod, ndraws = 100) |> 
-    ggplot(aes(x = SERIES.l.new), group=RESOLVED.TAXA.PAIR) +
+# try by just pulling out specifc taxa.pairs--this fixes it!
+library(rphylopic)
+  
+# insecta.insecta
+img <- pick_phylopic(name = "libellula pulchella", n = 1)
+A <- slopes.meta4 %>% 
+    subset(RESOLVED.TAXA.PAIR=="Insecta.Insecta" & CLIMATE1=="Temperate" & treatment_yn=="yes") %>%   
+  #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
+    group_by(RESOLVED.TAXA.PAIR) %>%
+    add_linpred_draws(mod, ndraws = 100) %>% 
+    ggplot(aes(x = SERIES.l.new), colour=RESOLVED.TAXA.PAIR) +
     stat_lineribbon(aes(y = .linpred), .width = 0.95,
-                    alpha = 0.5#, color = clrs[2], fill = clrs[2]
+                    alpha = 0.5
                     ) +
-    facet_wrap(interaction_present~treatment_yn~CLIMATE1) +
-    geom_point(data = slopes.meta4, aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
+    facet_wrap(treatment_yn~CLIMATE1, scales = "free") +
+    geom_point(data = subset(slopes.meta4, RESOLVED.TAXA.PAIR=="Insecta.Insecta" & CLIMATE1=="Temperate" & treatment_yn=="yes"),
+               aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
   theme_classic(base_size = 25) +
   labs(y="Association", 
-       x="Series length"#,
-       #col="", group=""
-  ) +
+       x="Series length") +
   theme(plot.background = element_blank(),
         #strip.text.x = element_text(size=25),
         plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
-        legend.position="none")
+        legend.position="none") +
+  add_phylopic(x = 12, y = 1.3, img = img, alpha = .8, ysize = .2) +
+  add_phylopic(x = 16, y = 1.3, img = img, alpha = .8, ysize = .2) 
+
+# mamallia.mamallia
+#img <- pick_phylopic(name = "Giraffa camelopardalis", n = 2)
+uuid <- get_uuid(name = "Giraffa camelopardalis", n = 1)
+img <- get_phylopic(uuid = uuid)
+B <- slopes.meta4 %>% 
+  subset(RESOLVED.TAXA.PAIR=="Mammalia.Mammalia" & CLIMATE1=="Temperate") %>%   
+  #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
+  group_by(RESOLVED.TAXA.PAIR) %>%
+  add_linpred_draws(mod, ndraws = 200) %>% 
+  ggplot(aes(x = SERIES.l.new), colour=RESOLVED.TAXA.PAIR) +
+  stat_lineribbon(aes(y = .linpred), .width = 0.95,
+                  alpha = 0.5
+  ) +
+  facet_wrap(treatment_yn~CLIMATE1) +
+  geom_point(data = subset(slopes.meta4, RESOLVED.TAXA.PAIR=="Mammalia.Mammalia" & CLIMATE1=="Temperate"),
+             aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
+  theme_classic(base_size = 25) +
+  labs(y="Association", 
+       x="Series length") +
+  theme(plot.background = element_blank(),
+        #strip.text.x = element_text(size=25),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none") +
+  add_phylopic(x = 12, y = .8, img = img, alpha = .8, ysize = .1) +
+  add_phylopic(x = 16, y = .8, img = img, alpha = .8, ysize = .1) 
+
+# Pinopsida.Monocots
+#img <- pick_phylopic(name = "Giraffa camelopardalis", n = 2)
+uuid <- get_uuid(name = "Welwitschia mirabilis", n = 1)
+img <- get_phylopic(uuid = uuid)
+uuid2 <- get_uuid(name = "Veratrum", n = 1)
+img2 <- get_phylopic(uuid = uuid2)
+C <- slopes.meta4 %>% 
+  subset(RESOLVED.TAXA.PAIR=="Pinopsida.Monocots" & CLIMATE1=="Temperate" & treatment_yn=="no") %>%   
+  #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
+  group_by(RESOLVED.TAXA.PAIR) %>%
+  add_linpred_draws(mod, ndraws = 200) %>% 
+  ggplot(aes(x = SERIES.l.new), colour=RESOLVED.TAXA.PAIR) +
+  stat_lineribbon(aes(y = .linpred), .width = 0.95,
+                  alpha = 0.5
+  ) +
+  facet_wrap(treatment_yn~CLIMATE1) +
+  geom_point(data = subset(slopes.meta4, RESOLVED.TAXA.PAIR=="Pinopsida.Monocots" & CLIMATE1=="Temperate" & treatment_yn=="no"),
+             aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
+  theme_classic(base_size = 25) +
+  labs(y="Association", 
+       x="Series length") +
+  theme(plot.background = element_blank(),
+        #strip.text.x = element_text(size=25),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none") +
+  add_phylopic(x = 12, y = .8, img = img2, alpha = .8, ysize = .1) +
+  add_phylopic(x = 12.5, y = .8, img = img, alpha = .8, ysize = .1) 
+
+
+# Pinopsida.Monocots
+#img <- pick_phylopic(name = "Giraffa camelopardalis", n = 2)
+uuid <- get_uuid(name = "Quercus robur", n = 1)
+img <- get_phylopic(uuid = uuid)
+uuid2 <- get_uuid(name = "Gnetum gnemon", n = 1)
+img2 <- get_phylopic(uuid = uuid2)
+D <- slopes.meta4 %>% 
+  subset(RESOLVED.TAXA.PAIR=="Magnoliopsida.Gnetopsida" & CLIMATE1=="Temperate" ) %>%   
+  #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
+  group_by(RESOLVED.TAXA.PAIR) %>%
+  add_linpred_draws(mod, ndraws = 200) %>% 
+  ggplot(aes(x = SERIES.l.new), colour=RESOLVED.TAXA.PAIR) +
+  stat_lineribbon(aes(y = .linpred), .width = 0.95,
+                  alpha = 0.5
+  ) +
+  facet_wrap(treatment_yn~CLIMATE1) +
+  geom_point(data = subset(slopes.meta4, RESOLVED.TAXA.PAIR=="Magnoliopsida.Gnetopsida" & CLIMATE1=="Temperate" ),
+             aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
+  theme_classic(base_size = 25) +
+  labs(y="Association", 
+       x="Series length") +
+  theme(plot.background = element_blank(),
+        #strip.text.x = element_text(size=25),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none") +
+  add_phylopic(x = 12, y = .8, img = img, alpha = .8, ysize = .1) +
+  add_phylopic(x = 12.5, y = .8, img = img2, alpha = .8, ysize = .1) 
+
+library(cowplot)
+plot_grid(A,B,C,D, labels=c("A", "B", "C", "D"))
+
+slopes.meta4 %>%
+    add_predicted_draws(Q2mod, ndraws = 10) %>%  # adding the posterior distribution
+    ggplot(aes(x = SERIES.l.new, y = Estimate.Prop.Change.Gn2)) +  
+    stat_lineribbon(aes(y = .prediction), .width = c(.95, .80, .50),  # regression line and CI
+                    alpha = 0.5, colour = "black") +
+    geom_point(data = slopes.meta4, aes(SERIES.l.new, y = Estimate.Prop.Change.Gn2),
+               colour = "darkseagreen4", size = 3) +   # raw data
+    scale_fill_brewer(palette = "Greys") +
+    ylab("Association") + 
+    xlab("Series length") +
+    theme_bw() +
+    theme(legend.title = element_blank())
+
+
+slopes.meta4 %>%
+    group_by(RESOLVED.TAXA.PAIR) %>%
+    add_predicted_draws(Q2mod, ndraws = 100) %>%
+  ggplot(aes(x = SERIES.l.new, y = Estimate.Prop.Change.Gn2, 
+             color = ordered(RESOLVED.TAXA.PAIR), fill = ordered(RESOLVED.TAXA.PAIR))) +  
+  # geom_point(data = slopes.meta4, aes(SERIES.l.new, y = Estimate.Prop.Change.Gn2),
+  #            colour = "darkseagreen4", size = 3, alpha=.3) +
+  stat_lineribbon(aes(y = .prediction), .width = c(.95, .80),  # regression line and CI
+                  alpha = 0.5, colour="black") +
+  facet_wrap(CLIMATE1~treatment_yn) +   # raw data
+  #scale_fill_brewer(palette = "Set2") +
+  #scale_color_brewer(palette = "Dark2") +
+  ylab("Association") + 
+  xlab("Series length") +
+  theme_classic() +
+  theme(legend.title = element_blank(),
+        )
+
+
