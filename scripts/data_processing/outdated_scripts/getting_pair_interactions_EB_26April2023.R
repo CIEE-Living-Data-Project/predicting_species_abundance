@@ -287,6 +287,10 @@ all_interactions <- all_interactions %>%
 
 #manually inspect the types of interactions
 unique(all_interactions$interaction)
+#figure out how many distinct pairs have an interaction
+all_interactions_pairs <- all_interactions %>%
+  select(-interaction)
+all_interactions_pairs <- distinct(all_interactions_pairs)
 
 #Upon manual inspection, some interactions are clearly mistakes due to
 #ambiguity in the genera
