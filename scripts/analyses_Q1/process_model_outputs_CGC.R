@@ -1,4 +1,3 @@
-
 # # LIBRARIES # #
 library(tidyverse)
 library(dplyr)
@@ -17,12 +16,12 @@ moddat<-mod$data
 #raw data from model for plotting
 #load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
 
-#assess convergence issues 
+#assess convergence issues---- 
 summary(mod)
 #convergence issue only on 'cor' term - re-run without 
 #MCMCtrace(mod) #this takes a while- but mostly looks good!
 
-#Unique study ID
+#pull out Unique study ID slopes----
 slopes<-coef(object = mod)
 slopes<-as.data.frame(slopes$UNIQUE.PAIR.ID)
 slopes<-select(slopes, contains("Gn2"))
@@ -30,24 +29,42 @@ slopes$UniquePairID<-row.names(slopes)
 
 #save(slopes, file = "outputs/Aug2023/randomslopes_q1modelv2.Rdata")
 
+#run ppchecks ----
 ppc<-pp_check(mod) #captures mean and variance ok but misses magnitude of mean
 #save(ppc, file='outputs/Aug2023/ppcheck_modq1.Rdata')
-pp_check(mod, type='error_scatter_avg') #not sure if this is working?
 
-# Check the normal distribution of random effect
+load(file = "outputs/Aug2023/ppcheck_modq1.Rdata")
+
+#re-plot for predictive accuracy 
+ppcdata<-ppc$data
+obsdata<-subset(ppcdata, is_y==TRUE)
+preddata<-subset(ppcdata, is_y==FALSE) #10 predictions for every 1 observation 
+
+obsdatax<-select(obsdata, y_id, value)%>%rename(value0=value)
+  
+alldata<-left_join(obsdatax, preddata)
+
+rm(ppc)
+plot(alldata$value~alldata$value0)
+save(alldata, file='outputs/Sep2023/Q1_ppc_data.Rdata')
+
+#make plot nicer
+pdf(file = "figures/ppc_plot.pdf", width = 8, height = 8)
+ggplot(data=alldata, aes(y = value, x=value0)) + 
+  geom_point()+ 
+  stat_lineribbon()+
+  ylab("Predicted") + xlab("Observed") +
+  scale_fill_brewer() + theme_bw()
+dev.off()
+
+
+#run correlation test 
+ct<-cor.test(alldata$value, alldata$value0)
+
+           
+# Check the normal distribution of random effects----
 qqnorm(slopes$Estimate.Prop.Change.Gn2, main = "Normal Q-Q plot of random slopes",  bty="n")
 qqline(slopes$Estimate.Prop.Change.Gn2, col = 2, lwd = 3, lty = 3) # a bit off on the tails 
-
-## observed and simulated metric per group  (simulated datasets) 
-library(bayesplot)
-ppc2<-ppc_stat_grouped(y = moddat$Prop.Change.Gn1,
-                 yrep = posterior_predict(mod, ndraws = 100),
-                 group = moddat$UNIQUE.PAIR.ID, 
-                 stat = "mean")
-
-pdf(width=8, height=8)
-ppc2
-dev.off
 
 
 #Kfold cross validation----
@@ -61,15 +78,32 @@ colSums(tab)# look pretty even ~49k each
 options(future.globals.maxSize = 8000 * 1024^2)# give a lot of space so kf doesn't crash 
 
 
-kf<-kfold(mod, folds = grps, save_fits = T )
+kf<-kfold(mod, folds = grps, save_fits = T ) #running very slowly
 
-#plot results----
-#plot random slopes 
+
+#loo-CV subsample- 
+#Keep getting ERROR: can't allocate vector this size for both of these
+#https://mc-stan.org/loo/articles/loo2-large-data.html
+#try this? 
+loo_ss_1 <-
+  brms::loo_subsample(mod)
+print(loo_ss_1)
+
+r2<-loo_R2(mod)
+
+
+#plot random slopes ----
 bars<-ggplot(data=slopes, aes(y = UniquePairID, x=Estimate.Prop.Change.Gn2)) + 
   geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='grey')+ 
   geom_vline(xintercept = 0, color='black', lty=2)+
    theme(axis.text.y=element_blank(),  #remove y axis labels
                 axis.ticks.y=element_blank()) + xlab("Group level slope estimates")
+
+geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='grey')+ 
+  geom_vline(xintercept = 0, color='black', lty=2)+
+  theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) + xlab("Group level slope estimates")
+
 
 #add posteriors on top 
 #these are equivalent 

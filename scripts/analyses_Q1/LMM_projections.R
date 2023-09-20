@@ -1,3 +1,103 @@
+# # LIBRARIES # #
+library(tidyverse)
+library(dplyr)
+library(brms)
+library(MCMCvis)
+library(tidybayes)
+library(ggdist)
+library(marginaleffects)
+
+#full model----
+#w/ corr term
+load(file = "outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata") 
+#w/o corr term 
+load(file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata')
+
+moddat<-mod$data
+
+#plot model predline  
+#use range of values from original dataset    
+nd<-expand_grid(Prop.Change.Gn1  = NA, 
+                Prop.Change.Gn2  = c(-7, -5, -3, -1,0, 1, 3, 5))
+
+#or predict Gn1 at AVERAGE Gn2 
+#nd <- with(moddat, expand.grid(Prop.Change.Gn2=mean(Prop.Change.Gn2), 
+#                               Prop.Change.Gn=NA)) 
+
+#moddat<-mod$data
+#ndx<- expand_grid(Prop.Change.Gn1  = unique(moddat$Prop.Change.Gn1),
+#                 Prop.Change.Gn2  = unique(moddat$Prop.Change.Gn2))%>%
+#  slice(which(row_number() %% 20000 == 1))#make much smaller n~2000
+
+#conditional effects 
+#w/measurement error 
+pred<-predictions(mod, nd, re_formula = NA) |> #setting RE=NA 
+  posterior_draws()
+gc()
+
+plot(pred$Prop.Change.Gn2, pred$estimate) #mean of all draws per x 
+
+plot(pred$Prop.Change.Gn2, pred$draw) #all draws
+
+my.prediction <- pred$estimate
+ct <- cor.test(my.prediction, moddat$Prop.Change.Gn1)
+
+
+p_value[i] <- ct$p.value
+
+
+
+#w/o measurement error 
+fit<-fitted(mod, re_formula = NA, newdata = nd,
+        ndraws=100,
+        summary = FALSE)
+fit<-as.data.frame(fit)
+
+
+#epred<-posterior_epred(mod, nd, re_formula = NA)|> #setting RE=NA here because otherwise error ribbon is weird
+#  posterior_draws()
+
+#preds<-predictions(mod, re_formula = NA) #marginal effects version using full dataset 
+
+#plot model predline over raw data 
+#I'm not sure if I should plot the draws or the estimates here??
+ggplot(pred, aes(x = Prop.Change.Gn2, y = estimate)) + 
+  #geom_point()+ 
+  geom_line(aes(color="red"))+
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5)+
+  #stat_lineribbon()+ #scale_fill_brewer() +
+  #geom_smooth(method='gam', formula= y ~ s(x, bs = "cs", fx = TRUE, k = 2), se = T)+
+  #geom_ribbon(aes(ymin = (conf.low*1.11)+2,
+  #                ymax = (conf.high*1.11)+2), alpha=0.2, outline.type = "both")+
+  #geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+
+  # plot raw data
+geom_point(data=moddat, aes(x = Prop.Change.Gn2, y=Prop.Change.Gn1,alpha=0.2))+
+  #geom_point() +
+  labs(x = "Prop yearly abundance change genus x ",
+       y = "Prop yearly abundance change genus y") + theme_bw()
+
+#try with marginal effects plot_predictions 
+#https://marginaleffects.com/dev/articles/predictions.html#bayesian-models
+plot_predictions(mod, condition = "Prop.Change.Gn2")
+
+
+#predict over new data 
+#use range of original dataset
+hist(mod$data$Prop.Change.Gn1)
+hist(mod$data$Prop.Change.Gn2)
+mean(mod$data$Prop.Change.Gn1)
+sd(mod$data$Prop.Change.Gn1)
+
+mean(mod$data$Prop.Change.Gn2)
+sd(mod$data$Prop.Change.Gn2)
+
+#simulate with normal dist 
+nd2 <- expand_grid(Prop.Change.Gn1  = rnorm(35, mean=0, sd=0.5),
+                   Prop.Change.Gn2 = (35, mean=0, sd=0.5))
+
+
+
+#OLD CODE----
 
 # # FITTING ISSUES
 
