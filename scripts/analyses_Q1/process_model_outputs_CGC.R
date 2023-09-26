@@ -13,8 +13,6 @@ load(file = "outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata")
 #load(file = 'outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata')
 moddat<-mod$data
 
-#raw data from model for plotting
-#load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
 
 #assess convergence issues---- 
 summary(mod)
@@ -43,13 +41,14 @@ preddata<-subset(ppcdata, is_y==FALSE) #10 predictions for every 1 observation
 obsdatax<-select(obsdata, y_id, value)%>%rename(value0=value)
   
 alldata<-left_join(obsdatax, preddata)
-
-rm(ppc)
-plot(alldata$value~alldata$value0)
 save(alldata, file='outputs/Sep2023/Q1_ppc_data.Rdata')
 
+
+plot(alldata$value~alldata$value0)
+
 #make plot nicer
-pdf(file = "figures/ppc_plot.pdf", width = 8, height = 8)
+#with stat lineribbon 
+png(file = "figures/ppc_plot.png", width = 8, height = 8, units = 'in', res = 300)
 ggplot(data=alldata, aes(y = value, x=value0)) + 
   geom_point()+ 
   stat_lineribbon()+
@@ -57,11 +56,82 @@ ggplot(data=alldata, aes(y = value, x=value0)) +
   scale_fill_brewer() + theme_bw()
 dev.off()
 
+#as gradient - no points 
+png(file = "figures/ppc_plot.png", width = 8, height = 8, units = 'in', res = 300)
+ggplot(data=alldata, aes(y = value, x=value0, fill = after_stat(.width))) + 
+  #geom_point()+ 
+  stat_lineribbon(.width = ppoints(50))+
+  ylab("Predicted") + xlab("Observed") +
+  scale_fill_distiller() + theme_bw()
+dev.off()
+
+
+
+png(file = "figures/ppc_plot4.png", width = 8, height = 8, units = 'in', res = 300)
+ggplot(data=alldata, aes(y = value, x=value0)) + 
+  #geom_point()+ 
+  stat_summary(
+    geom = "smooth",
+    fun.data = mean_cl_normal,
+    fun.args = list(conf.int = 0.95),
+    #group = 1,
+    alpha = .5,
+    color = "black",
+    se = TRUE) +
+  ylab("Predicted") + xlab("Observed") +
+  #scale_fill_distiller() + 
+  theme_bw()
+dev.off()
+
+
+
+#try with add fitted 
+moddatx<-moddat#dup
+moddatx$Prop.Change.Gn1<-NA #set resp to NAs 
+
+png(file = "figures/ppc_plot5.png", width = 8, height = 8, units = 'in', res = 300)
+ggplot(data=alldata, aes(y = value, x=value0)) + 
+  geom_point()+ 
+  geom_line(aes(group = interaction(Age,Sex))) 
+
+  
+      ylab("Predicted") + xlab("Observed") +
+  scale_fill_brewer() + theme_bw()
+dev.off()
+
+
+#plot by groups of interest??
+#raw data from model for plotting
+load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
+MODDAT$y_id<-as.integer(row.names(MODDAT))
+
+alldatax<-left_join(alldata, select(MODDAT, y_id, interaction_present, CLIMATE1, TAXA1, 
+                                    RESOLVED.TAXA1, UNIQUE.PAIR.ID))
+
+png(file = "figures/ppc_plot6.png", width = 8, height = 8, units = 'in', res = 300)
+ggplot(data=alldatax, aes(y = value, x=value0)) + 
+  geom_point(alpha=0.3)+ 
+  geom_smooth(method="lm")+
+  ylab("Predicted") + xlab("Observed") +
+  facet_wrap(~CLIMATE1 + TAXA1, scales="free")+ 
+  #scale_fill_brewer() + 
+  theme_bw()
+dev.off()
 
 #run correlation test 
 ct<-cor.test(alldata$value, alldata$value0)
 
-           
+    
+
+ctclim<-group_by(alldatax, CLIMATE1, RESOLVED.TAXA1)%>%
+cor.test(alldata$value, alldata$value0)
+
+cttax<-group_by(alldatax, TAXA1)%>%
+  cor.test(alldata$value, alldata$value0)
+
+ctt<-group_by(alldatax, TAXA1)%>%
+  cor.test(alldata$value, alldata$value0)
+
 # Check the normal distribution of random effects----
 qqnorm(slopes$Estimate.Prop.Change.Gn2, main = "Normal Q-Q plot of random slopes",  bty="n")
 qqline(slopes$Estimate.Prop.Change.Gn2, col = 2, lwd = 3, lty = 3) # a bit off on the tails 
