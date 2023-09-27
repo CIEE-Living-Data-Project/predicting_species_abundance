@@ -41,14 +41,12 @@ preddata<-subset(ppcdata, is_y==FALSE) #10 predictions for every 1 observation
 obsdatax<-select(obsdata, y_id, value)%>%rename(value0=value)
   
 alldata<-left_join(obsdatax, preddata)
-save(alldata, file='outputs/Sep2023/Q1_ppc_data.Rdata')
-
 
 plot(alldata$value~alldata$value0)
 
 #make plot nicer
 #with stat lineribbon 
-png(file = "figures/ppc_plot.png", width = 8, height = 8, units = 'in', res = 300)
+png(file = "figures/ppc_plot3.png", width = 8, height = 8, units = 'in', res = 300)
 ggplot(data=alldata, aes(y = value, x=value0)) + 
   geom_point()+ 
   stat_lineribbon()+
@@ -85,21 +83,6 @@ dev.off()
 
 
 
-#try with add fitted 
-moddatx<-moddat#dup
-moddatx$Prop.Change.Gn1<-NA #set resp to NAs 
-
-png(file = "figures/ppc_plot5.png", width = 8, height = 8, units = 'in', res = 300)
-ggplot(data=alldata, aes(y = value, x=value0)) + 
-  geom_point()+ 
-  geom_line(aes(group = interaction(Age,Sex))) 
-
-  
-      ylab("Predicted") + xlab("Observed") +
-  scale_fill_brewer() + theme_bw()
-dev.off()
-
-
 #plot by groups of interest??
 #raw data from model for plotting
 load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
@@ -118,19 +101,87 @@ ggplot(data=alldatax, aes(y = value, x=value0)) +
   theme_bw()
 dev.off()
 
-#run correlation test 
+#run correlation tests 
 ct<-cor.test(alldata$value, alldata$value0)
 
-    
+#pull out means and sds for each observed value 
+#can do by unique value per genus -492k values 
+pred_estimates_yid<-group_by(alldata, y_id) %>%mutate(mean_pred=mean(value), sd_pred=sd(value))%>%
+  select(value0, mean_pred, sd_pred)%>%distinct(.)
 
-ctclim<-group_by(alldatax, CLIMATE1, RESOLVED.TAXA1)%>%
-cor.test(alldata$value, alldata$value0)
+#or unique values across genera - 6025 values 
+pred_estimates<-group_by(alldata, value0) %>%mutate(mean_pred=mean(value), sd_pred=sd(value))%>%
+select(value0, mean_pred, sd_pred)%>%distinct(.)
 
-cttax<-group_by(alldatax, TAXA1)%>%
-  cor.test(alldata$value, alldata$value0)
 
-ctt<-group_by(alldatax, TAXA1)%>%
-  cor.test(alldata$value, alldata$value0)
+save(alldata, pred_estimates, pred_estimates_yid, file='outputs/Sep2023/Q1_ppc_data.Rdata')
+
+#plot with 1-1 line
+pdf(file = "figures/ppc_plot5.pdf", width = 8, height = 8)
+ggplot(data = pred_estimates, aes(x=value0, y=mean_pred))+
+  geom_abline(slope=1, intercept=0, color="red")+
+  geom_pointrange(aes(ymin=mean_pred-sd_pred, ymax=mean_pred+sd_pred), alpha=0.2)+  
+  ylab("Predicted") + xlab("Observed")  
+  #scale_colour_gradient2(
+  #  low = "red",
+  #  mid = "white",
+  #  high = "red",
+  #  midpoint = 0,
+  #  space = "Lab",
+  #  na.value = "grey50",
+  #  guide = "colourbar",
+  #  aesthetics = "colour")+
+  # theme_bw() #+theme(aes(legend.position="none"))+
+  dev.off()
+  
+
+#run correlation tests on pred means
+ct2<-cor.test(pred_estimates$mean_pred, pred_estimates$value0)
+  
+#plot of corr test on means 
+pdf(file = "figures/ppc_plot0.pdf", width = 8, height = 8)
+ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
+  geom_point(alpha=0.5)+  
+  ylab("Mean predicted") + xlab("Observed")  +theme_bw()+
+scale_colour_gradient2(
+  low = "yellow",
+  mid = "blue",
+  high = "yellow",
+  midpoint = 0,
+  space = "Lab",
+  na.value = "grey50",
+  guide = "colourbar",
+  aesthetics = "colour" )
+  #+theme(aes(legend.position="none"))+
+dev.off()
+
+#cut out very large outliers  
+pdf(file = "figures/ppc_plot00.pdf", width = 8, height = 8)
+ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
+  geom_point(alpha=0.5)+  xlim(-5, 5)+
+  ylab("Mean predicted") + xlab("Observed")  +theme_bw()+
+  scale_colour_gradient2(
+    low = "yellow",
+    mid = "blue",
+    high = "yellow",
+    midpoint = 0,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+    aesthetics = "colour" )
+#+theme(aes(legend.position="none"))+
+dev.off()
+
+#predictive accuracy----
+#differences on raw values then calculate mean, sd on diffs??
+#this is not making sense to me 9/26/23
+alldatay<- mutate(alldata, diff=abs(value0-value), accuracy=(abs(value0-diff)/value0))%>%group_by(y_id)%>%
+  mutate(mean=mean(accuracy), sd=sd(accuracy))
+
 
 # Check the normal distribution of random effects----
 qqnorm(slopes$Estimate.Prop.Change.Gn2, main = "Normal Q-Q plot of random slopes",  bty="n")
