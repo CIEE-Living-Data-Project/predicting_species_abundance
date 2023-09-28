@@ -24,28 +24,29 @@ nd<-expand_grid(Prop.Change.Gn1  = NA,
 #nd <- with(moddat, expand.grid(Prop.Change.Gn2=mean(Prop.Change.Gn2), 
 #                               Prop.Change.Gn=NA)) 
 
+#or predict Gn1 with a subset of Gn2 spanning the data range 
+nd<-expand_grid(Prop.Change.Gn1  = NA, 
+                Prop.Change.Gn2  = seq(min(moddat$Prop.Change.Gn2), 
+                                       max(moddat$Prop.Change.Gn2), 
+                                       length.out = 20))
+
 #moddat<-mod$data
 #ndx<- expand_grid(Prop.Change.Gn1  = unique(moddat$Prop.Change.Gn1),
 #                 Prop.Change.Gn2  = unique(moddat$Prop.Change.Gn2))%>%
 #  slice(which(row_number() %% 20000 == 1))#make much smaller n~2000
 
 #conditional effects 
-#w/measurement error 
+#w/measurement error but not random error 
 pred<-predictions(mod, nd, re_formula = NA) |> #setting RE=NA 
   posterior_draws()
 gc()
 
+predr<-predictions(mod, nd, re_formula = NULL) |> #setting RE=NULL (need UNIQUE ID in new data)
+  posterior_draws()
+
 plot(pred$Prop.Change.Gn2, pred$estimate) #mean of all draws per x 
 
 plot(pred$Prop.Change.Gn2, pred$draw) #all draws
-
-my.prediction <- pred$estimate
-ct <- cor.test(my.prediction, moddat$Prop.Change.Gn1)
-
-
-p_value[i] <- ct$p.value
-
-
 
 #w/o measurement error 
 fit<-fitted(mod, re_formula = NA, newdata = nd,
@@ -62,7 +63,6 @@ fit<-as.data.frame(fit)
 #plot model predline over raw data 
 #I'm not sure if I should plot the draws or the estimates here??
 ggplot(pred, aes(x = Prop.Change.Gn2, y = estimate)) + 
-  #geom_point()+ 
   geom_line(aes(color="red"))+
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5)+
   #stat_lineribbon()+ #scale_fill_brewer() +
@@ -72,7 +72,6 @@ ggplot(pred, aes(x = Prop.Change.Gn2, y = estimate)) +
   #geom_point(data=flowdat, aes(x = (doy*14)+172, y=(value*1.11)+2), alpha=0.2)+
   # plot raw data
 geom_point(data=moddat, aes(x = Prop.Change.Gn2, y=Prop.Change.Gn1,alpha=0.2))+
-  #geom_point() +
   labs(x = "Prop yearly abundance change genus x ",
        y = "Prop yearly abundance change genus y") + theme_bw()
 
@@ -80,6 +79,11 @@ geom_point(data=moddat, aes(x = Prop.Change.Gn2, y=Prop.Change.Gn1,alpha=0.2))+
 #https://marginaleffects.com/dev/articles/predictions.html#bayesian-models
 plot_predictions(mod, condition = "Prop.Change.Gn2")
 
+
+#combine with raw data for pred vs obs 
+predall<-select(pred, -Prop.Change.Gn1)%>%left_join(., select(moddat, -UNIQUE.PAIR.ID))
+
+data=moddat
 
 #predict over new data 
 #use range of original dataset

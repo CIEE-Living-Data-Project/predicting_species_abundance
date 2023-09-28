@@ -88,9 +88,8 @@ dev.off()
 load(file = 'outputs/Aug2023/Q1_rawdata_full.Rdata')
 MODDAT$y_id<-as.integer(row.names(MODDAT))
 
-alldatax<-left_join(alldata, select(MODDAT, y_id, interaction_present, CLIMATE1, TAXA1, 
+alldata<-left_join(alldata, select(MODDAT, y_id, interaction_present, CLIMATE1, TAXA1, 
                                     RESOLVED.TAXA1, UNIQUE.PAIR.ID))
-
 png(file = "figures/ppc_plot6.png", width = 8, height = 8, units = 'in', res = 300)
 ggplot(data=alldatax, aes(y = value, x=value0)) + 
   geom_point(alpha=0.3)+ 
@@ -104,15 +103,23 @@ dev.off()
 #run correlation tests 
 ct<-cor.test(alldata$value, alldata$value0)
 
+#predictive accuracy----
+#differences on raw values then calculate mean, sd on diffs??
+#this is not making sense to me 9/26/23
+#alldatay<- mutate(alldata, diff=abs(value0-value), accuracy=(abs(value0-diff)/value0))%>%group_by(y_id)%>%
+#  mutate(mean=mean(accuracy), sd=sd(accuracy))
+
 #pull out means and sds for each observed value 
 #can do by unique value per genus -492k values 
 pred_estimates_yid<-group_by(alldata, y_id) %>%mutate(mean_pred=mean(value), sd_pred=sd(value))%>%
-  select(value0, mean_pred, sd_pred)%>%distinct(.)
+  select(value0, mean_pred, sd_pred)%>%distinct(.)%>% mutate(diff=abs(value0-mean_pred))
+#combine with metatdata for taxa pairs 
+pred_estimates_yid<-left_join(pred_estimates_yid, select(MODDAT, y_id, interaction_present, CLIMATE1, TAXA1, 
+                                   RESOLVED.TAXA1, UNIQUE.PAIR.ID))
 
 #or unique values across genera - 6025 values 
 pred_estimates<-group_by(alldata, value0) %>%mutate(mean_pred=mean(value), sd_pred=sd(value))%>%
-select(value0, mean_pred, sd_pred)%>%distinct(.)
-
+select(value0, mean_pred, sd_pred)%>%distinct(.)%>%mutate(diff=abs(value0-mean_pred))
 
 save(alldata, pred_estimates, pred_estimates_yid, file='outputs/Sep2023/Q1_ppc_data.Rdata')
 
@@ -143,44 +150,25 @@ pdf(file = "figures/ppc_plot0.pdf", width = 8, height = 8)
 ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
-  geom_point(alpha=0.5)+  
-  ylab("Mean predicted") + xlab("Observed")  +theme_bw()+
-scale_colour_gradient2(
-  low = "yellow",
-  mid = "blue",
+  geom_point(alpha=0.5)+ 
+  ylab(" Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  theme_bw()+
+scale_colour_gradient(
+  low = "blue",
+  #mid = "blue",
   high = "yellow",
-  midpoint = 0,
+  #midpoint = 0.15,
   space = "Lab",
   na.value = "grey50",
   guide = "colourbar",
-  aesthetics = "colour" )
-  #+theme(aes(legend.position="none"))+
-dev.off()
-
-#cut out very large outliers  
-pdf(file = "figures/ppc_plot00.pdf", width = 8, height = 8)
-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
-  #geom_smooth(method='lm')+
-  geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
-  geom_point(alpha=0.5)+  xlim(-5, 5)+
-  ylab("Mean predicted") + xlab("Observed")  +theme_bw()+
-  scale_colour_gradient2(
-    low = "yellow",
-    mid = "blue",
-    high = "yellow",
-    midpoint = 0,
-    space = "Lab",
-    na.value = "grey50",
-    guide = "colourbar",
-    aesthetics = "colour" )
+    aesthetics = "colour", name="Residuals")+
+    annotate("text", label="R2 = 0.38
+              Pearson's R= 0.62
+              95% CI (0.608, 0.639)
+              t = 61.869, df = 6023
+              p-value < 2.2e-16", x=5.2, y=-1.2, size=3, hjust=1)  
 #+theme(aes(legend.position="none"))+
 dev.off()
-
-#predictive accuracy----
-#differences on raw values then calculate mean, sd on diffs??
-#this is not making sense to me 9/26/23
-alldatay<- mutate(alldata, diff=abs(value0-value), accuracy=(abs(value0-diff)/value0))%>%group_by(y_id)%>%
-  mutate(mean=mean(accuracy), sd=sd(accuracy))
 
 
 # Check the normal distribution of random effects----
