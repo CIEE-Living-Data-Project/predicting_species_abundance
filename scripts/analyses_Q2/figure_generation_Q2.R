@@ -71,8 +71,8 @@ dat <- left_join(dat, meta.pairs[, c(1,46)],
 
 dat_select <- dat %>%
   select(UNIQUE.PAIR.ID, TAXA1, TAXA2, CLIMATE1, CLIMATE2, REALM1, REALM2, SERIES.l, 
-         RESOLVED.TAXA1, RESOLVED.TAXA2, PairID,
-         interaction_present, interaction_benefit, interaction_type, treatment_yn)
+         RESOLVED.TAXA1, RESOLVED.TAXA2, UNIQUE.PAIR.ID, treatment_yn, 
+         interaction_present, interaction_benefit, interaction_type, interaction_present)
 
 
 dat_select <- dat_select %>%
@@ -242,7 +242,7 @@ unique(slopes_PM$PairID)
 
 #filter to only temperate, and no disturbance 
 slopes_baseline <- slopes_join %>%
-  filter(CLIMATE1=="Temperate", treatment_yn=="no")
+  filter(CLIMATE1=="Temperate", interaction_present=="0")
 
 ggplot(slopes_baseline, aes(x = Estimate.Prop.Change.Gn2)) +
   geom_density(color = "black", aes(fill=resolved_taxa_pair)) +
@@ -262,7 +262,6 @@ head(Q2mod$data)
 Q2mod$formula
 Q2mod$fit
 posterior_samples <- posterior_samples(Q2mod, pars = c("b", "sd"))
-coef_bays <- coef(Q2mod)
 
 #Using emmeans, extract the marginal effects
 climate_means <- Q2mod %>%
@@ -274,7 +273,7 @@ taxa_means_clim <- Q2mod %>%
   emmeans(~RESOLVED.TAXA.PAIR + CLIMATE1,
           level=0.95,
           at = list(interaction_present = '0', 
-        treatment_yn = 'no')
+        interaction_present = 'no')
           )
 #plot the taxa means 
 
@@ -298,7 +297,7 @@ custom_colors <- c("Temperate" = "#2E3C4C", "Tropical" = "#006400")
 
 df_sampled %>%
   filter(interaction_present == '0',
-         treatment_yn == 'no') %>%
+         interaction_present == 'no') %>%
 ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y=as.numeric(Estimate.Prop.Change.Gn2), group=CLIMATE1)) +
   geom_point(colour = 'grey', alpha=0.2,
              position = position_jitter(width = 0.08, height = 0), stroke=1) +
@@ -314,12 +313,12 @@ ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y=as.numeric(Estimate.Prop.
 
 #with density
 slopes_join_stats %>%
-  filter(interaction_present == '0', treatment_yn == 'no') %>%
+  filter(treatment_yn == 'no', interaction_present == '0') %>%
   ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2), fill = CLIMATE1)) +
-  geom_violin(alpha = 0.4, bw=0.05) +  # Violin plot by CLIMATE1
-  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, color = CLIMATE1),
-                position = position_dodge(width = 0.3), width = 1) +
-  geom_point(aes(x = resolved_taxa_pair, y = emmean, colour = CLIMATE1), size = 2) +
+  geom_violin(alpha = 0.3, bw=0.05) +  # Violin plot by CLIMATE1
+  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD),
+                color = 'black', position = position_dodge(width = 0.3), width = 1) +
+  geom_point(aes(x = resolved_taxa_pair, y = emmean), color = 'black', size = 2) +
   labs(x = "Resolved taxa pair", y = "Strength of association", colour = 'Climate') +
   scale_color_manual(values = custom_colors) +
   scale_fill_manual(values = custom_colors, guide = guide_legend(override.aes = list(fill = "grey"))) +
@@ -329,13 +328,81 @@ slopes_join_stats %>%
   guides(fill = "none") 
 
 #Do the same thing but with marginal effects for climate, interaction, disturbance, etc
+climate_means <- Q2mod %>%
+  emmeans(~CLIMATE1, 
+          level=0.95,
+          at = list(treatment_yn = 'no', 
+                    interaction_present = '0'))
 climate_means <- as.data.frame(climate_means)
 interaction_means <- Q2mod %>%
-  emmeans(~interaction_present )
+  emmeans(~interaction_present, 
+          level=0.95,
+          at = list(CLIMATE1 = 'Temperate', 
+                    treatment_yn = 'no'))
 interaction_means <- as.data.frame(interaction_means)
 treatment_means <- Q2mod %>%
-  emmeans(~treatment_yn)
+  emmeans(~treatment_yn, 
+          at = list(interaction_present = '0', 
+                    CLIMATE1 = 'Temperate'))
 treatment_means <- as.data.frame(treatment_means)
+
+treatment_means$treatment_yn <- as.character(treatment_means$treatment_yn)
+slopes_join$interaction_present <- as.character(slopes_join$interaction_present)
+
+slopes_join_treatment_stats <- left_join(slopes_join, treatment_means, by=c('treatment_yn'))
+df_sampled_treatment <- slopes_join_treatment_stats %>%
+  group_by(interaction_present, treatment_yn, resolved_taxa_pair, CLIMATE1) %>%
+  mutate(row_number = row_number()) %>%  # Add a row_number column
+  filter(row_number <= min(150, n())) %>%  # Filter to keep up to 100 points per group
+  ungroup() %>%  # Ungroup the data frame
+  select(-row_number)  
+
+#get some example pairs to highlight 
+sample_pairs_treatment <-  df_sampled_treatment %>%
+  filter(interaction_present == '0', CLIMATE1 == 'Temperate') 
+
+df_sampled_treatment %>%
+  filter(interaction_present == '0', CLIMATE1 == 'Temperate') %>%
+  ggplot(aes(x = treatment_yn, y = as.numeric(Estimate.Prop.Change.Gn2))) +
+  geom_point(alpha = 0.1, position = position_jitter(width = 0.1), colour = 'darkblue')+
+  geom_errorbar(aes(x =treatment_yn, ymin = lower.HPD, ymax = upper.HPD),
+                position = position_dodge(width = 0.3), width = 0.3, colour='black') +
+  geom_point(aes(x = treatment_yn, y = emmean), size = 4, colour='black') +
+  labs(x = "Treatment", y = "Strength of association") +
+  ylim(-1, 1) +
+  coord_flip() +
+  theme_classic()+
+  guides(fill = "none") 
+
+
+interaction_means$interaction_present <- as.character(interaction_means$interaction_present)
+slopes_join$interaction_present <- as.character(slopes_join$interaction_present)
+slopes_join_interaction_stats <- left_join(slopes_join, interaction_means, by=c('interaction_present'))
+df_sampled_interaction <- slopes_join_interaction_stats %>%
+  group_by(interaction_present, resolved_taxa_pair, CLIMATE1) %>%
+  mutate(row_number = row_number()) %>%  # Add a row_number column
+  filter(row_number <= min(50, n())) %>%  # Filter to keep up to 100 points per group
+  ungroup() %>%  # Ungroup the data frame
+  select(-row_number)  
+
+#get some example pairs to highlight 
+sample_pairs_interaction <-  df_sampled_interaction %>%
+  filter(treatment_yn=="no", CLIMATE1 == 'Temperate') 
+
+df_sampled_interaction %>%
+  filter(treatment_yn=="no", CLIMATE1 == 'Temperate') %>%
+  ggplot(aes(x = interaction_present, y = as.numeric(Estimate.Prop.Change.Gn2))) +
+  geom_point(alpha = 0.1, position = position_jitter(width = 0.1), colour = 'darkblue')+
+  geom_errorbar(aes(x = interaction_present, ymin = lower.HPD, ymax = upper.HPD),
+                position = position_dodge(width = 0.3), width = 0.3, colour='black') +
+  geom_point(aes(x = interaction_present, y = emmean), size = 4, colour='black') +
+  labs(x = "Interaction present", y = "Strength of association") +
+  ylim(-1, 1) +
+  coord_flip() +
+  theme_classic()+
+  guides(fill = "none")
+
+
 
 
 
@@ -346,7 +413,7 @@ Q2_plot <- ggplot(taxa_pair_betas, aes(x = reorder(effect, -mean), y = mean)) +
   geom_point() +  # Add points
   geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), width = 0.2) +  # Add error bars
   labs(x = "Taxa pair", y = "Strength of Association") +  # Label axes
-  theme_classic() +  # Use a minimal theme (you can customize this)
+  theme_classic() +  # Use a minimxaal theme (you can customize this)
   coord_flip()  # Flip the axes
 Q2_plot
 
