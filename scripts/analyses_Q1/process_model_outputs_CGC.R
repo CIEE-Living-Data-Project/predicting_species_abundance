@@ -110,18 +110,28 @@ ct<-cor.test(alldata$value, alldata$value0)
 #  mutate(mean=mean(accuracy), sd=sd(accuracy))
 
 #pull out means and sds for each observed value 
-#can do by unique value per genus -492k values 
+#for every observation (y_id) -492k values 
 pred_estimates_yid<-group_by(alldata, y_id) %>%mutate(mean_pred=mean(value), sd_pred=sd(value))%>%
   select(value0, mean_pred, sd_pred)%>%distinct(.)%>% mutate(diff=abs(value0-mean_pred))
-#combine with metatdata for taxa pairs 
+#combine with metatdata
 pred_estimates_yid<-left_join(pred_estimates_yid, select(MODDAT, y_id, interaction_present, CLIMATE1, TAXA1, 
                                    RESOLVED.TAXA1, UNIQUE.PAIR.ID))
+#for every genus pair (unique pair id) -22k values 
+pred_estimates_pairid<-mutate(alldata, diff=abs(value0-value))%>%
+  group_by(UNIQUE.PAIR.ID) %>%
+  mutate(mean_obs=mean(value0),mean_pred=mean(value), sd_pred=sd(value), mean_diff=mean(diff), sd_diff=sd(diff))%>%
+  select(mean_obs, mean_pred, sd_pred, mean_diff, sd_diff)%>%
+  distinct(.)
+#combine with metatdata 
+pred_estimates_pairid<-left_join(pred_estimates_pairid, select(MODDAT, interaction_present, CLIMATE1, TAXA1, 
+                                                         RESOLVED.TAXA1, UNIQUE.PAIR.ID))%>%
+  distinct(.)
 
 #or unique values across genera - 6025 values 
 pred_estimates<-group_by(alldata, value0) %>%mutate(mean_pred=mean(value), sd_pred=sd(value))%>%
 select(value0, mean_pred, sd_pred)%>%distinct(.)%>%mutate(diff=abs(value0-mean_pred))
 
-save(alldata, pred_estimates, pred_estimates_yid, file='outputs/Sep2023/Q1_ppc_data.Rdata')
+save(alldata, pred_estimates, pred_estimates_yid, pred_estimates_pairid, file='outputs/Sep2023/Q1_ppc_data.Rdata')
 
 #plot with 1-1 line
 pdf(file = "figures/ppc_plot5.pdf", width = 8, height = 8)
