@@ -71,7 +71,7 @@ dat <- left_join(dat, meta.pairs[, c(1,46)],
 
 dat_select <- dat %>%
   select(UNIQUE.PAIR.ID, TAXA1, TAXA2, CLIMATE1, CLIMATE2, REALM1, REALM2, SERIES.l, 
-         RESOLVED.TAXA1, RESOLVED.TAXA2, UNIQUE.PAIR.ID, treatment_yn, 
+         RESOLVED.TAXA1, RESOLVED.TAXA2, ORGANISMS1, ORGANISMS2, UNIQUE.PAIR.ID, treatment_yn, 
          interaction_present, interaction_benefit, interaction_type, interaction_present)
 
 
@@ -92,6 +92,39 @@ slopes_join <- slopes_join %>%
 colnames(slopes_join)
 
 #Get taxa pairs similar to Gavia's 
+sorted_words <- apply(slopes_join[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
+slopes_join$resolved_taxa_pair <- sorted_words
+unique(slopes_join$resolved_taxa_pair)
+
+#Resolve taxa names in slopes_join 
+slopes_join$RESOLVED.TAXA1 <- ifelse(
+  is.na(slopes_join$RESOLVED.TAXA1),
+  ifelse(
+    slopes_join$ORGANISMS1 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
+    "Insecta",
+    ifelse(slopes_join$ORGANISMS1 == "birds", "Aves", 
+           ifelse(slopes_join$ORGANISMS1 == "rodents", "Mammalia", NA)
+    )
+  ),
+  slopes_join$RESOLVED.TAXA1
+)
+
+
+
+slopes_join$RESOLVED.TAXA2 <- ifelse(
+  is.na(slopes_join$RESOLVED.TAXA2),
+  ifelse(
+    slopes_join$ORGANISMS2 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
+    "Insecta",
+    ifelse(slopes_join$ORGANISMS2 == "birds", "Aves", 
+           ifelse(slopes_join$ORGANISMS2 == "rodents", "Mammalia", NA)
+    )
+  ),
+  slopes_join$RESOLVED.TAXA2
+)
+
+
+
 sorted_words <- apply(slopes_join[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
 slopes_join$resolved_taxa_pair <- sorted_words
 unique(slopes_join$resolved_taxa_pair)
@@ -276,18 +309,28 @@ taxa_means_clim <- Q2mod %>%
   emmeans(~RESOLVED.TAXA.PAIR + CLIMATE1,
           level=0.95,
           at = list(interaction_present = '0', 
-        interaction_present = 'no')
+        treatment_yn = 'no')
           )
 #plot the taxa means 
+
+#get the opposite means
+taxa_means_clim_opposite <- Q2mod %>%
+  emmeans(~RESOLVED.TAXA.PAIR + CLIMATE1,
+          level=0.95,
+          at = list(interaction_present = '0', 
+                    treatment_yn = 'yes')
+  )
 
 
 #save as dataframe 
 taxa_means_clim_df <- as.data.frame(taxa_means_clim)
+taxa_means_clim_opposite_df <- as.data.frame(taxa_means_clim_opposite)
 #rename some variables
 taxa_means_clim_df <- taxa_means_clim_df %>%
   rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR)
+taxa_means_clim_df$treatment_yn <- c("no")
 #merge with slopes join
-slopes_join_stats <- left_join(slopes_join, taxa_means_clim_df, by=c('resolved_taxa_pair', 'CLIMATE1'))
+slopes_join_stats <- left_join(slopes_join, taxa_means_clim_df, by=c('resolved_taxa_pair', 'CLIMATE1', 'treatment_yn'))
 
 df_sampled <- slopes_join_stats %>%
   group_by(resolved_taxa_pair, CLIMATE1) %>%
@@ -300,7 +343,7 @@ custom_colors <- c("Temperate" = "#2E3C4C", "Tropical" = "#006400")
 
 df_sampled %>%
   filter(interaction_present == '0',
-         interaction_present == 'no') %>%
+         treatment_yn == 'no') %>%
 ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y=as.numeric(Estimate.Prop.Change.Gn2), group=CLIMATE1)) +
   geom_point(colour = 'grey', alpha=0.2,
              position = position_jitter(width = 0.08, height = 0), stroke=1) +
@@ -329,6 +372,38 @@ slopes_join_stats %>%
   coord_flip() +
   theme_classic()+
   guides(fill = "none") 
+
+#plot the opposite
+taxa_means_clim_opposite_df <- taxa_means_clim_opposite_df %>%
+  rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR)
+#add a column indicating treatment is yes
+taxa_means_clim_opposite_df$treatment_yn <- c("yes")
+
+taxa_means_clim_all <- rbind(taxa_means_clim_df, taxa_means_clim_opposite_df)
+
+slopes_join_stats_all <- left_join(slopes_join, taxa_means_clim_all, by=c('resolved_taxa_pair', 'CLIMATE1' ,'treatment_yn'))
+
+supp.labs <- c("No disturbance", "Disturbance")
+names(supp.labs) <- c("no", "yes")
+slopes_join_stats_all %>%
+  filter(interaction_present == '0') %>%
+  ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2), fill = CLIMATE1)) +
+  geom_violin(alpha = 0.35, bw=0.05) +  # Violin plot by CLIMATE1
+  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD),
+                color = 'black', position = position_dodge(width = 0.3), width = 1) +
+  geom_point(aes(x = resolved_taxa_pair, y = emmean), color = 'black', size = 2) +
+  labs(x = "Resolved taxa pair", y = "Strength of association", colour = 'Climate') +
+  scale_color_manual(values = custom_colors) +
+  scale_fill_manual(values = custom_colors, guide = guide_legend(override.aes = list(fill = "grey"))) +
+  ylim(-1, 1) +
+  coord_flip() +
+  facet_grid(~treatment_yn, 
+             labeller = labeller(treatment_yn = supp.labs)) + 
+  theme_classic()+
+  guides(fill = "none") 
+
+
+
 
 #Do the same thing but with marginal effects for climate, interaction, disturbance, etc
 climate_means <- Q2mod %>%
