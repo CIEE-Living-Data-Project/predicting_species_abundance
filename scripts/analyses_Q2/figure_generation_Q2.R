@@ -387,7 +387,8 @@ supp.labs <- c("No disturbance", "Disturbance")
 names(supp.labs) <- c("no", "yes")
 slopes_join_stats_all %>%
   filter(interaction_present == '0') %>%
-  ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2), fill = CLIMATE1)) +
+  ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2),
+             fill = CLIMATE1)) +
   geom_violin(alpha = 0.35, bw=0.05) +  # Violin plot by CLIMATE1
   geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD),
                 color = 'black', position = position_dodge(width = 0.3), width = 1) +
@@ -399,6 +400,25 @@ slopes_join_stats_all %>%
   coord_flip() +
   facet_grid(~treatment_yn, 
              labeller = labeller(treatment_yn = supp.labs)) + 
+  theme_classic()+
+  guides(fill = "none") 
+
+
+custom_colors_2 <- c("yes" = "maroon", "no" = "darkblue")
+slopes_join_stats_all %>%
+  filter(interaction_present == '0') %>%
+  ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2),
+             fill = treatment_yn)) +
+  geom_violin(alpha = 0.35, bw=0.05, position='dodge') +  # Violin plot by CLIMATE1
+  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD),
+                color = 'black', position = position_dodge(width = 0.7), width = 1) +
+  geom_point(aes(x = resolved_taxa_pair, y = emmean), color = 'black', size = 2, 
+             position = position_dodge(width = 0.7)) +
+  labs(x = "Resolved taxa pair", y = "Strength of association", colour = 'Disturbance') +
+  scale_color_manual(values = custom_colors_2) +
+  scale_fill_manual(values = custom_colors_2, guide = guide_legend(override.aes = list(fill = "grey"))) +
+  ylim(-1, 1) +
+  coord_flip() +
   theme_classic()+
   guides(fill = "none") 
 
