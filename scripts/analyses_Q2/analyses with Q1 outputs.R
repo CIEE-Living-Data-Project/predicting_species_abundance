@@ -140,6 +140,44 @@ slopes.meta4 <- left_join(slopes.meta3, meta.pairs[, c(1,46)],
 
 slopes.meta4$interaction_present <- as.factor(slopes.meta4$interaction_present)
 
+slopes.meta4$interaction_benefit <- ifelse(slopes.meta4$interaction_benefit=="NA", "no interaction", slopes.meta4$interaction_benefit)
+
+
+### fix NA resolved taxa pairs ####
+# code chunk by EB
+
+# taxa 1
+slopes.meta4$RESOLVED.TAXA1 <- ifelse(
+  is.na(slopes.meta4$RESOLVED.TAXA1),
+  ifelse(
+    slopes.meta4$ORGANISMS1 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
+    "Insecta",
+    ifelse(slopes.meta4$ORGANISMS1 == "birds", "Aves", 
+           ifelse(slopes.meta4$ORGANISMS1 == "rodents", "Mammalia", NA))
+    ),
+  slopes.meta4$RESOLVED.TAXA1
+)
+
+
+# taxa 2
+slopes.meta4$RESOLVED.TAXA2 <- ifelse(
+  is.na(slopes.meta4$RESOLVED.TAXA2)==TRUE,
+  ifelse(
+    slopes.meta4$ORGANISMS2 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
+    "Insecta",
+    ifelse(slopes.meta4$ORGANISMS2 == "birds", "Aves", 
+           ifelse(slopes.meta4$ORGANISMS2 == "rodents", "Mammalia", NA)
+    )
+  ),
+  slopes.meta4$RESOLVED.TAXA2
+)
+
+sorted_words <- apply(slopes.meta4[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
+slopes.meta4$resolved_taxa_pair <- sorted_words
+unique(slopes.meta4$resolved_taxa_pair)
+table(slopes.meta4$resolved_taxa_pair)
+
+
 #### fit model ####
 FAM <- gaussian(link = 'identity')
 
@@ -148,8 +186,9 @@ FAM <- gaussian(link = 'identity')
 MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma = TRUE) ~ 
                 SERIES.l.new + # if two disjoint time series, adding the together to get total length
                 #TAXA1 +
-                CLIMATE1*interaction_present  + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
+                CLIMATE1 + #*interaction_present  + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
                 treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
+                interaction_benefit +
                 #does GLOBI record these genera as potentially interacting
                 #interaction_type #no effect here, so removing bc adds unneseccary complexity. also small sample sizes (eg 1) within some categories reduce power
                 #Centrality_Betweenness_Edge +
@@ -161,7 +200,7 @@ Q2mod <- brm(MODFORM, slopes.meta4, FAM, seed = 042023,
          control = list(adapt_delta=0.99, max_treedepth = 12),    
          chains = 4, iter = 10000, warmup = 500, cores = 4) 
 
-save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYNxClimate.Rdata')      
+save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionBenefit.Rdata')      
 
 # re-run with interaction between interaction_present*CLIMATE1 or type of interaction
 
