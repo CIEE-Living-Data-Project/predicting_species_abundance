@@ -5,6 +5,10 @@
 # script created 25 August 2023 by GLL
 # last updated ______________________
 
+#EB: Adding clear environment 
+rm(list=ls()) 
+
+
 library(brms)
 library(dplyr)
 library(ggplot2)
@@ -12,7 +16,8 @@ library(tidybayes)
 
 #### read in model output from Q1 ####
 # only terrestrial, only within study comparisons
-load("~/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/randomslopes_q1model.Rdata")
+##EB edit - reading in document from Github
+load("outputs/Aug2023/randomslopes_q1model.Rdata")
 #load("~/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/intercept_only_models.Rdata")
 
 head(slopes)
@@ -118,7 +123,7 @@ slopes.meta2$RESOLVED.TAXA.PAIR <- paste0(slopes.meta2$RESOLVED.TAXA1, ".",slope
 #### read in centrality measures ####
 # use edge centralities  since they are immediately comparable to the slopes
 
-edge.centrality <- readRDS("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/centrality_edges.RDS")
+edge.centrality <- readRDS("outputs/Aug2023/centrality_edges.RDS")
 
 
 slopes.meta3 <- left_join(slopes.meta2, edge.centrality,
@@ -146,11 +151,21 @@ slopes.meta4$interaction_benefit <- ifelse(slopes.meta4$interaction_benefit=="NA
 ### fix NA resolved taxa pairs ####
 # code chunk by EB
 
+#Check the NA values and their corresponding organism values 
+dat_na <- slopes.meta4 %>%
+  filter(grepl("\\.NA|NA\\.", RESOLVED.TAXA.PAIR)) 
+
+#double check that the NAs match
+unique(dat_na$ORGANISMS1)
+unique(dat_na$ORGANISMS2)
+#Adjust names below 
+
+
 # taxa 1
 slopes.meta4$RESOLVED.TAXA1 <- ifelse(
   is.na(slopes.meta4$RESOLVED.TAXA1),
   ifelse(
-    slopes.meta4$ORGANISMS1 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
+    slopes.meta4$ORGANISMS1 %in% c("insects", "grasshoppers"),
     "Insecta",
     ifelse(slopes.meta4$ORGANISMS1 == "birds", "Aves", 
            ifelse(slopes.meta4$ORGANISMS1 == "rodents", "Mammalia", NA))
@@ -163,7 +178,7 @@ slopes.meta4$RESOLVED.TAXA1 <- ifelse(
 slopes.meta4$RESOLVED.TAXA2 <- ifelse(
   is.na(slopes.meta4$RESOLVED.TAXA2)==TRUE,
   ifelse(
-    slopes.meta4$ORGANISMS2 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
+    slopes.meta4$ORGANISMS2 %in% c("insects", "grasshoppers"),
     "Insecta",
     ifelse(slopes.meta4$ORGANISMS2 == "birds", "Aves", 
            ifelse(slopes.meta4$ORGANISMS2 == "rodents", "Mammalia", NA)
@@ -173,9 +188,13 @@ slopes.meta4$RESOLVED.TAXA2 <- ifelse(
 )
 
 sorted_words <- apply(slopes.meta4[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
-slopes.meta4$resolved_taxa_pair <- sorted_words
-unique(slopes.meta4$resolved_taxa_pair)
-table(slopes.meta4$resolved_taxa_pair)
+slopes.meta4$RESOLVED.TAXA.PAIR <- sorted_words
+unique(slopes.meta4$RESOLVED.TAXA.PAIR)
+table(slopes.meta4$RESOLVED.TAXA.PAIR)
+
+#double check if there are any more NAs
+dat_na_check <- slopes.meta4 %>%
+  filter(grepl("\\.NA|NA\\.", RESOLVED.TAXA.PAIR)) 
 
 
 #### fit model ####
