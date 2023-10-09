@@ -96,7 +96,7 @@ ggplot(data.frame(table(dat.terr2$RESOLVED.TAXA1)),
        aes(x=fct_reorder(Var1, Freq, .desc=TRUE), 
            y=log(Freq))) +
   #geom_bar(stat = "identity", fill="#66CC66") +
-  geom_col( fill="#66CC66") +
+  geom_col( fill="#3382BF") +
   labs(x = "Taxanomic category", y = "Number of genera") +
   theme_classic() + 
   theme(aspect.ratio = 0.4) +
