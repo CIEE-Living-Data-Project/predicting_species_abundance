@@ -5,10 +5,6 @@
 # script created 25 August 2023 by GLL
 # last updated ______________________
 
-#EB: Adding clear environment 
-rm(list=ls()) 
-
-
 library(brms)
 library(dplyr)
 library(ggplot2)
@@ -140,13 +136,15 @@ load("data/prep_biotime/meta_pairs_10km.RData")
 
 meta.pairs$STUDY_ID <- as.character(meta.pairs$STUDY_ID)
 
-slopes.meta4 <- left_join(slopes.meta3, meta.pairs[, c(1,46)],
+slopes.meta4 <- left_join(slopes.meta3, meta.pairs[, c(1,20,46)],
                           by=c("ID1" = "STUDY_ID"))
 
 slopes.meta4$interaction_present <- as.factor(slopes.meta4$interaction_present)
 
 slopes.meta4$interaction_benefit <- ifelse(slopes.meta4$interaction_benefit=="NA", "no interaction", slopes.meta4$interaction_benefit)
 
+# absolute latitude
+slopes.meta4$abs.lat <- abs(slopes.meta4$CENT_LAT)
 
 ### fix NA resolved taxa pairs ####
 # code chunk by EB
@@ -159,7 +157,6 @@ dat_na <- slopes.meta4 %>%
 unique(dat_na$ORGANISMS1)
 unique(dat_na$ORGANISMS2)
 #Adjust names below 
-
 
 # taxa 1
 slopes.meta4$RESOLVED.TAXA1 <- ifelse(
@@ -192,36 +189,40 @@ slopes.meta4$RESOLVED.TAXA.PAIR <- sorted_words
 unique(slopes.meta4$RESOLVED.TAXA.PAIR)
 table(slopes.meta4$RESOLVED.TAXA.PAIR)
 
+# drop taxa groups that only have one observation
+slopes.meta5 <- subset(slopes.meta4, RESOLVED.TAXA.PAIR!="Monocots.Gnetopsida" & RESOLVED.TAXA.PAIR!="Gnetopsida.Monocots")
+
 #double check if there are any more NAs
-dat_na_check <- slopes.meta4 %>%
+dat_na_check <- slopes.meta5 %>%
   filter(grepl("\\.NA|NA\\.", RESOLVED.TAXA.PAIR)) 
 
 
-#### fit model ####
+
+#### fit associations model ####
 FAM <- gaussian(link = 'identity')
 
 # centrality measures
 # interaction as yes/no
 MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma = TRUE) ~ 
-                SERIES.l.new + # if two disjoint time series, adding the together to get total length
+                scale(SERIES.l.new) + # if two disjoint time series, adding the together to get total length
                 #TAXA1 +
-                CLIMATE1 + #*interaction_present  + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
+                scale(abs.lat) +
+                #CLIMATE1 + #*interaction_present  + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
                 treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
-                interaction_benefit +
+                #interaction_benefit +
                 #does GLOBI record these genera as potentially interacting
-                #interaction_type #no effect here, so removing bc adds unneseccary complexity. also small sample sizes (eg 1) within some categories reduce power
+                interaction_present + 
                 #Centrality_Betweenness_Edge +
                 RESOLVED.TAXA.PAIR 
                 #(1|RESOLVED.TAXA.PAIR) 
                 ) 
 
-Q2mod <- brm(MODFORM, slopes.meta4, FAM, seed = 042023, 
+Q2mod <- brm(MODFORM, slopes.meta5, FAM, seed = 042023, 
          control = list(adapt_delta=0.99, max_treedepth = 12),    
          chains = 4, iter = 10000, warmup = 500, cores = 4) 
 
-save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionBenefit.Rdata')      
+save(Q2mod, file = 'outputs/Sep2023/Q2.model.wTaxa.fixed.wTreatment.abs.lat.Rdata')      
 
-# re-run with interaction between interaction_present*CLIMATE1 or type of interaction
 
 # output models
 # Q2.model.wTaxa: ~ SERIES.l.new + TAXA1 + CLIMATE1 + interaction_type + (1|RESOLVED.TAXA.PAIR) 
@@ -229,7 +230,8 @@ save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionB
 # Q2.model.wTaxa.fixed.wTreatment ~ SERIES.l.new  + CLIMATE1 +treatment_yn + interaction_type + RESOLVED.TAXA.PAIR
 # Q2.model.wTaxa.fixed.wTreatment.interactionYN ~ SERIES.l.new  + CLIMATE1 + treatment_yn + interaction_present + RESOLVED.TAXA.PAIR
 # Q2.model.wTaxa.fixed.wTreatment.interactionYNxClimate ~ SERIES.l.new  + CLIMATE1*interaction_present + treatment_yn  + RESOLVED.TAXA.PAIR
-
+# Q2.model.wTaxa.fixed.wTreatment.interactionBenefit.Rdata ~ SERIES.l.new + CLIMATE1 + treatment_yn + interaction_benefit + resolved.taxa.pair
+# Q2.model.wTaxa.fixed.wTreatment.abs.lat.Rdata ~ SERIES.l.new + abs.lat + treatment_yn + interaction_present + resolved.taxa.pair  *this one also resolves the unclassified taxa and drops Monocots.Gnetopsida associations as only 1 observation in that category
 
 # notes on models
 # all converge, diagnostics look good
@@ -241,7 +243,7 @@ save(Q2mod, file = 'outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionB
 # incorporating centrality will require subsetting data, so waiting to do this
 # prediction vs inference? were we gonna compare results? 
 
-load("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYN.Rdata")
+#load("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYN.Rdata")
 
 #sample size (Bulk_ESS & Tail_ESS) should > 1000 & rhat < 1.1
 summary(Q2mod)
@@ -271,7 +273,7 @@ mod %>%
 # median and 95% quantile interval of the variables, we can apply median_qi()
 mod %>%
   #spread_draws(b_Intercept, sigma) %>% #wide
-  gather_draws(b_Intercept, b_SERIES.l.new, b_CLIMATE1Tropical, 
+  gather_draws(b_Intercept, b_SERIES.l.new, b_abs.lat, 
                b_treatment_ynyes, b_interaction_present1,
                sigma) %>% #long
   median_qi()
@@ -630,4 +632,51 @@ slopes.meta4 %>%
   theme(legend.title = element_blank(),
         )
 
+#### fit predictions model ####
+##### load data ####
+load("outputs/Sep2023/Q1_ppc_data.Rdata")
 
+##### add same meta data as associations df ####
+
+hist(log(pred_estimates_pairid$mean_diff)) # not normal, positive, increasing values above one
+names(pred_estimates_pairid)[1] <- "UniquePairID"
+pred_estimates_pairid$interaction_present <- as.factor(pred_estimates_pairid$interaction_present)
+pred_estimates_pairid2 <- left_join(slopes.meta5, pred_estimates_pairid, 
+                                    by=c("UniquePairID", "interaction_present", "CLIMATE1", "TAXA1"))[, c(5:19, 22:38)]
+
+FAM <- gaussian(link = 'identity')
+
+# use mean_diff and sd_diff for the response variables for the predictive Q2 model
+MODFORM <- bf(1/mean_diff|resp_se(1/sd_diff, sigma = TRUE) ~ # not running this line bc unsure how to use error if log the response
+                scale(SERIES.l.new) + # if two disjoint time series, adding the together to get total length
+                scale(abs.lat) +
+                treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
+                interaction_present + 
+                RESOLVED.TAXA.PAIR 
+) 
+
+# after running above model in lm without error to check for normality, determined that
+# inverse transform works best 
+# apparently can also apply same transformation to sd???
+# eg when converting between units just multiply mean and sd by conversion factor
+
+##### fit model #####
+Q2predictions.mod <- brm(MODFORM, pred_estimates_pairid2, FAM, seed = 042023, 
+             control = list(adapt_delta=0.99, max_treedepth = 12),    
+             chains = 4, iter = 10000, warmup = 500, cores = 4) 
+
+save(Q2predictions.mod, file = 'outputs/Sep2023/Q2.predictions.model.invtransform.Rdata')      
+
+##### diagnostics ####
+# note, would need to back-transform params from log scale to be directly comparable to association model
+summary(Q2predictions.mod)
+
+plot(Q2predictions.mod) # model convergence (L: does distribution mean match estimate? R: did all values get explored?)
+
+# Posterior predictive check: Does data match model? (could be wrong distribution, not all effects modeled)
+pp_check(Q2predictions.mod, ndraws = 100) #posterior predictive checks - are predicted values similar to posterior distribution?
+
+# Pairs plots to diagnose sampling problems (should show Gaussian blobs)
+pairs(Q2predictions.mod)
+
+plot(conditional_effects(Q2predictions.mod)) #fitted parameters and their CI
