@@ -15,6 +15,7 @@ library(tidyverse)
 library("dplyr")
 library("tibble")
 library("readr") 
+library("emmeans")
 library("ggplot2")
 library("magrittr")
 library(progress)
@@ -66,12 +67,12 @@ head(dat)
 #read in the disturbance data
 load("data/prep_biotime/meta_pairs_10km.RData")
 meta.pairs$STUDY_ID <- as.character(meta.pairs$STUDY_ID)
-dat <- left_join(dat, meta.pairs[, c(1,46)],
+dat <- left_join(dat, meta.pairs[, c(1,20, 46)],
                         by=c("ID1" = "STUDY_ID"))
 
 dat_select <- dat %>%
   select(UNIQUE.PAIR.ID, TAXA1, TAXA2, CLIMATE1, CLIMATE2, REALM1, REALM2, SERIES.l, 
-         RESOLVED.TAXA1, RESOLVED.TAXA2, ORGANISMS1, ORGANISMS2, UNIQUE.PAIR.ID, treatment_yn, 
+         RESOLVED.TAXA1, RESOLVED.TAXA2, ORGANISMS1, ORGANISMS2, UNIQUE.PAIR.ID, treatment_yn, CENT_LAT, 
          interaction_present, interaction_benefit, interaction_type, interaction_present)
 
 
@@ -292,34 +293,47 @@ ggplot(slopes_baseline, aes(x = Estimate.Prop.Change.Gn2)) +
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 
 #Part 3: Investigate Gavia's linear model
-load("~/Documents/Work and Career/LDP/Working Group/Q2.model.wTaxa.fixed.wTreatment.interactionYNxClimate.Rdata")
-Q2mod
+load("~/Documents/Work and Career/LDP/Working Group/Q2.model.wTaxa.fixed.wTreatment.abs.lat.scaled.Rdata")
+Q2mod <- Q2mod.assoc
 head(Q2mod$data)
 Q2mod$formula
 Q2mod$fit
-posterior_samples <- posterior_samples(Q2mod, pars = c("b", "sd"))
+#posterior_samples <- posterior_samples(Q2mod, pars = c("b", "sd"))
+
+#get unique series sample values 
 
 #Using emmeans, extract the marginal effects
-climate_means <- Q2mod %>%
-  emmeans(~CLIMATE1 )
+lat_means <- Q2mod %>%
+  emmeans(~abs.lat )
 taxa_means <- Q2mod %>%
-  emmeans(~RESOLVED.TAXA.PAIR )
+  emmeans(~RESOLVED.TAXA.PAIR, 
+          level=0.95,
+          at = list(
+                    interaction_present = '0', 
+                    treatment_yn = 'no'))
+#Get unique latitude values 
+lat_values <- unique(round(Q2mod$data$abs.lat, digits = 0))
 #taxa means at different climates
 taxa_means_clim <- Q2mod %>%
-  emmeans(~RESOLVED.TAXA.PAIR + CLIMATE1,
+  emmeans(~RESOLVED.TAXA.PAIR + abs.lat + SERIES.l.new,
           level=0.95,
-          at = list(interaction_present = '0', 
+          at = list(abs.lat = c(39, 34, 42, 45, 18, 44),
+                SERIES.l.new = c(10, 15, 22, 30, 45), 
+            interaction_present = '0', 
         treatment_yn = 'no')
           )
 #plot the taxa means 
 
 #get the opposite means
 taxa_means_clim_opposite <- Q2mod %>%
-  emmeans(~RESOLVED.TAXA.PAIR + CLIMATE1,
+  emmeans(~RESOLVED.TAXA.PAIR + abs.lat + SERIES.l.new,
           level=0.95,
-          at = list(interaction_present = '0', 
+          at = list(abs.lat = c(39, 34, 42, 45, 18, 44), 
+                    SERIES.l.new = c(10, 15, 22, 30, 45), 
+            interaction_present = '0', 
                     treatment_yn = 'yes')
   )
+
 
 
 #save as dataframe 
@@ -329,79 +343,87 @@ taxa_means_clim_opposite_df <- as.data.frame(taxa_means_clim_opposite)
 taxa_means_clim_df <- taxa_means_clim_df %>%
   rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR)
 taxa_means_clim_df$treatment_yn <- c("no")
-#merge with slopes join
-slopes_join_stats <- left_join(slopes_join, taxa_means_clim_df, by=c('resolved_taxa_pair', 'CLIMATE1', 'treatment_yn'))
+#add a rounded latitude column to slopes_join 
+slopes_join <- slopes_join %>%
+  mutate(abs.lat = round(CENT_LAT, digits = 0))
 
-df_sampled <- slopes_join_stats %>%
-  group_by(resolved_taxa_pair, CLIMATE1) %>%
-  mutate(row_number = row_number()) %>%  # Add a row_number column
-  filter(row_number <= min(100, n())) %>%  # Filter to keep up to 100 points per group
-  ungroup() %>%  # Ungroup the data frame
-  select(-row_number)  
-
-custom_colors <- c("Temperate" = "#2E3C4C", "Tropical" = "#006400")
-
-df_sampled %>%
-  filter(interaction_present == '0',
-         treatment_yn == 'no') %>%
-ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y=as.numeric(Estimate.Prop.Change.Gn2), group=CLIMATE1)) +
-  geom_point(colour = 'grey', alpha=0.2,
-             position = position_jitter(width = 0.08, height = 0), stroke=1) +
-  #geom_hline(yintercept = 0.236448, linetype = "dotted", color = "black")+
-  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, color = CLIMATE1),
-                position = position_dodge(width = 0.3), width = 1) +
-  geom_point(aes(x=resolved_taxa_pair, y=emmean, colour = CLIMATE1), size = 2)+
-  labs(x = "Resolved taxa pair", y = "Strength of association", color = 'Climate') +
-  scale_color_manual(values = custom_colors)+
-  ylim(-1, 1)+
-  coord_flip()+
-  theme_classic()
-
-#with density
-slopes_join_stats %>%
-  filter(treatment_yn == 'no', interaction_present == '0') %>%
-  ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2), fill = CLIMATE1)) +
-  geom_violin(alpha = 0.3, bw=0.05) +  # Violin plot by CLIMATE1
-  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD),
-                color = 'black', position = position_dodge(width = 0.3), width = 1) +
-  geom_point(aes(x = resolved_taxa_pair, y = emmean), color = 'black', size = 2) +
-  labs(x = "Resolved taxa pair", y = "Strength of association", colour = 'Climate') +
-  scale_color_manual(values = custom_colors) +
-  scale_fill_manual(values = custom_colors, guide = guide_legend(override.aes = list(fill = "grey"))) +
-  ylim(-1, 1) +
-  coord_flip() +
-  theme_classic()+
-  guides(fill = "none") 
-
-#plot the opposite
 taxa_means_clim_opposite_df <- taxa_means_clim_opposite_df %>%
   rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR)
 #add a column indicating treatment is yes
 taxa_means_clim_opposite_df$treatment_yn <- c("yes")
 
 taxa_means_clim_all <- rbind(taxa_means_clim_df, taxa_means_clim_opposite_df)
+#rename the slopes column 
+taxa_means_clim_all <- taxa_means_clim_all %>%
+  rename(assigned_sl = SERIES.l.new)
 
-slopes_join_stats_all <- left_join(slopes_join, taxa_means_clim_all, by=c('resolved_taxa_pair', 'CLIMATE1' ,'treatment_yn'))
+#Add a new column in slopes_join saying whether the average value of their 
+#series length is closer to the min, mean, or max
+average_series_length_slopes <- slopes_join %>%
+  group_by(resolved_taxa_pair) %>%
+  summarize(mean_sl = mean(SERIES.l))
 
-supp.labs <- c("No disturbance", "Disturbance")
+reference_values <- c(10, 15, 22, 30, 45)
+average_series_length_slopes$assigned_sl <- sapply(average_series_length_slopes$mean_sl, function(x) {
+  closest_value <- reference_values[which.min(abs(x - reference_values))]
+  closest_value
+})
+
+#Build the values back into slopes_join 
+slopes_join <- left_join(slopes_join, average_series_length_slopes, by=c('resolved_taxa_pair'))
+slopes_join_stats_all <- left_join(slopes_join, taxa_means_clim_all, by=c('resolved_taxa_pair', 'abs.lat' ,'treatment_yn', 'assigned_sl'))
+
+#Filter the data for a violin plot 
+slopes_join_stats_all_filtered <- slopes_join_stats_all %>%
+  filter(interaction_present == '0') %>%
+  group_by(resolved_taxa_pair, abs.lat, treatment_yn) %>%
+  filter(n() >= 2) %>%
+  ungroup()
+
+#Add custom theme
+my.theme<-theme(axis.text=element_text(size=12),
+                axis.title = element_text(size = 14),
+                legend.text=element_text(size=10),
+                legend.title = element_text(size=12),
+                plot.title = element_text(face="bold",size=14,margin=margin(0,0,20,0),hjust = 0.5),
+                axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)),
+                axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0)))
+
+#Add a latitude grouping variable
+# Define the hex codes for light green and dark green
+green_colors <- colorRampPalette(c("#e8f7cf", "#023022"))(6)
+
+slopes_join_stats_all_filtered$abs.lat <- factor(slopes_join_stats_all_filtered$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
+
+supp.labs <- c("No Disturbance", "Disturbance")
 names(supp.labs) <- c("no", "yes")
-slopes_join_stats_all %>%
+figure_4 <- slopes_join_stats_all_filtered %>%
   filter(interaction_present == '0') %>%
   ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2),
-             fill = CLIMATE1)) +
-  geom_violin(alpha = 0.35, bw=0.05) +  # Violin plot by CLIMATE1
-  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD),
-                color = 'black', position = position_dodge(width = 0.3), width = 1) +
-  geom_point(aes(x = resolved_taxa_pair, y = emmean), color = 'black', size = 2) +
-  labs(x = "Resolved taxa pair", y = "Strength of association", colour = 'Climate') +
-  scale_color_manual(values = custom_colors) +
-  scale_fill_manual(values = custom_colors, guide = guide_legend(override.aes = list(fill = "grey"))) +
+             fill = abs.lat)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
+  geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
+  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, group = abs.lat),
+                color = 'black', position = position_dodge(width = 1), width = 1) +
+  geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat),  size = 2, 
+             position = position_dodge(width = 1), colour = 'black') +
+  labs(x = "Resolved taxa pair", y = "Strength of association", fill = 'Latitude') +
+  scale_color_manual(values = green_colors) +
+  scale_fill_manual(values = green_colors) +
   ylim(-1, 1) +
   coord_flip() +
   facet_grid(~treatment_yn, 
              labeller = labeller(treatment_yn = supp.labs)) + 
-  theme_classic()+
-  guides(fill = "none") 
+  theme_bw()+
+  #guides(fill = "none") +
+  theme(
+    panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+    panel.grid.minor.x = element_blank()   # Hide minor x-axis grid lines
+  )+
+  my.theme
+figure_4
+ggsave("figures/figure_4.png", plot = figure_4, width = 11, height = 7, units = 'in')
+
 
 
 custom_colors_2 <- c("yes" = "maroon", "no" = "darkblue")
