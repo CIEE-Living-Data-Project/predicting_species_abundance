@@ -361,7 +361,7 @@ taxa_means_clim_all <- taxa_means_clim_all %>%
 #series length is closer to the min, mean, or max
 average_series_length_slopes <- slopes_join %>%
   group_by(resolved_taxa_pair) %>%
-  summarize(mean_sl = mean(SERIES.l))
+  summarize(mean_sl = median(SERIES.l))
 
 reference_values <- c(10, 15, 22, 30, 45)
 average_series_length_slopes$assigned_sl <- sapply(average_series_length_slopes$mean_sl, function(x) {
@@ -391,7 +391,7 @@ my.theme<-theme(axis.text=element_text(size=12),
 
 #Add a latitude grouping variable
 # Define the hex codes for light green and dark green
-green_colors <- colorRampPalette(c("#e8f7cf", "#023022"))(6)
+green_colors <- colorRampPalette(c("#e9f0ff", "#0d3da8"))(6)
 
 slopes_join_stats_all_filtered$abs.lat <- factor(slopes_join_stats_all_filtered$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
 
@@ -399,7 +399,7 @@ supp.labs <- c("No Disturbance", "Disturbance")
 names(supp.labs) <- c("no", "yes")
 figure_4 <- slopes_join_stats_all_filtered %>%
   filter(interaction_present == '0') %>%
-  ggplot(aes(x = reorder(resolved_taxa_pair, -emmean), y = as.numeric(Estimate.Prop.Change.Gn2),
+  ggplot(aes(x = reorder(resolved_taxa_pair, -as.numeric(abs.lat)), y = as.numeric(Estimate.Prop.Change.Gn2),
              fill = abs.lat)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
   geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
