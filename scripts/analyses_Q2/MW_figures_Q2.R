@@ -4,6 +4,7 @@
 # script created 17 Sept 2023 by MTW
 # last updated ______________________
 
+#### Exploratory Figures not used in MS ####
 # Goals for Sept 17th and following days: 
 # 1) Try to decide on a clean visualization of the genus-genus slopes. Decide whether this should be a panel of Fig 2 or 
 # 2) Conceptual figure - in Illustrator, not R
@@ -58,4 +59,127 @@ terr_density <- slopes_terr %>%
   #faceting by Climate (temperate vs tropical) and taxa 1. 
   facet_wrap(~ CLIMATE1 + RESOLVED.TAXA1);terr_density 
 
+#faceted by climate only
+terr_density_Climate <- slopes_terr %>%
+  ggplot(aes(x = Estimate.Prop.Change.Gn2, group = RESOLVED.TAXA2, fill = RESOLVED.TAXA2)) +
+  geom_density(adjust=1.5, alpha=.4) +
+  xlim(-1.1, 1.1)+
+  labs(x = "Strength of association", y = "Frequency", fill = "Class 2") +
+  theme_classic() +
+  # Increase the size of axis titles and labels
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12)) +
+  #faceting by Climate (temperate vs tropical) and taxa 1. 
+  facet_wrap(~ CLIMATE1);terr_density_Climate 
 
+#Color Brewer - get the hex codes for the "paired" color set.We're considering these because they're colorblind friendly and fairly B&W freindly.
+library(RColorBrewer)
+
+brewer.pal(8, "Set2") #gives the hex values for each color.
+
+
+
+#### Figure 5 plot ####
+#load the Q2 model output, emailed by Gavia on 9/17/2023 and added locally to my WG folder (since it's too big to push/pull)
+# load("C:/Users/miatw/Desktop/predicting_species_abundance/Q2.model.wTaxa.fixed.wTreatment.interactionYNxClimate.Rdata") = this is the old model
+
+# Notes from Gavia's email 10/10/23:
+#1. Continuous predictors are now centred and scaled so that they are directly comparable, these will need to be back transformed for ease of interpretation
+#2. In the predictions model, the response is inverse transformed to meet assumptions of normality, so coefficients will need to be back transformed before interpretation 
+
+#The models that were run are of the form ~ scale(SERIES.l.new) + scale(abs.lat) + treatment_yn + interaction_present + RESOLVED.TAXA.PAIR. After a cursory examination, there are some slight differences between the models, namely if the interaction_present term has credible intervals that cross 0. So this will be interesting to talk about.
+
+#For the figures, proceed with the associations model, as it is less weird than the other one.
+load("C:/Users/miatw/Desktop/predicting_species_abundance/Q2.model.wTaxa.fixed.wTreatment.abs.lat.scaled.Rdata")
+Q2mod <- Q2mod.assoc
+head(Q2mod$data)
+Q2mod$data
+Q2mod$formula
+Q2mod$fit 
+
+# figure 5: association strength x time = Estimate.Prop.Change.Gn2 x SERIES.1.new (? or should I use the scale(Series.1.new)? ) ...and try to color by latitude? Facet by latitude?
+
+lat_values <- unique(round(Q2mod$data$abs.lat, digits = 0)); lat_values 
+# 6 different latitudes
+## Actually I want to try to plot latitude as a 3rd axis, but first I will get the association x time 2D plot:
+
+#Set up workspace with Emily's code from figure_generation_Q2.R, then:
+
+#Hypothesis: As time series length increases, we should see an increase in association strength.
+
+#Overall:
+ggplot(slopes_join_stats_all, 
+       aes(x = SERIES.l, y = emmean)) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  geom_smooth(method = "lm", linewidth = 1, se = FALSE) +
+  labs(x = "Time series length (years)", 
+       y = "Association strength") +
+  #ggtitle("") +
+  theme_classic()
+#We actually see a decrease now?? Is that right?? With the previous model, I thought we were getting positive? Have I done this incorrectly?
+
+#How does this trend differ across latitudes?
+slopes_join_stats_all$abs.lat <- as.factor(slopes_join_stats_all$abs.lat)
+str(slopes_join_stats_all)
+
+fig5_time_lat <- ggplot(slopes_join_stats_all, 
+       aes(x = SERIES.l, y = emmean, colour = abs.lat)) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  geom_smooth(method = "lm", linewidth = 1, se = FALSE) +
+  labs(x = "Time series length (years)", 
+       y = "Association strength") +
+  #ggtitle("") +
+  theme_classic(); fig5_time_lat #that's incredibly ugly, but some latitudes show a positive effect, others are negative
+
+#by Taxa1
+ggplot(slopes_join_stats_all, 
+       aes(x = SERIES.l, y = emmean, colour = TAXA1)) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  geom_smooth(method = "lm", linewidth = 1, se = FALSE) +
+  labs(x = "Time series length (years)", 
+       y = "Association strength") +
+  #ggtitle("") +
+  theme_classic() #hmm. These are just the rough taxa groups of genus 1, but I was curious
+
+#across taxa pairs?
+ggplot(slopes_join_stats_all, 
+       aes(x = SERIES.l, y = emmean, colour = resolved_taxa_pair)) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  geom_smooth(method = "lm", linewidth = 1, se = FALSE) +
+  labs(x = "Time series length (years)", 
+       y = "Association strength") +
+  #ggtitle("") +
+  theme_classic() # this is too messy to use, but interesting to see... within a pair, as the time series increases, there lots of instances of neg effects, and some neutral, a couple are positive.
+
+#But am I even using the right emmeans? I'm pretty sure I am, but I'm going to double check before trying to interpret this too deeply.
+
+fig5_time_pairs <- ggplot(slopes_join_stats_all, 
+       aes(x = SERIES.l, y = emmean, colour = resolved_taxa_pair)) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  geom_smooth(method = "lm", linewidth = 1, se = FALSE) +
+  labs(x = "Time series length (years)", 
+       y = "Association strength") +
+  #ggtitle("") +
+  theme_classic() + 
+  facet_wrap(~abs.lat) #...Weird! Only pairs at 34 latitude show a change (mostly very negative!) in association strength as time increases. Is there something different about studies at this latitude? (or again, do I need to calculate the emmeans differently than Emily did...)
+
+#Also I want to be using SERIES.1.new... that's used in Emily's emmeans, but needs to be added (from Gavia's latest model output) to the slopes_join_stats_all df, then I could use it. Although I'm not sure how much of a difference there is between that and the original SERIES.1? That's a Q for Gavia.
+
+#here it is with all the raw estimates from the model instead of the marginal means
+fig5_time_pairs_raw <- ggplot(slopes_join_stats_all, 
+       aes(x = SERIES.l, y = Estimate.Prop.Change.Gn2, colour = resolved_taxa_pair)) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  geom_smooth(method = "lm", linewidth = 1, se = FALSE) +
+  labs(x = "Time series length (years)", 
+       y = "Association strength") +
+  #ggtitle("") +
+  theme_classic() + 
+  facet_wrap(~abs.lat) 
+
+fig5_time_pairs
+fig5_time_pairs_raw
+
+#AH, I wonder if the solution is just that I need to backtransform the data, and then recalculate the means. I'm going to sleep and will look more into this in the morning. 
