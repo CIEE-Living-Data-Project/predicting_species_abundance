@@ -444,7 +444,7 @@ slopes_join_stats_all$resolved_taxa_pair <- factor(slopes_join_stats_all$resolve
 slopes_join_stats_all$abs.lat <- factor(slopes_join_stats_all$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
 figure_4_noviolin <- slopes_join_stats_all %>%
   filter(interaction_present == '0') %>%
-  mutate(resolved_taxa_pair = fct_reorder(resolved_taxa_pair, CENT_LAT, .fun='max')) %>%
+  #mutate(resolved_taxa_pair = fct_reorder(resolved_taxa_pair, CENT_LAT, .fun='max')) %>%
   ggplot(aes(x = resolved_taxa_pair, y = as.numeric(Estimate.Prop.Change.Gn2))) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
   #geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
