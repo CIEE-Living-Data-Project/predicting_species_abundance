@@ -405,9 +405,9 @@ figure_4 <- slopes_join_stats_all_filtered %>%
   geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
   geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, group = abs.lat),
                 color = 'black', position = position_dodge(width = 1), width = 1) +
-  geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat),  size = 2, 
+  geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat),  size = 3, 
              position = position_dodge(width = 1), colour = 'black') +
-  labs(x = "Resolved taxa pair", y = "Strength of association", fill = 'Latitude') +
+  labs(x = "Taxonomic group", y = "Strength of association", fill = 'Latitude') +
   scale_color_manual(values = green_colors) +
   scale_fill_manual(values = green_colors) +
   ylim(-1, 1) +
@@ -423,6 +423,52 @@ figure_4 <- slopes_join_stats_all_filtered %>%
   my.theme
 figure_4
 ggsave("figures/figure_4.png", plot = figure_4, width = 11, height = 7, units = 'in')
+
+#Rearrange the taxa groups to be by plant-plant, plant-animal, and animal-animal
+unique(slopes_join_stats_all$resolved_taxa_pair)
+interaction_list <- c(
+  "Eudicots.Eudicots", "Eudicots.Gnetopsida",
+  "Eudicots.Magnoliopsida", "Eudicots.Monocots", "Eudicots.Pinopsida", "Gnetopsida.Eudicots",
+  "Gnetopsida.Monocots", "Gnetopsida.Magnoliopsida", "Monocots.Eudicots", "Monocots.Gnetopsida", 
+  "Monocots.Monocots", "Monocots.Magnoliopsida", "Monocots.Pinopsida", "Magnoliopsida.Eudicots", 
+  "Magnoliopsida.Gnetopsida",  "Magnoliopsida.Magnoliopsida",
+  "Magnoliopsida.Monocots", "Magnoliopsida.Pinopsida", "Pinopsida.Magnoliopsida",
+  "Pinopsida.Monocots", "Pinopsida.Eudicots", "Bryopsida.Aves", "Aves.Bryopsida", 
+  "Aves.Aves", "Bivalvia.Gastropoda",
+  "Gastropoda.Bivalvia","Gastropoda.Gastropoda", "Insecta.Insecta", "Mammalia.Mammalia"
+)
+
+slopes_join_stats_all$resolved_taxa_pair <- factor(slopes_join_stats_all$resolved_taxa_pair, 
+                                                   levels = interaction_list)
+
+slopes_join_stats_all$abs.lat <- factor(slopes_join_stats_all$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
+figure_4_noviolin <- slopes_join_stats_all %>%
+  filter(interaction_present == '0') %>%
+  mutate(resolved_taxa_pair = fct_reorder(resolved_taxa_pair, CENT_LAT, .fun='max')) %>%
+  ggplot(aes(x = resolved_taxa_pair, y = as.numeric(Estimate.Prop.Change.Gn2))) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
+  #geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
+  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, group = abs.lat),
+                color = 'black', position = position_dodge(width = 1), width = 1) +
+  geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat, color = abs.lat),  size = 3, 
+             position = position_dodge(width = 1)) +
+  labs(x = "Taxonomic groups", y = "Strength of association", colour = "Latitude") +
+  scale_color_manual(values = green_colors) +
+  scale_fill_manual(values = green_colors) +
+  ylim(-0.3, 0.65) +
+  coord_flip() +
+  facet_grid(~treatment_yn, 
+             labeller = labeller(treatment_yn = supp.labs)) + 
+  theme_bw()+
+  #guides(fill = "none") +
+  theme(
+    panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+    panel.grid.minor.x = element_blank()   # Hide minor x-axis grid lines
+  )+
+  my.theme
+figure_4_noviolin
+ggsave("figures/figure_4_noviolin.png", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
+
 
 
 
