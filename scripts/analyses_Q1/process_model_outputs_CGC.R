@@ -156,17 +156,20 @@ ggplot(data = pred_estimates, aes(x=value0, y=mean_pred))+
 ct2<-cor.test(pred_estimates$mean_pred, pred_estimates$value0)
   
 #plot of corr test on means 
-pdf(file = "figures/ppc_plot0.pdf", width = 8, height = 8)
+library(RColorBrewer)
+brewer.pal(n=5,"Set2")#get some hex codes
+
+pdf(file = "figures/ppc_plot0.pdf", width = 8, height = 6)
 ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
-  geom_point(alpha=0.5)+ 
+  geom_point(alpha=1)+ 
   ylab(" Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
   theme_bw()+
 scale_colour_gradient(
-  low = "blue",
+  low = "#8DA0CB",
   #mid = "blue",
-  high = "yellow",
+  high = "#a6d854",
   #midpoint = 0.15,
   space = "Lab",
   na.value = "grey50",
@@ -180,6 +183,50 @@ scale_colour_gradient(
 #+theme(aes(legend.position="none"))+
 dev.off()
 
+#There's also beige (#E5C494) and grey (#B3B3B3) if you think the yellow is too pale.
+#They're #66C2A5 for teal, and #FFD92F for yellow
+
+#look at distribution of residuals 
+hist(pred_estimates$diff)
+check<-subset(pred_estimates, diff<1) #5438/6025 ~90%
+check2<-subset(pred_estimates, diff<0.5)#4296/6025 ~71% 
+check2.1<-subset(pred_estimates, diff<0.25)#2870/6025 ~71% 
+check2.2<-subset(pred_estimates, diff<0.1)#1350/6025 ~71% 
+
+#only plot those with diff < 0.5 (71% of values) 
+ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
+  geom_point(alpha=1)+
+  ylab(" Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  theme_bw()+
+  scale_colour_gradient(
+    low = "#8DA0CB",
+    #mid = "blue",
+    high = "#FC8D62",
+    #midpoint = 0.15,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+    aesthetics = "colour", name="Residuals")
+
+#ok looks like predictive accuracy is only very good 
+#between observed log change -1, 1
+
+hist(check2$value0)#majority of these have changes <+/- 0.5 (logged)
+hist(check2.1$value0)#majority of these have changes <+/- 0.5 (logged)
+
+check3<-subset(check2.1, check2.1$value0<0.5)#2841/2870 ~99%
+check4<-subset(check2, check2$value0<0.25) #2732/2870 ~95%
+
+#make pretty 
+hist<-ggplot(check2, aes(x=value0)) + 
+  geom_histogram(aes(y=..count..), colour="black", fill="#8da0cb")+
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  geom_density(alpha=.2, fill="#8DA0CB") +
+  theme_bw()+
+  xlab("observed log change in abundance")+
+  ylab("number of observations")+ xlim(-1,1)
 
 # Check the normal distribution of random effects----
 qqnorm(slopes$Estimate.Prop.Change.Gn2, main = "Normal Q-Q plot of random slopes",  bty="n")
@@ -212,17 +259,29 @@ r2<-loo_R2(mod)
 
 
 #plot random slopes ----
+#Fig 1 
 bars<-ggplot(data=slopes, aes(y = UniquePairID, x=Estimate.Prop.Change.Gn2)) + 
-  geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='grey')+ 
+  geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='#8DA0CB')+ 
   geom_vline(xintercept = 0, color='black', lty=2)+
    theme(axis.text.y=element_blank(),  #remove y axis labels
-                axis.ticks.y=element_blank()) + xlab("Group level slope estimates")
+                axis.ticks.y=element_blank()) + xlab("Strength of association")+
+  ylab("Unique genera pair")
+#plot as histogram 
+library(RColorBrewer)
+brewer.pal(n=5,"Set2")#get some hex codes 
 
-geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='grey')+ 
-  geom_vline(xintercept = 0, color='black', lty=2)+
-  theme(axis.text.y=element_blank(),  #remove y axis labels
-        axis.ticks.y=element_blank()) + xlab("Group level slope estimates")
+hist<-ggplot(slopes, aes(x=Estimate.Prop.Change.Gn2)) + 
+  geom_histogram(aes(y=..count..), colour="black", fill="#8DA0CB")+
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  #geom_density(alpha=.2, fill="#8DA0CB") +
+   theme_bw()+
+  xlab("Strength of association")+
+  ylab("Number of pairs")+
+  geom_vline(aes(xintercept=0),
+             color="black", linetype="dashed", size=1)
 
+#combine 
+gridExtra::grid.arrange(hist, bars, nrow=1)
 
 #add posteriors on top 
 #these are equivalent 
@@ -252,3 +311,17 @@ bars + annotation_custom(grob = grob_hist,  xmin=min(postmod2$b_Prop.Change.Gn2)
 
 
 
+#how many negative, neutral, positive?? 
+neutral<-subset(slopes, round(slopes$Estimate.Prop.Change.Gn2)==0)
+ pos<-subset(slopes, round(slopes$Estimate.Prop.Change.Gn2)>0)
+ neg<-subset(slopes, round(slopes$Estimate.Prop.Change.Gn2)<0)
+ 
+ #can also look at CIs crossing zero or not (more accurate)
+ pos<-subset(slopes, slopes$Q2.5.Prop.Change.Gn2>0 & slopes$Q97.5.Prop.Change.Gn2>0)
+ #5643 or 25 % 
+ neg<-subset(slopes, slopes$Q2.5.Prop.Change.Gn2<0 & slopes$Q97.5.Prop.Change.Gn2<0)
+ #148 or <1% %
+ sig<-rbind(pos, neg)
+ neutral<-anti_join(slopes, sig) #17127 or 75%
+
+ 
