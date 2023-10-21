@@ -328,15 +328,175 @@ ggsave("figures/figure_4_noviolin.pdf", plot = figure_4_noviolin, width = 11, he
 
 
 #Do again but with the predictive model 
+#Part 3: Investigate Gavia's linear model
+load("~/Documents/Work and Career/LDP/Working Group/Q2.predictions.model.invtransform.scale.Rdata")
+head(Q2predictions.mod$data)
+Q2predictions.mod$formula
+Q2predictions.mod$fit
+Q2predictions_dat <- Q2predictions.mod$data
+
+
+#Using emmeans, extract the marginal effects
+lat_means_predictions <- Q2predictions.mod %>%
+  emmeans(~lat.scale )
+taxa_means_predictions <- Q2predictions.mod %>%
+  emmeans(~RESOLVED.TAXA.PAIR, 
+          level=0.95,
+          at = list(
+            interaction_present = '0', 
+            treatment_yn = 'no'))
+#Get unique latitude values 
+lat_unique <- unique(Q2predictions.mod$data$lat.scale)
+lat_values <- unique(round(Q2predictions.mod$data$lat.scale, digits = 1))
+lat_abs_values <- unique(round(slopes_join$CENT_LAT, digits = 1))
+
+hist(Q2predictions.mod$data$lat.scale)
+
+
+#taxa means at different climates
+taxa_means_clim_predictions <- Q2predictions.mod %>%
+  emmeans(~RESOLVED.TAXA.PAIR + lat.scale + series.scale,
+          level=0.95,
+          at = list(lat.scale = lat_values,
+                    series.scale = scale_values_list, 
+                    interaction_present = '0', 
+                    treatment_yn = 'no')
+  )
+#plot the taxa means 
+
+#get the opposite means
+taxa_means_clim_predictions_opposite <- Q2predictions.mod %>%
+  emmeans(~RESOLVED.TAXA.PAIR + lat.scale + series.scale,
+          level=0.95,
+          at = list(lat.scale = lat_values,
+                    series.scale = scale_values_list, 
+                    interaction_present = '0', 
+                    treatment_yn = 'yes')
+  )
+
+
+
+
+#save as dataframe 
+taxa_means_clim_predictions_df <- as.data.frame(taxa_means_clim_predictions)
+taxa_means_clim_predictions_opposite_df <- as.data.frame(taxa_means_clim_predictions_opposite)
+
+#rename some variables
+taxa_means_clim_predictions_df <- taxa_means_clim_predictions_df %>%
+  rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR)
+taxa_means_clim_predictions_df$treatment_yn <- c("no")
+
+taxa_means_clim_predictions_opposite_df <- taxa_means_clim_predictions_opposite_df %>%
+  rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR)
+#add a column indicating treatment is yes
+taxa_means_clim_predictions_opposite_df$treatment_yn <- c("yes")
+
+taxa_means_clim_predictions_all <- bind_rows(taxa_means_clim_predictions_df, taxa_means_clim_predictions_opposite_df)
+#rename the slopes column 
+taxa_means_clim_predictions_all <- taxa_means_clim_predictions_all %>%
+  rename(assigned_sl = series.scale) %>%
+  rename(scale.lat = lat.scale)
+
+#Add a new column in slopes_join saying whether the average value of their 
+#series length is closer to the min, mean, or max
+average_series_length_slopes <- Q2predictions_dat %>%
+  group_by(RESOLVED.TAXA.PAIR) %>%
+  summarize(mean_sl = median(series.scale))
+
+average_series_length_slopes$assigned_sl <- sapply(average_series_length_slopes$mean_sl, function(x) {
+  closest_value <- scale_values_list[which.min(abs(x - scale_values_list))]
+  closest_value
+})
+
+#Build the values back into slopes_join 
+Q2predictions_join <- left_join(Q2predictions_dat, average_series_length_slopes, by=c('RESOLVED.TAXA.PAIR'))
+Q2predictions_join <- Q2predictions_join %>%
+  rename(resolved_taxa_pair = RESOLVED.TAXA.PAIR )
+Q2predictions_join <- Q2predictions_join %>%
+  mutate(lat.scale = round(lat.scale, digits = 1))
+taxa_means_clim_predictions_all <- taxa_means_clim_predictions_all %>%
+  rename(assigned_sl = series.scale) %>%
+  rename(lat.scale = scale.lat)
+slopes_join_predictions_all <- left_join(Q2predictions_join, taxa_means_clim_predictions_all, by=c('resolved_taxa_pair', 'lat.scale' ,'treatment_yn', 'assigned_sl'))
+
+#get latitude data from original data
+load("outputs/Sep2023/Q1_ppc_data.Rdata")
+head(pred_estimates_pairid)
+pred_estimates_pairid <- pred_estimates_pairid %>%
+  rename(UniquePairID = UNIQUE.PAIR.ID)
+pred_estimates_withlat <- left_join(pred_estimates_pairid,slopes_join[, c(1,2, 5, 15, 19)],  
+                                    by=c("UniquePairID"))
+
+slopes_join_predictions_all <- left_join(slopes_join_predictions_all, pred_estimates_withlat[, c(5,6, 13)], 
+                                   by=c("mean_diff", "sd_diff"))
+
+
+
+#Add a latitude grouping variable
+# Define the hex codes for light green and dark green
+green_colors <- colorRampPalette(c("#e6f6ff", "#006199"))(6)
+
+#Make a abs.lat column
+slopes_join_predictions_all <- slopes_join_predictions_all %>%
+  filter(!is.na(emmean)) %>%
+  mutate(abs.lat = round(CENT_LAT, digits = 0))
+slopes_join_predictions_all$abs.lat <- factor(slopes_join_predictions_all$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
+#Get the average latitude of each group
+average_lat <- slopes_join_predictions_all %>%
+  group_by(resolved_taxa_pair) %>%
+  summarize(mean_lat = mean(CENT_LAT)) %>%
+  arrange(desc(mean_lat))
+average_lat
+
+
+#Rearrange the taxa groups to be by plant-plant, plant-animal, and animal-animal
+unique(slopes_join_predictions_all$resolved_taxa_pair)
+
+slopes_join_predictions_all$resolved_taxa_pair <- factor(slopes_join_predictions_all$resolved_taxa_pair, 
+                                                   levels = interaction_list)
+
+slopes_join_predictions_all$abs.lat <- factor(slopes_join_predictions_all$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
+
+#Add custom theme
+my.theme<-theme(axis.text=element_text(size=12),
+                axis.title = element_text(size = 14),
+                legend.text=element_text(size=10),
+                legend.title = element_text(size=12),
+                plot.title = element_text(face="bold",size=14,margin=margin(0,0,20,0),hjust = 0.5),
+                axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)),
+                axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0)))
+
+
+figure_4_noviolin_predictions <- slopes_join_predictions_all %>%
+  filter(interaction_present == '0') %>%
+  #mutate(resolved_taxa_pair = fct_reorder(resolved_taxa_pair, CENT_LAT, .fun='max')) %>%
+  ggplot(aes(x = resolved_taxa_pair, y = as.numeric(Estimate.Prop.Change.Gn2))) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
+  #geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
+  geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, group = abs.lat),
+                color = 'black', position = position_dodge(width = 1), width = 1) +
+  geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat, color = abs.lat),  size = 3, 
+             position = position_dodge(width = 1)) +
+  labs(x = "Taxonomic category", y = "Strength of association", colour = "Latitude") +
+  scale_color_manual(values = green_colors) +
+  scale_fill_manual(values = green_colors) +
+  ylim(-0.3, 0.65) +
+  coord_flip() +
+  facet_grid(~treatment_yn) + 
+  theme_bw()+
+  #guides(fill = "none") +
+  theme(
+    panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+    panel.grid.minor.x = element_blank(), 
+    strip.text.x = element_blank()# Hide minor x-axis grid lines
+  )+
+  my.theme
+figure_4_noviolin_predictions
+# ggsave("figures/figure_4_noviolin.png", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
+# ggsave("figures/figure_4_noviolin.pdf", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
+# 
 
 
 
 
 
-
-
-# #So looks like something we could do with this is model the taxa-level 
-# #add a rounded latitude column to slopes_join 
-# slopes_join <- slopes_join %>%
-#   mutate(scale.lat = round(scale(CENT_LAT), digits = 1), 
-#          scale.series = scale(SERIES.l))
