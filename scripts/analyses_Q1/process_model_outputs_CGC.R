@@ -234,10 +234,10 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
   geom_point(alpha=1)+ 
-  ylab(" Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  ylab(" Predicted log change in abundance") + xlab("Observed log change in abundance")  +
   theme_bw()+
-  theme(axis.title = element_text(size = 10), 
-        legend.title = element_text(size = 10))+
+  theme(axis.title = element_text(size = 12), 
+        legend.title = element_text(size = 12))+
   scale_colour_gradient(
     low = "#8DA0CB",
     #mid = "blue",
@@ -257,7 +257,7 @@ b<-ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=dif
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="black", lty=2)+
   geom_point(alpha=1)+
-  ylab("Mean predicted log change in abundance") + 
+  ylab("Predicted log change in abundance") + 
   xlab("Observed log change in abundance")  +
   theme_bw()+ 
   scale_colour_gradient(
@@ -269,8 +269,8 @@ b<-ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=dif
     na.value = "grey50",
     guide = "colourbar",
     aesthetics = "colour", name="Residuals")+
-    theme(axis.title = element_text(size = 8), 
-          legend.title = element_text(size = 8))
+    theme(axis.title = element_text(size = 10), 
+          legend.title = element_text(size = 10))
 
 c<-ggplot(check2, aes(x=value0)) + 
   geom_histogram(aes(y=..count..), colour="black", fill="#8da0cb")+
@@ -279,7 +279,7 @@ c<-ggplot(check2, aes(x=value0)) +
   theme_bw()+
   xlab("observed log change in abundance")+
   ylab("number of observations")+ xlim(-1,1)+
-  theme(axis.title = element_text(size = 8))
+  theme(axis.title = element_text(size = 10))
 
 
 library(gridExtra)
