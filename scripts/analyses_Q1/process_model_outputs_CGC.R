@@ -188,8 +188,8 @@ dev.off()
 hist(pred_estimates$diff)
 check<-subset(pred_estimates, diff<1) #5438/6025 ~90%
 check2<-subset(pred_estimates, diff<0.5)#4296/6025 ~71% 
-check2.1<-subset(pred_estimates, diff<0.25)#2870/6025 ~71% 
-check2.2<-subset(pred_estimates, diff<0.1)#1350/6025 ~71% 
+check2.1<-subset(pred_estimates, diff<0.25)#2870/6025 ~47% 
+check2.2<-subset(pred_estimates, diff<0.1)#1350/6025 ~22% 
 
 #only plot those with diff < 0.5 (71% of values) 
 ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=diff))+
@@ -253,7 +253,7 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
               t = 61.869, df = 6023
               p-value < 2.2e-16", x=5.2, y=-1.2, size=3, hjust=1)  
 
-b<-ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=diff))+
+b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="black", lty=2)+
   geom_point(alpha=1)+
@@ -272,7 +272,7 @@ b<-ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=dif
     theme(axis.title = element_text(size = 10), 
           legend.title = element_text(size = 10))
 
-c<-ggplot(check2, aes(x=value0)) + 
+c<-ggplot(check2.1, aes(x=value0)) + 
   geom_histogram(aes(y=..count..), colour="black", fill="#8da0cb")+
   #geom_histogram(aes(y=..density..), colour="black", fill="white")+
   geom_density(alpha=.2, fill="#8DA0CB") +
