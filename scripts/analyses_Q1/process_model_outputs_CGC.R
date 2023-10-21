@@ -31,7 +31,7 @@ slopes$UniquePairID<-row.names(slopes)
 ppc<-pp_check(mod) #captures mean and variance ok but misses magnitude of mean
 #save(ppc, file='outputs/Aug2023/ppcheck_modq1.Rdata')
 
-load(file = "outputs/Aug2023/ppcheck_modq1.Rdata")
+#load(file = "outputs/Aug2023/ppcheck_modq1.Rdata")
 
 #re-plot for predictive accuracy 
 ppcdata<-ppc$data
@@ -104,8 +104,7 @@ dev.off()
 ct<-cor.test(alldata$value, alldata$value0)
 
 #predictive accuracy----
-#differences on raw values then calculate mean, sd on diffs??
-#this is not making sense to me 9/26/23
+#differences on raw values then calculate mean, sd on diffs
 #alldatay<- mutate(alldata, diff=abs(value0-value), accuracy=(abs(value0-diff)/value0))%>%group_by(y_id)%>%
 #  mutate(mean=mean(accuracy), sd=sd(accuracy))
 
@@ -133,6 +132,8 @@ select(value0, mean_pred, sd_pred)%>%distinct(.)%>%mutate(diff=abs(value0-mean_p
 
 save(alldata, pred_estimates, pred_estimates_yid, pred_estimates_pairid, file='outputs/Sep2023/Q1_ppc_data.Rdata')
 
+load(file = "outputs/Sep2023/Q1_ppc_data.Rdata")
+
 #plot with 1-1 line
 pdf(file = "figures/ppc_plot5.pdf", width = 8, height = 8)
 ggplot(data = pred_estimates, aes(x=value0, y=mean_pred))+
@@ -157,35 +158,32 @@ ct2<-cor.test(pred_estimates$mean_pred, pred_estimates$value0)
   
 #plot of corr test on means 
 library(RColorBrewer)
-brewer.pal(n=5,"Set2")#get some hex codes
+brewer.pal(n=8,"Set2")#get some hex codes
 
 pdf(file = "figures/ppc_plot0.pdf", width = 8, height = 6)
 ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
   geom_point(alpha=1)+ 
-  ylab(" Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  ylab("Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
   theme_bw()+
-scale_colour_gradient(
-  low = "#8DA0CB",
-  #mid = "blue",
-  high = "#a6d854",
-  #midpoint = 0.15,
-  space = "Lab",
-  na.value = "grey50",
-  guide = "colourbar",
+  scale_colour_gradient(
+    low = "#8DA0CB",
+    #mid = "blue",
+    high = "#ff0000",
+    #midpoint = 0.15,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
     aesthetics = "colour", name="Residuals")+
-    annotate("text", label="R2 = 0.38
+  annotate("text", label="R2 = 0.38
               Pearson's R= 0.62
               95% CI (0.608, 0.639)
               t = 61.869, df = 6023
               p-value < 2.2e-16", x=5.2, y=-1.2, size=3, hjust=1)  
 #+theme(aes(legend.position="none"))+
+
 dev.off()
-
-#There's also beige (#E5C494) and grey (#B3B3B3) if you think the yellow is too pale.
-#They're #66C2A5 for teal, and #FFD92F for yellow
-
 #look at distribution of residuals 
 hist(pred_estimates$diff)
 check<-subset(pred_estimates, diff<1) #5438/6025 ~90%
@@ -227,6 +225,71 @@ hist<-ggplot(check2, aes(x=value0)) +
   theme_bw()+
   xlab("observed log change in abundance")+
   ylab("number of observations")+ xlim(-1,1)
+
+
+####Put all together into one multipanel fig 
+#Fig 2----
+
+a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
+  geom_point(alpha=1)+ 
+  ylab(" Mean predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  theme_bw()+
+  theme(axis.title = element_text(size = 10), 
+        legend.title = element_text(size = 10))+
+  scale_colour_gradient(
+    low = "#8DA0CB",
+    #mid = "blue",
+    high = "#ff0000",
+    #midpoint = 0.15,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+    aesthetics = "colour", name="Residuals")+
+  annotate("text", label="R2 = 0.38
+              Pearson's R= 0.62
+              95% CI (0.608, 0.639)
+              t = 61.869, df = 6023
+              p-value < 2.2e-16", x=5.2, y=-1.2, size=3, hjust=1)  
+
+b<-ggplot(subset(pred_estimates,diff<0.5), aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="black", lty=2)+
+  geom_point(alpha=1)+
+  ylab("Mean predicted log change in abundance") + 
+  xlab("Observed log change in abundance")  +
+  theme_bw()+ 
+  scale_colour_gradient(
+    low = "#8DA0CB",
+    #mid = "blue",
+    high = "#Ff0000",
+    #midpoint = 0.15,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+    aesthetics = "colour", name="Residuals")+
+    theme(axis.title = element_text(size = 8), 
+          legend.title = element_text(size = 8))
+
+c<-ggplot(check2, aes(x=value0)) + 
+  geom_histogram(aes(y=..count..), colour="black", fill="#8da0cb")+
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  geom_density(alpha=.2, fill="#8DA0CB") +
+  theme_bw()+
+  xlab("observed log change in abundance")+
+  ylab("number of observations")+ xlim(-1,1)+
+  theme(axis.title = element_text(size = 8))
+
+
+library(gridExtra)
+pdf(file = "figures/Figure2.pdf", width = 12, height = 8)
+grid.arrange(arrangeGrob(a, ncol=1, nrow=1), heights=c(6,2.5), widths=c(3,2), 
+             arrangeGrob(b,c, ncol=1, nrow=2))
+dev.off()
+
+
+
 
 # Check the normal distribution of random effects----
 qqnorm(slopes$Estimate.Prop.Change.Gn2, main = "Normal Q-Q plot of random slopes",  bty="n")
