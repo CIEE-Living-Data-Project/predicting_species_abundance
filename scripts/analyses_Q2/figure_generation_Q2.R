@@ -441,46 +441,31 @@ slopes_join_predictions_all <- slopes_join_predictions_all %>%
   filter(!is.na(emmean)) %>%
   mutate(abs.lat = round(CENT_LAT, digits = 0))
 slopes_join_predictions_all$abs.lat <- factor(slopes_join_predictions_all$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
-#Get the average latitude of each group
-average_lat <- slopes_join_predictions_all %>%
-  group_by(resolved_taxa_pair) %>%
-  summarize(mean_lat = mean(CENT_LAT)) %>%
-  arrange(desc(mean_lat))
-average_lat
+
 
 
 #Rearrange the taxa groups to be by plant-plant, plant-animal, and animal-animal
-unique(slopes_join_predictions_all$resolved_taxa_pair)
 
 slopes_join_predictions_all$resolved_taxa_pair <- factor(slopes_join_predictions_all$resolved_taxa_pair, 
                                                    levels = interaction_list)
 
 slopes_join_predictions_all$abs.lat <- factor(slopes_join_predictions_all$abs.lat, levels = c(18, 34, 39, 42, 44, 45))
 
-#Add custom theme
-my.theme<-theme(axis.text=element_text(size=12),
-                axis.title = element_text(size = 14),
-                legend.text=element_text(size=10),
-                legend.title = element_text(size=12),
-                plot.title = element_text(face="bold",size=14,margin=margin(0,0,20,0),hjust = 0.5),
-                axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)),
-                axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0)))
-
 
 figure_4_noviolin_predictions <- slopes_join_predictions_all %>%
   filter(interaction_present == '0') %>%
   #mutate(resolved_taxa_pair = fct_reorder(resolved_taxa_pair, CENT_LAT, .fun='max')) %>%
-  ggplot(aes(x = resolved_taxa_pair, y = as.numeric(Estimate.Prop.Change.Gn2))) +
+  ggplot(aes(x = resolved_taxa_pair, y = as.numeric(mean_diff))) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
   #geom_violin(alpha = 0.95, bw=0.04, trim=FALSE, position = position_dodge(width = 1), width = 1) +  # Violin plot by CLIMATE1
   geom_errorbar(aes(x = resolved_taxa_pair, ymin = lower.HPD, ymax = upper.HPD, group = abs.lat),
                 color = 'black', position = position_dodge(width = 1), width = 1) +
   geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat, color = abs.lat),  size = 3, 
              position = position_dodge(width = 1)) +
-  labs(x = "Taxonomic category", y = "Strength of association", colour = "Latitude") +
+  labs(x = "Taxonomic category", y = "Predictive accuracy", colour = "Latitude") +
   scale_color_manual(values = green_colors) +
   scale_fill_manual(values = green_colors) +
-  ylim(-0.3, 0.65) +
+  #ylim(-0.3, 0.65) +
   coord_flip() +
   facet_grid(~treatment_yn) + 
   theme_bw()+
@@ -492,11 +477,72 @@ figure_4_noviolin_predictions <- slopes_join_predictions_all %>%
   )+
   my.theme
 figure_4_noviolin_predictions
-# ggsave("figures/figure_4_noviolin.png", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
-# ggsave("figures/figure_4_noviolin.pdf", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
-# 
+ggsave("figures/figure_4_noviolin_predictions.png", plot = figure_4_noviolin_predictions, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_4_noviolin_predictions.pdf", plot = figure_4_noviolin_predictions, width = 11, height = 7, units = 'in')
 
 
+
+#Figure 5
+#Pick four representative groups: two plant, one animal, one animal-plant
+#Aves/Aves
+#Insecta/Insecta
+#Eudicots/Magnoliopsida
+#Aves/Bryopsida 
+
+#Get the different series lengths for the different taxa groups
+table(slopes_join$resolved_taxa_pair, slopes_join$SERIES.l)
+
+#Get our slopes table down to the groups in question
+selected_pairs <- c("Aves.Aves", "Insecta.Insecta","Mammalia.Mammalia", 
+                    "Aves.Bryopsida", 
+                    "Bryopsida.Aves", "Eudicots.Eudicots",  
+                    "Monocots.Magnoliopsida", "Magnoliopsida.Monocots", 
+                    "Magnoliopsida.Magnoliopsida")
+select_groups <- slopes_join %>%
+  filter(resolved_taxa_pair %in% selected_pairs)
+#Add an abs.lat column
+select_groups$abs_lat <- round(select_groups$CENT_LAT, digits =0)
+#Plot the relationships vs the series lengths 
+select_groups$factor_groups <- paste(select_groups$abs_lat, select_groups$treatment_yn, sep = "-")
+unique(select_groups$factor_groups)
+
+#now get four blue colours and four orange colours
+green_colors_2 <- colorRampPalette(c("#b3e3ff", "#005180"))(4)
+orange_colours <- colorRampPalette(c("#ffcf66", "#996900"))(4)
+all_colours <- c(green_colors_2,orange_colours )
+
+#Set up the linetype factoring
+factor_list <- c("18-no", "34-no", "39-no", "45-no", 
+                 "34-yes", "39-yes","42-yes", "44-yes")
+select_groups$factor_groups <- factor(select_groups$factor_groups, 
+                                                   levels = factor_list)
+
+#Come up with a factor table 
+
+#Get summary r-squared values for each group
+# Calculate the overall R-squared for your linear model
+
+series_length_plot <- select_groups %>%
+  ggplot(aes(x=SERIES.l, y=Estimate.Prop.Change.Gn2, color = factor(factor_groups), 
+             shape = factor(treatment_yn))) + 
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey")+
+  geom_point(colour ='darkgrey', alpha = 0.5, size = 2,
+             position = position_jitter(width = 0.1, height = 0)) + 
+  geom_smooth(method = "lm", se = TRUE, 
+              aes(group = factor_groups, fill = factor_groups), size = 2) +
+  facet_wrap(~factor(resolved_taxa_pair, levels = selected_pairs))+
+  scale_color_manual(values = all_colours) +
+  scale_fill_manual(values = all_colours) +
+  ylim(-1, 1)+
+  labs(x = "Length of study", y ="Strength of Association", shape = "Disturbance", 
+       color = "Latitude - Disturbance", fill ="Latitude - Disturbance" )+
+  theme_classic()+
+  my.theme+ 
+  guides(shape = guide_legend(override.aes = list(size = 5)))+
+  theme(legend.key.width = unit(2, "cm"))
+series_length_plot
+ggsave("figures/figure_5.png", plot = series_length_plot, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_5.pdf", plot = series_length_plot, width = 11, height = 7, units = 'in')
 
 
 
