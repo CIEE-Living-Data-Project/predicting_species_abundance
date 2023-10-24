@@ -287,13 +287,14 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   ylab(" Predicted log change in abundance") + xlab("Observed log change in abundance")  +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.text.y  = element_text(hjust = 0),
+        axis.text.y  = element_text(hjust = 0)
         #text = element_text(family = "Ubuntu")
   ) +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
         panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
   my.theme +
+  theme(legend.text=element_text(size=15)) +
   scale_colour_gradient(
     low = "#8DA0CB",
     #mid = "blue",
@@ -302,7 +303,7 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
     space = "Lab",
     na.value = "grey50",
     guide = "colourbar",
-    aesthetics = "colour", name="Residuals")+
+    aesthetics = "colour", name="")+
   annotate("text", label="R2 = 0.38
               Pearson's R= 0.62
               95% CI (0.608, 0.639)
@@ -325,6 +326,7 @@ b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=di
   theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
         panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
   my.theme +
+  theme(legend.text=element_text(size=15)) +
   scale_colour_gradient(
     low = "#8DA0CB",
     #mid = "blue",
@@ -333,15 +335,15 @@ b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=di
     space = "Lab",
     na.value = "grey50",
     guide = "colourbar",
-  aesthetics = "colour", name="Residuals")#+
+  aesthetics = "colour", name="")#+
   # theme(axis.title = element_text(size = 10), 
   #       legend.title = element_text(size = 10))
 
 check2.1<-subset(pred_estimates, diff<0.25)#2870/6025 ~47% 
 c<-ggplot(check2.1, aes(x=value0)) + 
-  geom_histogram(aes(y=..count..), colour="black", fill="#8da0cb")+
+  geom_histogram(aes(y=..count..), colour="white", fill="#AFA7AE")+
   #geom_histogram(aes(y=..density..), colour="black", fill="white")+
-  geom_density(alpha=.2, fill="#8DA0CB") +
+  geom_density(alpha=.2, fill="#AFA7AE") +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y  = element_text(hjust = 0),
