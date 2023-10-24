@@ -48,6 +48,11 @@ slopes.meta$ORGANISMS1 <- ifelse(slopes.meta$ORGANISMS1=="Grasshoppers", "grassh
 slopes.meta$ORGANISMS2 <- ifelse(slopes.meta$ORGANISMS2=="Grasshoppers", "grasshoppers", slopes.meta$ORGANISMS2)
 
 
+# Fix: “Oleacina” was assigned the classification of “Bivalvia”, 
+# but it’s a terrestrial snail in the Gastropoda
+slopes.meta$RESOLVED.TAXA1 [slopes.meta$Gn1 == "Oleacina" ] <- "Gastropoda"
+slopes.meta$RESOLVED.TAXA2 [slopes.meta$Gn2 == "Oleacina" ] <- "Gastropoda"
+
 ##### exploratory plots ####
 # series info
 ggplot(slopes.meta, aes(SERIES.l, Estimate.Prop.Change.Gn2, 
@@ -201,12 +206,16 @@ dat_na_check <- slopes.meta5 %>%
 #### fit associations model ####
 FAM <- gaussian(link = 'identity')
 
-# centrality measures
+# scale predictors
+slopes.meta5$lat.scale <- scale(slopes.meta5$abs.lat)
+slopes.meta5$series.scale <- scale(slopes.meta5$SERIES.l.new)
+
+
 # interaction as yes/no
 MODFORM <- bf(Estimate.Prop.Change.Gn2|resp_se(Est.Error.Prop.Change.Gn2, sigma = TRUE) ~ 
-                scale(SERIES.l.new) + # if two disjoint time series, adding the together to get total length
+                series.scale + # if two disjoint time series, adding the together to get total length
                 #TAXA1 +
-                scale(abs.lat) +
+                lat.scale +
                 #CLIMATE1 + #*interaction_present  + #identical to column CLIMATE2 ie all within study comparisons are within the same climate
                 treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
                 #interaction_benefit +
@@ -221,7 +230,7 @@ Q2mod <- brm(MODFORM, slopes.meta5, FAM, seed = 042023,
          control = list(adapt_delta=0.99, max_treedepth = 12),    
          chains = 4, iter = 10000, warmup = 500, cores = 4) 
 
-save(Q2mod, file = 'outputs/Sep2023/Q2.model.wTaxa.fixed.wTreatment.abs.lat.Rdata')      
+save(Q2mod, file = 'outputs/Oct2023/Q2.model.wTaxa.fixed.wTreatment.abs.lat.scale.Rdata')      
 
 
 # output models
@@ -243,7 +252,7 @@ save(Q2mod, file = 'outputs/Sep2023/Q2.model.wTaxa.fixed.wTreatment.abs.lat.Rdat
 # incorporating centrality will require subsetting data, so waiting to do this
 # prediction vs inference? were we gonna compare results? 
 
-#load("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Aug2023/Q2.model.wTaxa.fixed.wTreatment.interactionYN.Rdata")
+load("/Users/Gavia/Documents/14 U of T/CIEE/predicting_species_abundance/outputs/Sep2023/Q2.model.wTaxa.fixed.wTreatment.abs.lat.Rdata")
 
 #sample size (Bulk_ESS & Tail_ESS) should > 1000 & rhat < 1.1
 summary(Q2mod)
@@ -261,6 +270,9 @@ pairs(mod)
 plot(conditional_effects(Q2mod)) #fitted parameters and their CI
 # need to make sure id is reversible ie monocot.dicot is same as dicot.monocot
 
+# get coefs for summary tables using fixef(mod)
+# this reports mean of posterior
+fixef(Q2mod)
 
 ##### plot random slopes ####
 mod <- Q2mod
@@ -276,7 +288,7 @@ mod %>%
   gather_draws(b_Intercept, b_SERIES.l.new, b_abs.lat, 
                b_treatment_ynyes, b_interaction_present1,
                sigma) %>% #long
-  median_qi()
+  mean_qi()
 
 # summary for all regions [only when have random effect]
 mod %>%
@@ -286,12 +298,13 @@ mod %>%
 # convergence diagnostics
 mod %>%
   #spread_draws(r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR, ]) %>%
-  spread_draws(b_Intercept, b_SERIES.l.new, b_CLIMATE1Tropical, 
-               b_treatment_ynyes, b_interaction_present1, sigma) %>% 
+  spread_draws(b_Intercept, b_SERIES.l.new, b_abs.lat, 
+               b_treatment_ynyes, b_interaction_present1,
+               sigma) %>% 
   summarise_draws()
 
 # maybe we want to know what the overall effect is, ie the global mean as expressed in each region
-mod %>%
+Q2mod %>%
   #spread_draws(b_Intercept, r_RESOLVED.TAXA.PAIR[RESOLVED.TAXA.PAIR,]) %>%
   #median_qi(condition_mean = b_Intercept + r_RESOLVED.TAXA.PAIR) # can change the width of the credible interval
   spread_draws(b_Intercept, b_CLIMATE1Tropical, 
@@ -488,21 +501,72 @@ ggplot(slopes.meta5) +
 # not quite doing what I want, but closer
 # want each marginal slope plotted for each of the taxa.taxa pairs
 # try by just pulling out specifc taxa.pairs--this fixes it!
-library(rphylopic)
+
   
+  
+new.dat1 <- expand.grid(lat.scale = 45.4,
+                       treatment_yn="no",
+                       interaction_present=0,
+                       series.scale= seq(11,18, by=.1),
+                       RESOLVED.TAXA.PAIR="Insecta.Insecta",
+                       Est.Error.Prop.Change.Gn2=mean(subset(slopes.meta5, 
+                                                             RESOLVED.TAXA.PAIR=="Insecta.Insecta" &
+                                                             treatment_yn=="no" &
+                                                             abs.lat == 45.4 &
+                                                             interaction_present==0)$Est.Error.Prop.Change.Gn2))
+new.dat2 <- expand.grid(lat.scale = 39.06966,
+                        treatment_yn="yes",
+                        interaction_present=0,
+                        series.scale= seq(11,18, by=.1),
+                        RESOLVED.TAXA.PAIR="Insecta.Insecta",
+                        Est.Error.Prop.Change.Gn2=mean(subset(slopes.meta5, 
+                                                              RESOLVED.TAXA.PAIR=="Insecta.Insecta" &
+                                                                treatment_yn=="yes" &
+                                                                abs.lat == 39.06966 &
+                                                                interaction_present==0)$Est.Error.Prop.Change.Gn2))
+new.dat3 <- rbind(new.dat1,new.dat2)
+
+pred <- predict(Q2mod, new.dat3)  
+
+pred2 <- cbind(new.dat3, pred)
+
+ggplot(pred2, aes(x = series.scale, y = Estimate, group=as.factor(lat.scale), 
+                  colour=as.factor(lat.scale)
+                  )) + 
+  geom_ribbon(data=pred2, aes(ymin = Q2.5, ymax = Q97.5, fill=as.factor(lat.scale)), 
+              alpha = 0.2, 
+              linewidth = 0) +
+  geom_line(linewidth=2) +
+  # geom_point(data=subset(slopes.meta5, 
+  #                   RESOLVED.TAXA.PAIR=="Insecta.Insecta" #&
+  #                     #treatment_yn=="yes" &
+  #                     #abs.lat == 39.06966 &
+  #                     #interaction_present==0
+  #                     ), 
+  #            aes(SERIES.l.new, Estimate.Prop.Change.Gn2)) +
+  scale_colour_manual(values=c("darkgreen", "blue")) + # obv these colours are horrendous, just chosen randomly to make sure figure is getting adjusted the way it needs to be
+  scale_fill_manual(values=c("darkgreen", "blue")) +
+  theme_classic(base_size = 25) +
+  labs(y="Strength of association", 
+       x="Series length") +
+  theme(plot.background = element_blank(),
+        #strip.text.x = element_text(size=25),
+        plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
+        legend.position="none")
+
+library(rphylopic) 
 # insecta.insecta
 img <- pick_phylopic(name = "libellula pulchella", n = 1)
-A <- slopes.meta4 %>% 
-    subset(RESOLVED.TAXA.PAIR=="Insecta.Insecta" & CLIMATE1=="Temperate" & treatment_yn=="yes") %>%   
-  #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
+slopes.meta5 %>% 
+    subset(RESOLVED.TAXA.PAIR=="Insecta.Insecta" & treatment_yn=="yes") %>%   
+    #data_grid(flipper_length_mm = seq_range(flipper_length_mm, n = 100)) |> 
     group_by(RESOLVED.TAXA.PAIR) %>%
-    add_linpred_draws(mod, ndraws = 100) %>% 
-    ggplot(aes(x = SERIES.l.new), colour=RESOLVED.TAXA.PAIR) +
+    add_linpred_draws(Q2mod, ndraws = 100) %>% 
+    ggplot(aes(x = series.scale, group=lat.scale)) +
     stat_lineribbon(aes(y = .linpred), .width = 0.95,
-                    alpha = 0.5
-                    ) +
-    facet_wrap(treatment_yn~CLIMATE1, scales = "free") +
-    geom_point(data = subset(slopes.meta4, RESOLVED.TAXA.PAIR=="Insecta.Insecta" & CLIMATE1=="Temperate" & treatment_yn=="yes"),
+                    alpha = 0.5, colour="red", fill="blue") +
+    facet_wrap(~treatment_yn, scales = "free") +
+    geom_point(data = subset(slopes.meta5, RESOLVED.TAXA.PAIR=="Insecta.Insecta" & treatment_yn=="yes"),
                aes(y = Estimate.Prop.Change.Gn2), size = 1, alpha = 0.7) +
   theme_classic(base_size = 25) +
   labs(y="Association", 
@@ -510,9 +574,9 @@ A <- slopes.meta4 %>%
   theme(plot.background = element_blank(),
         #strip.text.x = element_text(size=25),
         plot.margin = unit(c(1, 1, 1, 1), "cm"), #r, t, l, b
-        legend.position="none") +
-  add_phylopic(x = 12, y = 1.3, img = img, alpha = .8, ysize = .2) +
-  add_phylopic(x = 16, y = 1.3, img = img, alpha = .8, ysize = .2) 
+        legend.position="none") #+
+  #add_phylopic(x = 12, y = 1.3, img = img, alpha = .8, ysize = .2) +
+  #add_phylopic(x = 16, y = 1.3, img = img, alpha = .8, ysize = .2) 
 
 # mamallia.mamallia
 #img <- pick_phylopic(name = "Giraffa camelopardalis", n = 2)
@@ -642,14 +706,14 @@ hist(log(pred_estimates_pairid$mean_diff)) # not normal, positive, increasing va
 names(pred_estimates_pairid)[1] <- "UniquePairID"
 pred_estimates_pairid$interaction_present <- as.factor(pred_estimates_pairid$interaction_present)
 pred_estimates_pairid2 <- left_join(slopes.meta5, pred_estimates_pairid, 
-                                    by=c("UniquePairID", "interaction_present", "CLIMATE1", "TAXA1"))[, c(5:19, 22:38)]
+                                    by=c("UniquePairID", "interaction_present", "CLIMATE1", "TAXA1"))[, c(5:19, 22:40)]
 
 FAM <- gaussian(link = 'identity')
 
 # use mean_diff and sd_diff for the response variables for the predictive Q2 model
 MODFORM <- bf(1/mean_diff|resp_se(1/sd_diff, sigma = TRUE) ~ # not running this line bc unsure how to use error if log the response
-                scale(SERIES.l.new) + # if two disjoint time series, adding the together to get total length
-                scale(abs.lat) +
+                series.scale + # if two disjoint time series, adding the together to get total length
+                lat.scale +
                 treatment_yn + #is there some sort of disturbance yes/no (fertilizer, fire, grazing etc)
                 interaction_present + 
                 RESOLVED.TAXA.PAIR 
@@ -665,10 +729,15 @@ Q2predictions.mod <- brm(MODFORM, pred_estimates_pairid2, FAM, seed = 042023,
              control = list(adapt_delta=0.99, max_treedepth = 12),    
              chains = 4, iter = 10000, warmup = 500, cores = 4) 
 
-save(Q2predictions.mod, file = 'outputs/Sep2023/Q2.predictions.model.invtransform.Rdata')      
+save(Q2predictions.mod, file = 'outputs/Oct2023/Q2.predictions.model.invtransform.scale.Rdata')      
 
 ##### diagnostics ####
-# note, would need to back-transform params from log scale to be directly comparable to association model
+# need would need to back-transform params from inverse scale to be directly comparable to association model
+
+back.inverse <- function(x) {
+  x^-1
+}
+
 summary(Q2predictions.mod)
 
 plot(Q2predictions.mod) # model convergence (L: does distribution mean match estimate? R: did all values get explored?)
@@ -680,3 +749,9 @@ pp_check(Q2predictions.mod, ndraws = 100) #posterior predictive checks - are pre
 pairs(Q2predictions.mod)
 
 plot(conditional_effects(Q2predictions.mod)) #fitted parameters and their CI
+
+back.inverse(fixef(Q2predictions.mod))
+
+# note brms automatically standardizes, but not scales continious predictors and back transforms them for you
+# suggestion from burkner forums is, rather than back transform, just predict at meaningful values
+
