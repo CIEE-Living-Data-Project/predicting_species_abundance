@@ -13,6 +13,8 @@ library(tidybayes)
 library(brms)
 #library(brmstools)
 library(bayesplot)
+library(cowplot)
+
 
 ##### Read in Associations, predictions model and Q1 model ####
 load("outputs/Oct2023/Q2.model.wTaxa.fixed.wTreatment.abs.lat.scale.Rdata")
@@ -264,12 +266,6 @@ Q2predictions.mod %>%
 ########## Main text figures #########
 # Figure generation
 
-# Figure 1. Conceptual
-
-###### Figure 2. Q1 results #######
-# Q1 predictive accuracy + violin plots
-
-######  Figure 3. Q2 coef plot  #######
 #Add custom theme
 my.theme<-theme(axis.text=element_text(size=20),
                 axis.title = element_text(size = 25),
@@ -278,6 +274,97 @@ my.theme<-theme(axis.text=element_text(size=20),
                 plot.title = element_text(face="bold",size=14,margin=margin(0,0,20,0),hjust = 0.5),
                 axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)),
                 axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0)))
+
+
+###### Figure 2. Q1 results #######
+# Q1 predictive accuracy
+load(file = "outputs/Sep2023/Q1_ppc_data.Rdata")
+
+a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
+  geom_point(alpha=1)+ 
+  ylab(" Predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_colour_gradient(
+    low = "#8DA0CB",
+    #mid = "blue",
+    high = "#ff0000",
+    #midpoint = 0.15,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+    aesthetics = "colour", name="Residuals")+
+  annotate("text", label="R2 = 0.38
+              Pearson's R= 0.62
+              95% CI (0.608, 0.639)
+              t = 61.869, df = 6023
+              p-value < 2.2e-16", x=5.2, y=-1.2, size=5, hjust=1) 
+
+b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=diff))+
+  #geom_smooth(method='lm')+
+  geom_abline(slope=1, intercept=0, color="black", lty=2)+
+  geom_point(alpha=1)+
+  ylab("Predicted log change \nin abundance") + 
+  #xlab("Observed log change in abundance")  +
+  xlab("")  +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_colour_gradient(
+    low = "#8DA0CB",
+    #mid = "blue",
+    high = "#Ff0000",
+    #midpoint = 0.15,
+    space = "Lab",
+    na.value = "grey50",
+    guide = "colourbar",
+  aesthetics = "colour", name="Residuals")#+
+  # theme(axis.title = element_text(size = 10), 
+  #       legend.title = element_text(size = 10))
+
+check2.1<-subset(pred_estimates, diff<0.25)#2870/6025 ~47% 
+c<-ggplot(check2.1, aes(x=value0)) + 
+  geom_histogram(aes(y=..count..), colour="black", fill="#8da0cb")+
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  geom_density(alpha=.2, fill="#8DA0CB") +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  xlab("Observed log change in abundance")+
+  ylab("Number of observations")+ xlim(-1,1) #+
+  # theme(axis.title = element_text(size = 10))
+
+top_row <- plot_grid(b, align = "h", axis = "l", ncol = 1)
+
+bottom_row <- plot_grid(c, align = "h", axis = "l", ncol = 2, rel_widths = c(1, .19))
+
+bc <- plot_grid(top_row, bottom_row, ncol = 1)
+
+abc <- plot_grid(a, bc, ncol=2, rel_widths = c(3, 2))
+#pdf(file = "figures/Figure2.pdf", width = 12, height = 8)
+
+######  Figure 3. Q2 coef plot  #######
 
 # with posterior distribution
 # associations model
