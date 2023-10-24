@@ -234,7 +234,7 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
   geom_abline(slope=1, intercept=0, color="darkblue", lty=2)+
   geom_point(alpha=1)+ 
-  ylab(" Predicted log change in abundance") + xlab("Observed log change in abundance")  +
+  ylab("Predicted log change in abundance") + xlab("Observed log change in abundance")  +
   theme_bw()+
   theme(axis.title = element_text(size = 12), 
         legend.title = element_text(size = 12))+
@@ -277,8 +277,8 @@ c<-ggplot(check2.1, aes(x=value0)) +
   #geom_histogram(aes(y=..density..), colour="black", fill="white")+
   geom_density(alpha=.2, fill="#8DA0CB") +
   theme_bw()+
-  xlab("observed log change in abundance")+
-  ylab("number of observations")+ xlim(-1,1)+
+  xlab("Observed log change in abundance")+
+  ylab("Number of observations")+ xlim(-1,1)+
   theme(axis.title = element_text(size = 10))
 
 
