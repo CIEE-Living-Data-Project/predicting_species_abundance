@@ -294,7 +294,8 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
   theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
         panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
   my.theme +
-  theme(legend.text=element_text(size=15)) +
+  theme(legend.text=element_text(size=15),
+        legend.title=element_text(size=15)) +
   scale_colour_gradient(
     low = "#8DA0CB",
     #mid = "blue",
@@ -303,12 +304,21 @@ a<-ggplot(data = pred_estimates, aes(x=value0, y=mean_pred, colour=diff))+
     space = "Lab",
     na.value = "grey50",
     guide = "colourbar",
-    aesthetics = "colour", name="")+
-  annotate("text", label="R2 = 0.38
-              Pearson's R= 0.62
-              95% CI (0.608, 0.639)
-              t = 61.869, df = 6023
-              p-value < 2.2e-16", x=5.2, y=-1.2, size=5, hjust=1) 
+    aesthetics = "colour", name="Residuals")+
+  annotate("text", label="R^2 = 0.38
+             Pearson's R = 0.62
+             95% CI (0.608, 0.639)
+             t = 61.869, df = 6023
+             p-value < 2.2e-16",
+
+           x=5.2, y=-1.2, size=5, hjust=1) 
+
+# "R^2 == 0.38
+# Pearson's R == 0.62
+#               95% CI (0.608, 0.639)
+#               t = 61.869, df = 6023
+#               p-value < 2.2e-16"
+
 
 b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=diff))+
   #geom_smooth(method='lm')+
@@ -326,7 +336,8 @@ b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=di
   theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
         panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
   my.theme +
-  theme(legend.text=element_text(size=15)) +
+  theme(legend.text=element_text(size=15),
+        legend.title=element_text(size=15)) +
   scale_colour_gradient(
     low = "#8DA0CB",
     #mid = "blue",
@@ -335,7 +346,7 @@ b<-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=di
     space = "Lab",
     na.value = "grey50",
     guide = "colourbar",
-  aesthetics = "colour", name="")#+
+  aesthetics = "colour", name="Residuals")#+
   # theme(axis.title = element_text(size = 10), 
   #       legend.title = element_text(size = 10))
 
