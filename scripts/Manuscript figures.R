@@ -436,6 +436,13 @@ dat_terr2 <- subset(dat_terr1, Metric!="CROSS" &  Type!="Between") %>%
   select(-c("Prop.Change.Gn1", "Prop.Change.Gn2", "YEAR.T","YEAR.T1", "SERIES.start", "SERIES.end")) %>% 
   distinct(.)
 
+# Fix: “Oleacina” was assigned the classification of “Bivalvia”, 
+# but it’s a terrestrial snail in the Gastropoda
+dat_terr2$RESOLVED.TAXA1 [dat_terr2$Gn1 == "Oleacina" ] <- "Gastropoda"
+dat_terr2$RESOLVED.TAXA2 [dat_terr2$Gn2 == "Oleacina" ] <- "Gastropoda"
+
+
+
 dat.terr3 <- dat_terr2
 
 dat.terr3$RESOLVED.TAXA.PAIR <- paste0(dat.terr3$RESOLVED.TAXA1, ".",dat.terr3$RESOLVED.TAXA2)
@@ -499,8 +506,9 @@ ggplot(data.frame(table(dat.terr3$RESOLVED.TAXA1)),
   #geom_col( fill="#3382BF") +
   geom_col() +
   labs(x = "Taxanomic category", y = "Number of genera") +
-  theme_classic() + 
-  theme(legend.position = "none") +
+  theme_classic(base_size = 25) + 
+  theme(legend.position = "none",
+        axis.text=element_text(size=25)) +
   theme(aspect.ratio = 0.4) +
   theme(axis.text.x = element_text(angle = 45, hjust=1)) +
   scale_fill_manual(values = taxaCol) 
@@ -547,7 +555,7 @@ Q2predictions.mod %>%
        y = "Model parameters") +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.text.y  = element_text(hjust = 0),
+        axis.text.y  = element_text(hjust = 0)
         #text = element_text(family = "Ubuntu")
   ) +
   theme_bw(base_size = 25) +
