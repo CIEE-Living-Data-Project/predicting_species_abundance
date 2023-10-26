@@ -392,7 +392,7 @@ fig3 <- Q2mod %>%
                point_size=3, 
                point_interval = "mean_qi",
                interval_size_range=c(1,2)) +
-  labs(x = expression("Association strengh"),
+  labs(x = expression("Association strength"),
        y = "Model parameters") +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
