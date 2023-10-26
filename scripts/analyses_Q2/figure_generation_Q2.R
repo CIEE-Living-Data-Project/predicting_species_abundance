@@ -218,7 +218,6 @@ taxa_means_clim_opposite_df$treatment_yn <- c("yes")
 taxa_means_clim_all <- bind_rows(taxa_means_clim_df, taxa_means_clim_opposite_df)
 #rename the slopes column 
 taxa_means_clim_all <- taxa_means_clim_all %>%
-  rename(assigned_sl = series.scale) %>%
   rename(scale.lat = lat.scale)
 
 #Add a new column in slopes_join saying whether the average value of their 
@@ -239,8 +238,10 @@ Q2_join_join <- Q2_join_join %>%
 Q2_join_join <- Q2_join_join %>%
   mutate(lat.scale = round(lat.scale, digits = 1))
 taxa_means_clim_all <- taxa_means_clim_all %>%
-  rename(assigned_sl = series.scale)
-slopes_join_stats_all <- left_join(Q2_join_join, taxa_means_clim_all, by=c('resolved_taxa_pair', 'lat.scale' ,'treatment_yn', 'assigned_sl'))
+  rename(assigned_sl = series.scale) %>%
+  rename(lat.scale = scale.lat)
+slopes_join_stats_all <- left_join(Q2_join_join, taxa_means_clim_all, 
+                                   by=c('resolved_taxa_pair', 'lat.scale' ,'treatment_yn', 'assigned_sl'))
 
 #Unscale the latitude 
 #Replace slopes_join resolved taxa bivalvia
@@ -322,8 +323,8 @@ figure_4_noviolin <- slopes_join_stats_all %>%
   )+
   my.theme
 figure_4_noviolin
-ggsave("figures/figure_4_noviolin.png", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
-ggsave("figures/figure_4_noviolin.pdf", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_4_noviolin_10262023.png", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_4_noviolin_10262023.pdf", plot = figure_4_noviolin, width = 11, height = 7, units = 'in')
 
 
 
@@ -415,9 +416,10 @@ Q2predictions_join <- Q2predictions_join %>%
 Q2predictions_join <- Q2predictions_join %>%
   mutate(lat.scale = round(lat.scale, digits = 1))
 taxa_means_clim_predictions_all <- taxa_means_clim_predictions_all %>%
-  rename(assigned_sl = series.scale) %>%
+  #rename(assigned_sl = series.scale) %>%
   rename(lat.scale = scale.lat)
-slopes_join_predictions_all <- left_join(Q2predictions_join, taxa_means_clim_predictions_all, by=c('resolved_taxa_pair', 'lat.scale' ,'treatment_yn', 'assigned_sl'))
+slopes_join_predictions_all <- left_join(Q2predictions_join, taxa_means_clim_predictions_all,
+                                         by=c('resolved_taxa_pair', 'lat.scale' ,'treatment_yn', 'assigned_sl'))
 
 #get latitude data from original data
 load("outputs/Sep2023/Q1_ppc_data.Rdata")
@@ -462,7 +464,7 @@ figure_4_noviolin_predictions <- slopes_join_predictions_all %>%
                 color = 'black', position = position_dodge(width = 1), width = 1) +
   geom_point(aes(x = resolved_taxa_pair, y = emmean, group = abs.lat, color = abs.lat),  size = 3, 
              position = position_dodge(width = 1)) +
-  labs(x = "Taxonomic category", y = "Predictive accuracy", colour = "Latitude") +
+  labs(x = "Taxonomic category", y = "Predictive accuracy (1/MAE)", colour = "Latitude") +
   scale_color_manual(values = green_colors) +
   scale_fill_manual(values = green_colors) +
   #ylim(-0.3, 0.65) +
@@ -477,8 +479,8 @@ figure_4_noviolin_predictions <- slopes_join_predictions_all %>%
   )+
   my.theme
 figure_4_noviolin_predictions
-ggsave("figures/figure_4_noviolin_predictions.png", plot = figure_4_noviolin_predictions, width = 11, height = 7, units = 'in')
-ggsave("figures/figure_4_noviolin_predictions.pdf", plot = figure_4_noviolin_predictions, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_4_noviolin_predictions_10262023.png", plot = figure_4_noviolin_predictions, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_4_noviolin_predictions_10262023.pdf", plot = figure_4_noviolin_predictions, width = 11, height = 7, units = 'in')
 
 
 
@@ -534,15 +536,15 @@ series_length_plot <- select_groups %>%
   scale_color_manual(values = all_colours) +
   scale_fill_manual(values = all_colours) +
   ylim(-1, 1)+
-  labs(x = "Length of study", y ="Strength of Association", shape = "Disturbance", 
+  labs(x = "Length of study (years)", y ="Strength of Association", shape = "Disturbance", 
        color = "Latitude - Disturbance", fill ="Latitude - Disturbance" )+
   theme_classic()+
   my.theme+ 
   guides(shape = guide_legend(override.aes = list(size = 5)))+
   theme(legend.key.width = unit(2, "cm"))
 series_length_plot
-ggsave("figures/figure_5.png", plot = series_length_plot, width = 11, height = 7, units = 'in')
-ggsave("figures/figure_5.pdf", plot = series_length_plot, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_5_10262023.png", plot = series_length_plot, width = 11, height = 7, units = 'in')
+ggsave("figures/figure_5_10262023.pdf", plot = series_length_plot, width = 11, height = 7, units = 'in')
 
 
 
