@@ -21,3 +21,8 @@ outputs/Aug2023/mod_q1.terrestrial_withinstudies.Rdata
 outputs/Aug2023/mod_q1.terrestrial_withinstudiesv2.Rdata
 outputs/Aug2023/MCMCtrace_q1model.pdf
 outputs/Aug2023/ppcheck_modq1.Rdata
+
+# working group meeting folders that dont' need to be available for publication:
+tutorials/
+scripts/homework/
+

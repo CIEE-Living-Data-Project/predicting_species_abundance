@@ -4,9 +4,9 @@
 
 **Created by:** Sam Straus
 
-**Date updated:**
+**Date updated:** 27 October 2023
 
-**Updated by:**
+**Updated by:** Sam Straus
 
 This folder stores intermediate data files created during the data pre-processing steps.
 
@@ -24,14 +24,20 @@ This folder stores intermediate data files created during the data pre-processin
 
 -   `log.prop.change.full.data.RDS` created in `scripts/data_processing/Portion.Change.R`. This .RDS file contains all the cleaned pair information with resolved taxonomy, does not include interaction data. This is an intermediary file
 
--   `log.prop.change.interactions.RDS` is created in the `scripts/data_processing/Data.processing.R` script. It integrates interaction information with the `log.prop.change.with.meta.RDS`data file
+-   `log.prop.change.interactions.RDS` is created in the `scripts/data_processing/Data.processing.R` script. It integrates interaction information with the `log.prop.change.with.meta.RDS`data file. This is an outdated version of the file
 
--   log.prop.change.with.meta.BETWEEN.w.taxa.RDS created in `scripts/data_processing/Portion.Change.R`. This .RDS file contains cleaned pair information, with resolved taxonomy, for genus pairs found only between different studies
+-   `log.prop.change.interactions.UPDATED.RDS` is created in the `scripts/data_processing/Data.processing.R` script. It integrates interaction information with the `log.prop.change.with.meta.RDS`data file. This is the updated version of the file
+
+-   `log.prop.change.interactions.hypenated.RDS` is created in the `scripts/data_processing/Data.processing.R` script. It integrates hyphenated interaction information with the `log.prop.change.with.meta.RDS`data file
+
+-   `log.prop.change.with.meta.BETWEEN.w.taxa.RDS` created in `scripts/data_processing/Portion.Change.R`. This .RDS file contains cleaned pair information, with resolved taxonomy, for genus pairs found only between different studies
 
 -   `log.prop.change.with.meta.RDS` contains the log propotional change for all bio pairs, created by Isaac Eckert
 
--   log.prop.change.with.meta.WITHIN.w.taxa.RDS created in `scripts/data_processing/Portion.Change.R`. This .RDS file contains cleaned pair information, with resolved taxonomy, for genus pairs found only within the same study
+-   `log.prop.change.with.meta.WITHIN.w.taxa.RDS` created in `scripts/data_processing/Portion.Change.R`. This .RDS file contains cleaned pair information, with resolved taxonomy, for genus pairs found only within the same study
 
 -   `outdated/` folder containing outdated data files that were created during early stages of data processing.
+
+- `taxa_assignment/` folder containing .csv files on taxa assignments
 
 -   `within.studies.overlap.RDS` contains overlap within study ID with at least 10 overlapping years, only accounting for pairs where each species comes from same study ID, Created by Isaac Eckert
