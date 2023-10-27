@@ -1,6 +1,5 @@
 # predicting_species_abundance
 ### Living Data Project working group to predict species abundance with intertrophic interactions
-
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10048275.svg)](https://doi.org/10.5281/zenodo.10048275)
 
 This project synthesizes data from two large, global datasets: BioTIME and GloBI to quantify pairwise relationships in biodiversity through time and space. It contains four main subdirectories:
