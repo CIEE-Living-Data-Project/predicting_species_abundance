@@ -6,11 +6,12 @@ This project contains four main subdirectories:
 
 -   `data/` contains the raw data (downloaded from BioTIME on 15 March 2023) and the processed data used for analysis
 
--   `figures/` contains exploratory figures created in preliminary analyses
+-   `figures/` contains exploratory and final figures created in analyses
 
 -   `scripts/` contains scripts used in pre-processing and to create the pre-working group homework assignment
 
--   `tutorials/` contains materials used to create the GitHub workshop
+- `outputs/` contains model outputs of the Bayesian regression models
+
 
 [![CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](http://creativecommons.org/licenses/by/4.0/)
 
