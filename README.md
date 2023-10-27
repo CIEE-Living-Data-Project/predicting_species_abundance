@@ -1,6 +1,15 @@
 # predicting_species_abundance
-Living Data Project working group to predict species abundance with intertrophic interactions
+### Living Data Project working group to predict species abundance with intertrophic interactions
 
+This project synthesizes data from two large, global datasets: BioTIME and GloBI. It contains four main subdirectories:
+
+-   `data/` contains the raw data (downloaded from BioTIME on 15 March 2023) and the processed data used for analysis
+
+-   `figures/` contains exploratory and final figures created in analyses
+
+-   `scripts/` contains scripts used in pre-processing and to create the pre-working group homework assignment
+
+- `outputs/` contains model outputs of the Bayesian regression models
 
 [![CC BY 4.0][cc-by-shield]][cc-by]
 
