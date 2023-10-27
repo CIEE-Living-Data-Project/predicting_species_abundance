@@ -24,5 +24,7 @@ outputs/Aug2023/ppcheck_modq1.Rdata
 
 # working group meeting folders that dont' need to be available for publication:
 tutorials/
+tutorials/_README.md
+tutorials/GitHub_Tutorial_Agenda.Rmd
 scripts/homework/
 
