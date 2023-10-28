@@ -431,7 +431,7 @@ fig3 <- Q2mod %>%
                "b_lat.scale", 
                "b_Intercept" )) +
   guides(fill = "none") +
-  scale_fill_manual(values=c("#009E73", "grey50","#0072B2" ,"#E69F00" ,"#CC79A7"))
+  scale_fill_manual(values=c("#009E73", "grey50","#0072B2" ,"#CC79A7","#E69F00" ))
 fig3
 
 ######  Figure 4. Q2 coef plot  #######
@@ -590,7 +590,7 @@ Q2predictions.mod %>%
                "b_lat.scale", 
                "b_Intercept" )) +
   guides(fill = "none") +
-  scale_fill_manual(values=c("#009E73", "grey50","#0072B2" ,"#E69F00" ,"#CC79A7"))
+  scale_fill_manual(values=c("#009E73", "grey50","#0072B2" ,"#CC79A7","#E69F00" ))
 
 
 ###### Barplot genera pair by latitude ######
