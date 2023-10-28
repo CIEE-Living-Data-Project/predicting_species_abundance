@@ -153,6 +153,22 @@ dat_na_check <- slopes.meta5 %>%
 
 
 ###### Calculations for results section #####
+
+#how many negative, neutral, positive?? 
+neutral<-subset(slopes, round(slopes$Estimate.Prop.Change.Gn2)==0)
+pos<-subset(slopes, round(slopes$Estimate.Prop.Change.Gn2)>0)
+neg<-subset(slopes, round(slopes$Estimate.Prop.Change.Gn2)<0)
+
+#can also look at CIs crossing zero or not (more accurate)
+pos<-subset(slopes, slopes$Q2.5.Prop.Change.Gn2>0 & slopes$Q97.5.Prop.Change.Gn2>0)
+#5643 or 25 % 
+neg<-subset(slopes, slopes$Q2.5.Prop.Change.Gn2<0 & slopes$Q97.5.Prop.Change.Gn2<0)
+#148 or <1% %
+sig<-rbind(pos, neg)
+neutral<-anti_join(slopes, sig) #17127 or 75%
+
+
+# calculate taxonomic slopes, including baseline
 paste0("b_", rownames(fixef(Q2mod))[6:29])
 Q2mod %>%
   spread_draws(b_Intercept, b_RESOLVED.TAXA.PAIRAves.Bryopsida,
@@ -596,17 +612,50 @@ ggplot(data=slopes.meta5, aes(x=abs.lat)) +
   guides(fill = "none") #+
   #scale_fill_manual(values=c("#66C2A5", "grey50","#8DA0CB" ,"#FC8D62" ,"#E78AC3"))
 
+######## Plot random slopes from Q1 model ####
+ 
+bars<-ggplot(data=slopes, aes(y = UniquePairID, x=Estimate.Prop.Change.Gn2)) + 
+  geom_pointrange(aes(xmin=Q2.5.Prop.Change.Gn2, xmax=Q97.5.Prop.Change.Gn2), size=0.01, alpha=0.5, color='#8DA0CB')+ 
+  geom_vline(xintercept = 0, color='black', lty=2)+
+  theme_bw(base_size = 25) +
+  theme(panel.grid   = element_blank(),
+        panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  xlab("Strength of association")+
+    theme(axis.text.y=element_blank(),  #remove y axis labels
+        axis.ticks.y=element_blank()) + 
+  ylab("Unique genera pair") +
+  my.theme
+
+#plot as histogram 
+library(RColorBrewer)
+brewer.pal(n=5,"Set2")#get some hex codes 
+
+hist<-ggplot(slopes, aes(x=Estimate.Prop.Change.Gn2)) + 
+  geom_histogram(aes(y=..count..), colour="black", fill="#8DA0CB")+
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  #geom_density(alpha=.2, fill="#8DA0CB") +
+  theme_bw()+
+  xlab("Strength of association")+
+  ylab("Number of pairs")+
+  geom_vline(aes(xintercept=0),
+             color="black", linetype="dashed", size=1)+
+  theme(panel.grid   = element_blank(),
+       axis.ticks.y = element_blank(),
+       axis.text.y  = element_text(hjust = 0),
+       #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme 
+
+#combine 
+gridExtra::grid.arrange(hist, bars, nrow=1)
 
 
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-###############################################################################
-#Emily's Figure 4, Sup Fig 4, and Fig 5 Code
-
-
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
+##### Emily's Figure 4, Sup Fig 4, and Fig 5 Code ######
+# much of this is redundant with the data read in at the top---need to clean this up
 
 #Part 1: Read in random slopes, get a sense of the data, and set up Q2 analysis 
 load("outputs/Aug2023/randomslopes_q1model.Rdata")
