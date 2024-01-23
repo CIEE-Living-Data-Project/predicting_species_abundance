@@ -66,7 +66,7 @@ biotime <- mutate(biotimex, sum.allrawdata.ABUNDANCE = #change abundance column
 biotime<-rename(biotime, ID=STUDY_ID) #rename for clarity CGC
 head(biotime)
 
-save(collated.biotime.nopairs, file = 'data/prep_biotime/collated.biotime.nopairs.RData')
+save(biotime, file = 'data/prep_biotime/collated.biotime.nopairs.RData')
 
 
 
