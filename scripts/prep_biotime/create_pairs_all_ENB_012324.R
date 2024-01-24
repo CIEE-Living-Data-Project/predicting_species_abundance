@@ -300,7 +300,7 @@ unique(meta.pairs$LICENSE)
 
 
 # Save
-# save(meta.pairs, file = 'data/prep_biotime/meta_pairs_10km.RData')
+ save(meta.pairs, file = 'data/prep_biotime/meta_pairs_all_ENB_012324.RData')
 # write.csv(meta.pairs, file = 'data/prep_biotime/meta_pairs_10km.csv', row.names = F)
 # 
 
