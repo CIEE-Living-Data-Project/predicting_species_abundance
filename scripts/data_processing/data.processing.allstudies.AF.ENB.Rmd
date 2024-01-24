@@ -8,7 +8,7 @@ editor_options:
 ---
 
 ```{r}
-
+rm(list=ls()) 
 #Filtering BIOtime (collated pairs)
 library(tidyverse) # a suite of tidy packages useful for data manipulation
 library("dplyr") # data manipulation
@@ -33,9 +33,9 @@ source("functions_portion_change.R")
 
 ```{r}
 #load data
-load("data/prep_biotime/collated_pairs.RData") #full dataset with species/abundances
-load('data/prep_biotime/bio_pairs_10km.RData') #"key" with overlapping studies, and reference to species in collated.pairs
-load('data/prep_biotime/meta_pairs_10km.RData') #biotime metadata for 10 km pairs to use
+load("data/prep_biotime/collated.biotime.all.ENB.012324.RData") #full dataset with species/abundances
+load('data/prep_biotime/bio_pairs_all_ENB_012324.RData') #"key" with overlapping studies, and reference to species in collated.pairs
+load('data/prep_biotime/meta_pairs_all_ENB_012324.RData') #biotime metadata for 10 km pairs to use
 #subseted<-collated.pairs[1:10000,]
 
 
@@ -89,18 +89,20 @@ temp <- filtered.collated.pairs %>%
 
 plot <- ggplot(data = temp, aes(x = YEAR, y = EFFORT.YEAR, group = ID, color = ID)) +
   theme_classic() +
+  theme(legend.position = "none")
   geom_line();plot
 
 ```
 
-Zooming in on studies other than those 4 studies:
+Zooming in on studies other than those 5 studies:
 
 ```{r}
 
 plot2 <- temp %>% 
-  filter(!(ID %in% c(54, 295, 296, 355))) %>% 
+  filter(!(ID %in% c(298, 54, 295, 296, 355))) %>% 
   ggplot(aes(x = YEAR, y = EFFORT.YEAR, group = ID, color = ID)) + 
   theme_classic() +
+  theme(legend.position = "none")
   geom_line();plot2
 
 ```
@@ -132,6 +134,9 @@ standardizes Lat/Long within each study - Aggregated species to the
 genus level - tested to make sure quantile calculation is correct
 
 ```{r}
+#Filter collated pairs to only terrestrial realm
+collated.pairs_standardized <- collated.pairs_standardized %>%
+  filter(REALM=="Terrestrial")
 
 collated.pairs_standardized_summary <- collated.pairs_standardized %>% #read in filtered collated pairs
   group_by(ID,YEAR,GENUS,TAXA, ORGANISMS, CLIMATE, REALM) %>% #group by study, location, genus
@@ -164,32 +169,31 @@ collated.pairs_standardized_summary <- collated.pairs_standardized %>% #read in 
 #3. Find overlapping consecutive years for all pairs
 
 ```{r}
-bio.pairs <- read_csv("data/prep_biotime/bio_pairs_10km.csv")
+load("data/prep_biotime/bio_pairs_all_ENB_012324.RData'.Rdata")
 ```
 
 #### Run for BETWEEN studies
 
 ```{r}
-
-pb<-set.prog.bar(nrow(bio.pairs)) #sets progress bar
-between.studies.overlap=data.frame(matrix(ncol=5,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Max.Overlap","Type","PAIR.ID")))) #makes an empty dataframe
-for (h in 1:nrow(bio.pairs)){
-  pb$tick()
-  data.pair<-calc.overlap.between(h,collated.pairs_standardized_summary)
-  between.studies.overlap<-rbind(between.studies.overlap,data.pair)
-  
-} #populates dataframe with pairs
+# 
+# pb<-set.prog.bar(nrow(bio.pairs)) #sets progress bar
+# between.studies.overlap=data.frame(matrix(ncol=5,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Max.Overlap","Type","PAIR.ID")))) #makes an empty dataframe
+# for (h in 1:nrow(bio.pairs)){
+#   pb$tick()
+#   data.pair<-calc.overlap.between(h,collated.pairs_standardized_summary)
+#   between.studies.overlap<-rbind(between.studies.overlap,data.pair)
+#   
+# } #populates dataframe with pairs
 
 ```
 
 #### Run for WITHIN studies
 
 ```{r}
-
 pb<-set.prog.bar(length(unique(c(bio.pairs$ID.1,bio.pairs$ID.2)))) #sets progress bar
 within.studies.overlap=data.frame(matrix(ncol=5,nrow=0, dimnames=list(NULL, c("Gn1", "Gn2", "Max.Overlap","Type","PAIR.ID")))) #makes an empty dataframe
 for (h in 1:length(unique(c(bio.pairs$ID.1,bio.pairs$ID.2)))){
-  #pb$tick()
+  pb$tick()
   id=unique(c(bio.pairs$ID.1,bio.pairs$ID.2))[h]
   data.pair<-calc.overlap.within(id,collated.pairs_standardized_summary)
   within.studies.overlap<-rbind(within.studies.overlap,data.pair)
@@ -202,9 +206,11 @@ for (h in 1:length(unique(c(bio.pairs$ID.1,bio.pairs$ID.2)))){
 
 ```{r}
 
-overlap.all.pairs<-rbind(between.studies.overlap,within.studies.overlap)
+#Since between not calculated, write 
+#within studies as all 
+overlap.all.pairs<-within.studies.overlap
 
-#saveRDS(between.studies.overlap,"data/data_processing/between.studies.overlap.RDS")
+#saveRDS(within.studies.overlap,"data/data_processing/within.studies.overlap.ENB.012324.RDS")
 
 ```
 
@@ -212,9 +218,7 @@ Load previously saved version
 
 ```{r}
 
-between.studies.overlap <- readRDS("./data/data_processing/between.studies.overlap.RDS")
 
-head(between.studies.overlap)
 
 ```
 
@@ -223,19 +227,9 @@ head(between.studies.overlap)
 Load data
 
 ```{r}
+#Rename within studies as between so subsequent code runs as written 
 
-load("../data/data_processing/outdated/cleaned_collated_standardized_MSF.Rdata") #NOTE WE ARE LOADING OUTDATED DATA - CHECK WHAT DATA IS REPLACING IT (Isac?)
-
-bio.pairs <- read.csv("data/prep_biotime/bio_pairs_10km.csv")
-meta.pairs <- read.csv("data/prep_biotime/meta_pairs_10km.csv")
-
-# between
-
-between.studies.overlap<-readRDS("../data/data_processing/between.studies.overlap.RDS")
-
-# within
-
-# within.studies.overlap<-readRDS("data/data_processing/within.studies.overlap.RDS")
+between.studies.overlap<-within.studies.overlap
 
 
 ```
@@ -249,11 +243,13 @@ Select only pairs that overlap for a minimum of 10 years
 pairs.keep=between.studies.overlap[which(between.studies.overlap$Max.Overlap>9),] #this is generated in the Overlap script
 
 
-# within
-
-#pairs.keep=within.studies.overlap[which(within.studies.overlap$Max.Overlap>9),]
-
 head(pairs.keep)
+
+#Adjust the PAIR.ID column to match between.pairs
+#So code below runs as expected 
+pairs.keep <- pairs.keep %>%
+  mutate(PAIR.ID = paste0(PAIR.ID, "_", PAIR.ID))
+
 
 ```
 
@@ -810,7 +806,7 @@ colnames(log_change)[26] <- "interaction_found"
 
 #saveRDS(log_change, "data/data_processing/log.prop.change.interactions.RDS")
 
-``` 
+```
 
 Do positive negative neutral
 
