@@ -28,7 +28,7 @@ rm(list=ls())
 
 
 #read in the full dataset used for Q1 and Q2 analysis
-log.prop.change.with.meta <-read.csv("~/Documents/Work and Career/LDP/Working Group/within.study.updated.data.csv")
+log.prop.change.with.meta <-read.csv("~/Documents/Work and Career/LDP/Working Group/within.study.updated.data.050224.csv")
 log_change <- log.prop.change.with.meta
 
 head(log.prop.change.with.meta)
@@ -571,7 +571,7 @@ all_interactions_pairs <- distinct(all_interactions_pairs)
 #will manually inspect
 #Unfortunately, pollination also seems to be a mistake - it's always plant to plant
 mistake_interactions <- c("hasHost", "pathogenOf", "hemiparasiteOf", 'hostOf', 'pathogenOf', 
-                          'hasVector', 'parasiteOf', 'hasParasite', 'hasPathogen', "endoparasiteOf", 'pollinates')
+                          'hasVector', 'parasiteOf','ectoparasiteOf', 'hasParasite', 'hasPathogen', "endoparasiteOf", 'pollinates')
 mistake_rows <- all_interactions %>%
   filter(interaction %in% mistake_interactions)
 #In general, these appear to be implausible
@@ -618,13 +618,13 @@ unique_interactions_1 <-summary_interactions %>%
 cased_interactions<- all_interactions_2%>%
   mutate(
     interaction_type = case_when(
-      interaction %in%  c("preysOn", "preyedUponBy", "eatenBy", "eats") ~ "predator_prey",
+      interaction %in%  c("preysOn", "preyedUponBy", "eatenBy", "eats", "killedBy") ~ "predator_prey",
       interaction %in% c("mutualistOf") ~ "mutualism",
       interaction %in% c("hasDispersalVector", "dispersalVectorOf") ~ "dispersal",
       interaction %in% c("pollinates") ~ "pollination", 
       interaction %in% c("hostOf", "hemiparasiteOf", "hasParasite", "parasiteOf", "hasHost") ~ "parasitism", 
       interaction %in% c("interactsWith", "flowersVisitedBy", "visits", "visitsFlowersOf", "visitedBy", "adjacentTo", 
-                         "ecologicallyRelatedTo") ~ "uncategorized_interaction",
+                         "ecologicallyRelatedTo", "coOccursWith") ~ "uncategorized_interaction",
       TRUE ~ interaction
     ),
     .keep = "unused"
@@ -714,7 +714,7 @@ distinct_pairs <- cased_interactions_filtered_3 %>%
   distinct()
 
 #Read in interactions 
-log_change <- read_csv("~/Documents/Work and Career/LDP/Working Group/within.study.updated.data.csv")
+log_change <- read.csv("~/Documents/Work and Career/LDP/Working Group/within.study.updated.data.050224.csv")
 head(log_change)
 
 # Create a new column in df2 called "interaction" and initialize all values to 0
@@ -744,7 +744,9 @@ for (i in 1:nrow(log_change)) {
   }
 }
 
-saveRDS(log_change, "data/data_processing/log.prop.change.interactions.012924ENB.RDS")
+saveRDS(log_change, "data/data_processing/log.prop.change.interactions.020724ENB.RDS")
+write.csv(log_change, "data/data_processing/within.study.updated.interactions.020724ENB.csv")
+
 saveRDS(cased_interactions_filtered_3, "data/preprocessing/all.interactions.genus.pairs.012924.ENB.RDS")
 
 
