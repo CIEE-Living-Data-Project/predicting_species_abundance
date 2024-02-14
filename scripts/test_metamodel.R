@@ -1,8 +1,7 @@
-#alldat<-read.csv("data/data_processing/within.study.updated.data.csv")# load without interactions for smaller df
-
-alldat<-readRDS("data/data_processing/within.study.updated.interactions.020724ENB.RDS")
-
 library(tidyverse)
+
+alldat<-readRDS("data/data_processing/within.study.updated.interactions.020724ENB.RDS") #current full dataset, update w/ final version
+
 
 names(alldat)
 alldat<-group_by(alldat, TS_ID)%>%mutate(cor=cor(Log.prop.change.Gn1, Log.prop.change.Gn2)) #calculate pearson's cor for all time series 
