@@ -35,8 +35,8 @@ names(moddat)
 #add in treatment info
 #this will need to get expanded to >10km for full dataset 
 #probably need to go back to the full metadata table methods for each study 
-load("data/prep_biotime/BioTIMEMetadata_24_06_2021.csv")
-moddat<-left_join(moddat, meta.pairs[, c(1,20,46)])
+load("data/prep_biotime/meta_pairs_10km.RData")
+moddat<-left_join(moddat, meta.pairs[, c(1,20,46)])0
 names(moddat)
 
 #set some priors 
