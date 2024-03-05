@@ -540,7 +540,7 @@ drawWorld<-function(lats) {
                legend.position="none",axis.ticks=element_blank(), axis.text.x=element_blank(), axis.text.y=element_blank())
   
   if(lats=="y") {
-    g1<-g1+geom_hline(yintercept=23.5, colour="red")+geom_hline(yintercept =-23.5, colour="red")
+    g1<-g1+geom_hline(yintercept=23.5, colour="darkred")+geom_hline(yintercept =-23.5, colour="darkred")
     g1<-g1+geom_hline(yintercept=66.5, colour="darkblue")+geom_hline(yintercept =-66.5, colour="darkblue")
   }
   else { return(g1) }
@@ -549,10 +549,13 @@ drawWorld<-function(lats) {
 
 # Now let's use the above function to plot these studies across the globe
 (gplot <- drawWorld("y") + 
-    geom_point(data=left_join(dat.terr3, meta.pairs, by=c("ID1" = "STUDY_ID")), 
-               aes(x=CENT_LONG, y=CENT_LAT, colour = RESOLVED.TAXA1, size = SERIES.l), 
-               alpha=0.1)) +
-  scale_colour_manual(values=taxaCol)
+    geom_point(data=distinct(select(moddat, LONGITUDE, LATITUDE, Elevation, SERIES.l, STUDY_ID)), 
+               aes(x=LONGITUDE, y=LATITUDE, 
+                   #colour = RESOLVED.TAXA1, 
+                   colour = Elevation, 
+                   size = SERIES.l), 
+               alpha=0.4)) #+
+  #scale_colour_manual(values=taxaCol)
 
 
 ###### Predictions model coef plot, main hypotheses #####
