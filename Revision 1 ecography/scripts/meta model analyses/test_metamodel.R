@@ -128,15 +128,6 @@ length(na.omit(moddat$abs.total.indivsGn1mGn2)) # 401,804
 # update column numbers when re-run mutate
 pairs(moddat[,c(27,28,30,31,32)])
 
-# check correlations in data between MAP, MAT, elev, abs lat
-# all low, oddly elev and abs.lat highest cor, but not such that can't include in same model
-cor(moddat$MAP, moddat$MAT)
-cor(moddat$MAP, moddat$Elevation)
-cor(moddat$MAT, moddat$Elevation)
-cor(moddat$abs.lat, moddat$MAT)
-cor(moddat$abs.lat, moddat$MAP)
-cor(moddat$abs.lat, moddat$Elevation)
-cor(moddat$abs.lat, moddat$Tseas) # too high to include both!
 
 
 # NEED RESOLVED TAXA PAIRS AND DISTURBANCE INFO
