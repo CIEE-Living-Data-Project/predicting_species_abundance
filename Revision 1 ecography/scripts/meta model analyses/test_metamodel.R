@@ -65,7 +65,6 @@ alldat <- alldat %>%
   mutate(cor=cor(Log.prop.change.Gn1, Log.prop.change.Gn2)) 
 
 # warnings caused by time series length where 0 changes through entire time series
-# ask isaac about this--shouldn't the log prop change be -INF bc log(0)?? why replaced with zero?
 
 # subset dataset with cleaned disturbance information
 
@@ -118,6 +117,9 @@ select(moddat, cor, z, SE.timeseries)
 hist(moddat$SE.timeseries)
 
 # explore number of rows with various SE metric
+# drop the time series length one bc doesn't make sense to also use it as a question we are testing
+# trim all data to most restrictive of these SE calculations
+# compare models with goodness of fit stats
 length(na.omit(moddat$SE.timeseries)) # 411,472
 length(na.omit(moddat$SE.total.indivs)) # 411,423
 length(na.omit(moddat$SE.total.sp)) #  411,472
@@ -127,7 +129,6 @@ length(na.omit(moddat$abs.total.indivsGn1mGn2)) # 401,804
 # explore how related
 # update column numbers when re-run mutate
 pairs(moddat[,c(27,28,30,31,32)])
-
 
 
 # NEED RESOLVED TAXA PAIRS AND DISTURBANCE INFO
@@ -151,7 +152,10 @@ moddat$scale.elev <- scale(moddat$Elevation)
 priors <-c(prior(normal(0,0.33), class = Intercept), #set between -1 and 1 for z score
           prior(cauchy(0,5), class = sd)) #set lower bound 0 for SE, values b/w (0,1)
 
-#model with z scores and SE as joint response
+# model with z scores and SE as joint response
+# don't use SE.timeseries
+# add interaction between disturbance and time series length
+# elevation? Tseas? Pseas?
 MODFORM <- bf(z|resp_se(SE.timeseries) ~ 
                 scale.SERIES.l + 
                 #Resolved.taxa.pair + NEED THIS IN DATA
