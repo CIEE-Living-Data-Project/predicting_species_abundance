@@ -840,12 +840,9 @@ repts<- log_change.taxa %>%
 unique(repts$Gn1)
 unique(repts$STUDY_PLOT)
 #So 319 and 316 are fine - 225 needs to be changed to Aves
-log_change.taxa$RESOLVED.TAXA1 <- ifelse(log_change.taxa$STUDY_PLOT == "225~Was_NA", 
-                                         log_change.taxa$RESOLVED.TAXA1 <- gsub("Reptilia", "Aves", log_change.taxa$RESOLVED.TAXA1),
-                                         log_change.taxa$RESOLVED.TAXA1)
-log_change.taxa$RESOLVED.TAXA2 <- ifelse(log_change.taxa$STUDY_PLOT == "225~Was_NA", 
-                                         log_change.taxa$RESOLVED.TAXA2 <- gsub("Reptilia", "Aves", log_change.taxa$RESOLVED.TAXA2),
-                                         log_change.taxa$RESOLVED.TAXA2)
+log_change.taxa$RESOLVED.TAXA2 [grepl("225", log_change.taxa$STUDY_PLOT )] <- "Aves"
+log_change.taxa$RESOLVED.TAXA1 [grepl("225", log_change.taxa$STUDY_PLOT)] <- "Aves"
+
 
 
 #Check Teleostei 
@@ -1138,8 +1135,37 @@ log_change.taxa$RESOLVED.TAXA1 [grepl("195", log_change.taxa$STUDY_PLOT)] <- "Av
 
 #Double check - why is aves.aves so overrepresented? 
 aves_aves <- log_change.taxa %>%
-  filter(resolved_taxa_pair=="Aves.Aves")
+  filter(resolved_taxa_pair=="Aves.Magnoliopsida")
 table(aves_aves$STUDY_PLOT)
+#Fix 363, 339, 475
+#All birds 
+log_change.taxa$RESOLVED.TAXA2 [grepl("363", log_change.taxa$STUDY_PLOT )] <- "Aves"
+log_change.taxa$RESOLVED.TAXA1 [grepl("363", log_change.taxa$STUDY_PLOT)] <- "Aves"
+log_change.taxa$RESOLVED.TAXA2 [grepl("339", log_change.taxa$STUDY_PLOT )] <- "Aves"
+log_change.taxa$RESOLVED.TAXA1 [grepl("339", log_change.taxa$STUDY_PLOT)] <- "Aves"
+log_change.taxa$RESOLVED.TAXA2 [grepl("475", log_change.taxa$STUDY_PLOT )] <- "Aves"
+log_change.taxa$RESOLVED.TAXA1 [grepl("475", log_change.taxa$STUDY_PLOT)] <- "Aves"
+
+insecta_magno <- log_change.taxa %>%
+  filter(resolved_taxa_pair=="Insecta.Magnoliopsida")
+table(insecta_magno$STUDY_PLOT)
+#336 should be all plants, what's going on 
+unique(insecta_magno$Gn1)
+#Boerhaavia should be Eudicot 
+log_change.taxa$RESOLVED.TAXA1[grepl("Boerhaavia", log_change.taxa$Gn1)] <- "Eudicots"
+
+
+amphibia_aves <- log_change.taxa %>%
+  filter(grepl("173", STUDY_PLOT))
+table(amphibia_aves$STUDY_PLOT)
+unique(amphibia_aves$Gn1)
+
+#Fixing some errors from above code: 
+repts <- c("Coluber", "Diadophis", "Eumeces", "Tantilla", "Cnemidophorus", "Uta", "Thamnophis")
+repts <- paste(repts, collapse = "|")
+log_change.taxa$RESOLVED.TAXA2[grepl(repts, log_change.taxa$Gn2)] <- "Reptilia"
+log_change.taxa$RESOLVED.TAXA1[grepl(repts, log_change.taxa$Gn1)] <- "Reptilia"
+
 
 #Check that it's all resolved: 
 sorted_words <- apply(log_change.taxa[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
