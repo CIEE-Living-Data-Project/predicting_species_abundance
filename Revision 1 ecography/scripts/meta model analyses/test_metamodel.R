@@ -10,22 +10,24 @@ library(brms)
 # 2. interactions and taxonomic data
 # 3. BioTime metadata: BioTIMEMetadata_24_06_2021.csv
 
-
-
 # reading in data and cleaning ####
 # interactions and resolved taxa pair column
 # update to include corrected genera names from Emily
-interactions.dat <- readRDS("Revision 1 ecography/output/prep_data/results_abundance_interactions_taxa_030724ENB.RDS") 
+interactions.dat <- readRDS("Revision 1 ecography/output/prep_data/results_abundance_interactions_taxa_032024ENB.RDS") 
+
+#interactions.dat$interactions_present
+#factorlist<-factor(interactions.dat$interactions_present)
 
 # full dataset log prop change dataset
 # update to include file with corrected genera names from Emily
-abun.dat <- read.csv("Revision 1 ecography/output/prep_data/results.abundance_23Feb24.csv")
+abun.dat <- read.csv("Revision 1 ecography/output/prep_data/results.abundance.csv")
 
 # add a STUDY_ID column so can join to metadata
 abun.dat$STUDY_ID <- as.character(sapply(strsplit(abun.dat$STUDY_PLOT, "~"), "[", 1))
+interactions.dat$STUDY_ID <- as.character(sapply(strsplit(interactions.dat$STUDY_PLOT, "~"), "[", 1))
 
 # meta data
-all_meta <- read.csv("Revision 1 ecography/raw biotime data/BioTIMEMetadata_24_06_2021.csv")
+all_meta <- read.csv("data/prep_biotime/BioTIMEMetadata_24_06_2021.csv")
 
 all_meta <- select(all_meta, STUDY_ID, REALM, CLIMATE, HABITAT, ORGANISMS, CENT_LAT, CENT_LONG, NUMBER_OF_SPECIES)
 all_meta$STUDY_ID <- as.character(all_meta$STUDY_ID)
@@ -61,11 +63,20 @@ interactions.dat_trim <- distinct(select(interactions.dat, c("TS_ID", "STUDY_PLO
                                                              "interaction_present", "RESOLVED.TAXA1", "RESOLVED.TAXA2", "resolved_taxa_pair")))
 alldat <- left_join(abun.dat, interactions.dat_trim)
 alldat <- left_join(alldat, all_meta)
+names(alldat) #look at all column names 
 
 # check to make sure that every pair has interaction info
 sum(is.na(alldat$interaction_present))
+intcheck<-subset(alldat, is.na(interaction_present))
 which(is.na(alldat$interaction_present)==TRUE)
-alldat[7010172, ] 
+alldat[7010172, ] #??
+
+#fix weirdness??
+intcheck<-select(interactions.dat, TS_ID, STUDY_ID, interaction_present)%>%group_by(TS_ID)%>%distinct(.)%>%
+  subset(STUDY_ID=='313'|STUDY_ID=='39'|STUDY_ID=='221')
+alldatx<-left_join(intcheck, alldat)%>%subset(!is.na(X))
+alldat<-filter(alldat, !is.na(interaction_present))#remove 2500 NAS
+alldat<-rbind(alldat, alldatx) #add rows back in 
 
 # calculate abs latitude metric
 alldat$abs.lat <- abs(alldat$CENT_LAT)
@@ -80,18 +91,20 @@ alldat <- left_join(alldat, worldclim, by=c("CENT_LAT"="LATITUDE",
 # section that creates csv file to populate with cleaned disturbance data,
 # ignore during modelling work
 # read in metadata from entire study
-all_meta <- read.csv("Revision 1 ecography/raw biotime data/BioTIMEMetadata_24_06_2021.csv")
+#all_meta <- read.csv("Revision 1 ecography/raw biotime data/BioTIMEMetadata_24_06_2021.csv")
 
-meta.info <- distinct(left_join(select(alldat, STUDY_ID, STUDY_PLOT, LATITUDE, LONGITUDE), all_meta))
+#meta.info <- distinct(left_join(select(alldat, STUDY_ID, STUDY_PLOT, LATITUDE, LONGITUDE), all_meta))
 
 # add in column for cleaned disturbance from Sam
-load("data/prep_biotime/meta_pairs_10km.RData")
-test <- left_join(meta.info, meta.pairs)
+#load("data/prep_biotime/meta_pairs_10km.RData")
+#test <- left_join(meta.info, meta.pairs)
 # write.csv(test, "meta.info.csv")
 
-# download final disturabance data from google drive when cleaned
+# download final disturbance data from google drive when cleaned
 # and bind back to alldat
-
+dist<-read.csv("Revision 1 ecography/output/prep_data/disturbance cleaning.csv")
+dist$STUDY_ID<-as.character(dist$STUDY_ID)
+alldat<-left_join(alldat, dist)
 
 # prep data for model ####
 # calculate pearson's cor for all time series 
@@ -101,7 +114,7 @@ alldat <- alldat %>%
 # warnings caused by time series length where 0 changes through entire time series
 
 
-# subset to only relatively strong cors 
+# subset to only relatively strong cors - any higher unrealistic
 alldat_trim <- subset(alldat, cor<0.8 & cor>-0.8) 
 
 hist(alldat_trim$cor)
