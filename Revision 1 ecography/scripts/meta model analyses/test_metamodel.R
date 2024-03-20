@@ -1,6 +1,6 @@
 # script written by CC and GLL March 2024
 # calculates correlations and z-scores for genera pairs
-# fits metamodel that tests how 4 ecological hypotheses drive relationsships between genera-pair
+# fits metamodel that tests how 4 ecological hypotheses drive relationships between genera-pair
 
 library(tidyverse)
 library(brms)
@@ -8,7 +8,7 @@ library(brms)
 # requires data to be saved locally
 # 1. log prop changes
 # 2. interactions and taxonomic data
-# 3. BiotTime metadata: BioTIMEMetadata_24_06_2021.csv
+# 3. BioTime metadata: BioTIMEMetadata_24_06_2021.csv
 
 
 
