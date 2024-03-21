@@ -1,7 +1,6 @@
 # script written by CC and GLL March 2024
 # calculates correlations and z-scores for genera pairs
 # fits metamodel that tests how 4 ecological hypotheses drive relationships between genera-pair
-
 library(tidyverse)
 library(brms)
 
@@ -15,22 +14,29 @@ library(brms)
 # update to include corrected genera names from Emily
 interactions.dat <- readRDS("Revision 1 ecography/output/prep_data/results_abundance_interactions_taxa_032024ENB.RDS") 
 
-#interactions.dat$interactions_present
-#factorlist<-factor(interactions.dat$interactions_present)
-
 # full dataset log prop change dataset
 # update to include file with corrected genera names from Emily
 abun.dat <- read.csv("Revision 1 ecography/output/prep_data/results.abundance.csv")
+abun.dat$X.1<-NULL
+#str(abun.dat)
+#names(abun.dat)
+#names(interactions.dat)
+
+#pull out only new information not to duplicate on abun.dat
+abun.dat_trim<-abun.dat[, c(2,3, 23:30)]%>%distinct(.)
+#str(abun.dat_trim)
+abun.dat_trim<-distinct_at(abun.dat_trim, "TS_ID", .keep_all = T)
+rm(abun.dat)
 
 # add a STUDY_ID column so can join to metadata
-abun.dat$STUDY_ID <- as.character(sapply(strsplit(abun.dat$STUDY_PLOT, "~"), "[", 1))
+#abun.dat$STUDY_ID <- as.character(sapply(strsplit(abun.dat$STUDY_PLOT, "~"), "[", 1))
 interactions.dat$STUDY_ID <- as.character(sapply(strsplit(interactions.dat$STUDY_PLOT, "~"), "[", 1))
 
 # meta data
 all_meta <- read.csv("data/prep_biotime/BioTIMEMetadata_24_06_2021.csv")
-
 all_meta <- select(all_meta, STUDY_ID, REALM, CLIMATE, HABITAT, ORGANISMS, CENT_LAT, CENT_LONG, NUMBER_OF_SPECIES)
 all_meta$STUDY_ID <- as.character(all_meta$STUDY_ID)
+str(all_meta)
 
 # clean up organisms column
 all_meta$ORGANISMS <- gsub("birds|Bird|Birds", "Birds", all_meta$ORGANISMS)
@@ -59,24 +65,18 @@ all_meta$HABITAT <- gsub("birch forest", "Deciduous forest", all_meta$HABITAT)
 
 
 ## combine datasets ####
-interactions.dat_trim <- distinct(select(interactions.dat, c("TS_ID", "STUDY_PLOT", "Gn1", "Gn2", "SERIES.l", 
-                                                             "interaction_present", "RESOLVED.TAXA1", "RESOLVED.TAXA2", "resolved_taxa_pair")))
-alldat <- left_join(abun.dat, interactions.dat_trim)
-alldat <- left_join(alldat, all_meta)
+#interactions.dat_trim <- distinct(select(interactions.dat, c("TS_ID", "STUDY_PLOT", "Gn1", "Gn2", "SERIES.l", 
+#                                                             "interaction_present", "RESOLVED.TAXA1", "RESOLVED.TAXA2", "resolved_taxa_pair")))
+#alldat <- left_join(abun.dat_trim, interactions.dat)
+alldat <- left_join(interactions.dat, all_meta)
 names(alldat) #look at all column names 
 
 # check to make sure that every pair has interaction info
 sum(is.na(alldat$interaction_present))
-intcheck<-subset(alldat, is.na(interaction_present))
-which(is.na(alldat$interaction_present)==TRUE)
-alldat[7010172, ] #??
-
-#fix weirdness??
-intcheck<-select(interactions.dat, TS_ID, STUDY_ID, interaction_present)%>%group_by(TS_ID)%>%distinct(.)%>%
-  subset(STUDY_ID=='313'|STUDY_ID=='39'|STUDY_ID=='221')
-alldatx<-left_join(intcheck, alldat)%>%subset(!is.na(X))
-alldat<-filter(alldat, !is.na(interaction_present))#remove 2500 NAS
-alldat<-rbind(alldat, alldatx) #add rows back in 
+#intcheck<-subset(alldat, is.na(interaction_present))#1984 obs missing info
+#checkIDs<-unique(intcheck$TS_ID) #108 IDs 
+#which(is.na(alldat$interaction_present)==TRUE)
+#alldat[7010172, ] #??
 
 # calculate abs latitude metric
 alldat$abs.lat <- abs(alldat$CENT_LAT)
@@ -114,12 +114,16 @@ alldat <- alldat %>%
 # warnings caused by time series length where 0 changes through entire time series
 
 
-# subset to only relatively strong cors - any higher unrealistic
+# subset to only relatively strong cors - any higher is unrealistic
 alldat_trim <- subset(alldat, cor<0.8 & cor>-0.8) 
 
 hist(alldat_trim$cor)
 max(alldat_trim$cor)
 min(alldat_trim$cor)
+
+#add in richness info from abundance data csv
+alldat_trim<-left_join(alldat_trim, abun.dat_trim)#7436718
+str(alldat_trim)
 
 # calculate other metrics for SE
 alldat_trim <- alldat_trim %>% 
