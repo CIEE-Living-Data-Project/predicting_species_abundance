@@ -221,7 +221,7 @@ priors <-c(prior(normal(0,0.33), class = Intercept), # set between -1 and 1 for 
 ## define models ####
 # model with z scores and total indivs SE as joint response
 MODFORM.indivs <- bf(z|resp_se(SE.total.indivs) ~ 
-                scale.SERIES.l*treatment_yn + 
+                scale.SERIES.l*treatment_yn_clean + 
                 resolved_taxa_pair + 
                 scale.abs.lat +
                 interaction_present.factor +
@@ -229,7 +229,7 @@ MODFORM.indivs <- bf(z|resp_se(SE.total.indivs) ~
                 (1|STUDY_ID))
 # model with z scores and total indivs SE as joint response
 MODFORM.sp <- bf(z|resp_se(SE.total.sp) ~ 
-                       scale.SERIES.l*treatment_yn + 
+                       scale.SERIES.l*treatment_yn_clean + 
                        resolved_taxa_pair + 
                        scale.abs.lat +
                        interaction_present.factor +
