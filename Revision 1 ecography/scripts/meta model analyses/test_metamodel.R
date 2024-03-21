@@ -155,35 +155,40 @@ alldat_trim <- alldat_trim %>%
 # include plot in supplement
 # things with higher error are more weakly correlated 
 # takes 10 minutes to render
-par(mfrow=c(1,2), oma=c(3,3,2,0), mar=c(2,4,2,4))
-plot(alldat_trim$cor, alldat_trim$abs.total.spGn1mGn2,
-     ylab="", xlab="", 
-     cex.axis=1.5, cex.lab=1.5, 
-     col=ifelse(alldat_trim$cor<.2 & alldat_trim$cor>-.2 & alldat_trim$abs.total.spGn1mGn2>=175 , "dodgerblue2", 
-                ifelse(alldat_trim$cor<.2 & alldat_trim$cor>-.2 & alldat_trim$abs.total.spGn1mGn2<175, "darkblue",
-                       "grey40")))
-mtext("Difference in species richness \nbetween genera", 2, line=3, cex=1.5)
-mtext("a.", 3, line=1, cex=1.5, at=-1)
+#par(mfrow=c(1,2), oma=c(3,3,2,0), mar=c(2,4,2,4))
+#plot(alldat_trim$cor, alldat_trim$abs.total.spGn1mGn2,
+#     ylab="", xlab="", 
+#     cex.axis=1.5, cex.lab=1.5, 
+#     col=ifelse(alldat_trim$cor<.2 & alldat_trim$cor>-.2 & alldat_trim$abs.total.spGn1mGn2>=175 , "dodgerblue2", 
+#                ifelse(alldat_trim$cor<.2 & alldat_trim$cor>-.2 & alldat_trim$abs.total.spGn1mGn2<175, "darkblue",
+#                       "grey40")))
+#mtext("Difference in species richness \nbetween genera", 2, line=3, cex=1.5)
+#mtext("a.", 3, line=1, cex=1.5, at=-1)
 
-plot(alldat_trim$cor, alldat_trim$abs.total.indivsGn1mGn2, 
-     ylab="", xlab="", cex.axis=1.5,
-     col=ifelse(alldat_trim$cor<.2 & alldat_trim$cor>-.2 & alldat_trim$abs.total.indivsGn1mGn2>=10000 , "dodgerblue2", 
-                ifelse(alldat_trim$cor<.2 & alldat_trim$cor >-.2 & alldat_trim$abs.total.indivsGn1mGn2<10000, "darkblue",
-                       "grey40")))
-mtext("Difference in abundance \nbetween genera", 2, line=3, cex=1.5)
-mtext("b.", 3, line=1, cex=1.5, at=-1)
-mtext("Correlations between genera", 1, line=1, cex=1.5, outer=T)
+#plot(alldat_trim$cor, alldat_trim$abs.total.indivsGn1mGn2, 
+#     ylab="", xlab="", cex.axis=1.5,
+#     col=ifelse(alldat_trim$cor<.2 & alldat_trim$cor>-.2 & alldat_trim$abs.total.indivsGn1mGn2>=10000 , "dodgerblue2", 
+#                ifelse(alldat_trim$cor<.2 & alldat_trim$cor >-.2 & alldat_trim$abs.total.indivsGn1mGn2<10000, "darkblue",
+#                       "grey40")))
+#mtext("Difference in abundance \nbetween genera", 2, line=3, cex=1.5)
+#mtext("b.", 3, line=1, cex=1.5, at=-1)
+#mtext("Correlations between genera", 1, line=1, cex=1.5, outer=T)
 
 # filter df to remove repeat values 
 # ie keeping unique cases of z-scores
+
 moddat <- alldat_trim %>% 
   select(-Log.prop.change.Gn1, -Log.prop.change.Gn2, -Abs.change.Gn1, -Abun.T1.Gn1, -Abun.T.Gn2, -Abun.T1.Gn2, 
          -Abs.change.Gn2, -Abun.T.Gn1, -Length.Unique.Values.Gn1, -Length.Unique.Values.Gn2,
          -Rich.T.Gn1, -Rich.T1.Gn1, -Rich.T.Gn2, -Rich.T1.Gn2, -SS.T.Gn1, -SS.T1.Gn1, -SS.T.Gn2, -SS.T1.Gn2,
-         -X, -X.1, -YEAR.T, -YEAR.T1, -abs.total.indivsGn1mGn2, -abs.total.spGn1mGn2, -SE.abs.total.indivsGn1mGn2, -SE.abs.total.spGn1mGn2) %>%
+         -X, -YEAR.T, -YEAR.T1, -abs.total.indivsGn1mGn2, -abs.total.spGn1mGn2, -SE.abs.total.indivsGn1mGn2, -SE.abs.total.spGn1mGn2) %>%
   distinct(.)
 
+#save so don't need to re-run 
+save(moddat, file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
+
 # look at some to check   
+load(file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
 select(moddat, cor, z, SE.timeseries)
 hist(moddat$cor)
 
@@ -191,15 +196,15 @@ hist(moddat$cor)
 # drop the time series length one bc doesn't make sense to also use it as a question we are testing
 # trim all data to most restrictive of these SE calculations
 # compare models with goodness of fit stats
-length(na.omit(moddat$SE.total.indivs)) # 411,423
-length(na.omit(moddat$SE.total.sp)) #  411,472
+length(na.omit(moddat$SE.total.indivs)) # 411,408
+length(na.omit(moddat$SE.total.sp)) #  411,400
 
 # if want to run all SE calculations on max restrictive data set then:
 # remove any NAs
-length(unique(na.omit(moddat)$STUDY_ID)) # 62 studies
-length(unique(na.omit(moddat)$TS_ID)) #  374557 time series
+#length(unique(na.omit(moddat)$STUDY_ID)) # 62 studies
+#length(unique(na.omit(moddat)$TS_ID)) #  374557 time series
 
-moddat <- na.omit(moddat)
+#moddat <- na.omit(moddat)
 
 # make sure interaction_present is encoded as a factor
 # and scale inputs here bc doesn't work in model formula 
