@@ -491,32 +491,203 @@ for (i in 1:nrow(final.pairs.abundance)){
 } #get prop change for every genera pair
 
 write.csv(results.abundance,"~/Documents/Work and Career/LDP/Working Group/results.abundance_221_29.csv")
-results.abundance=read.csv("C:\\Users\\isaac\\OneDrive - McGill University\\Sharepoint\\Datasets\\BioTIME\\results.abundance.csv")
+results.abundance=read.csv("~/Documents/Work and Career/LDP/Working Group/results.abundance_221_39.csv")
+
+#Read in the study 221_39 original 
+biotime<-read.csv("~/Documents/Work and Career/LDP/Working Group/BioTIMEQuery_24_06_2021.csv")
+missing_data <- read.csv("~/Documents/Work and Career/LDP/Working Group/data_missing_richness.csv")
+metadata<-read.csv("~/Documents/Work and Career/LDP/Working Group/BioTIMEMetadata_24_06_2021.csv")
+
+#remove marine and aquatic (keep only terr)
+biotime.t<-biotime[which(biotime$STUDY_ID%in%metadata$STUDY_ID[which(metadata$REALM=="Terrestrial")]),]
+
+
+studies <- c("39", "221")
+b_221_39 <- biotime.t %>%
+  filter(STUDY_ID %in% studies)
+unique(b_221_39$GENUS_SPECIES)
+
+#Correct the genus and species names for study 39
+name_mapping <- list(
+  "SALIBEBB" = "Salix bebbiana",
+  "POPUTRE2" = "Populus tremuloides",
+  "SALIINTE" = "Salix interior",
+  "POPUTRE" = "Populus tremuloides",
+  "POPUTRE3" = "Populus tremuloides",
+  "PICEGLA3" = "Picea glauca",
+  "POPUBAL3" = "Populus balsamifera",
+  "VIBUEDUL" = "Viburnum edule",
+  "SALIMONT" = "Salix monticola",
+  "ROSAACIC" = "Rosa acicularis",
+  "BETUPAP3" = "Betula papyrifera",
+  "BETUPAP2" = "Betula papyrifera",
+  "RUBUIDAE" = "Rubus idaeus",
+  "ALNUTENU" = "Alnus tenuifolia",
+  "POPUBAL2" = "Populus balsamifera",
+  "PICEGLA" = "Picea glauca",
+  "SALINOVA" = "Salix novae-angliae",
+  "SALISPE2" = "Salix petiolaris",
+  "BETUPAP" = "Betula papyrifera",
+  "PICEMAR3" = "Picea mariana",
+  "ALNUCRIS" = "Alnus crispa",
+  "RUBUSPEC" = "Rubus species",
+  "SALIALAX" = "Salix alaxensis",
+  "SALIGLAU" = "Salix glauca",
+  "VIBUED" = "Viburnum edule",
+  "SALILASI" = "Salix lasiandra",
+  "PICEMAR2" = "Picea mariana",
+  "LARILAR2" = "Larix laricina",
+  "SALIPLAN" = "Salix planifolia",
+  "SALIBRAC" = "Salix brachycarpa",
+  "POPUTRE1" = "Populus tremuloides",
+  "POPUBAL" = "Populus balsamifera",
+  "LARILAR3" = "Larix laricina",
+  "SALIARBU" = "Salix arbusculoides",
+  "SALISCOU" = "Salix scouleriana",
+  "PICEMAR" = "Picea mariana",
+  "BETUGLAN" = "Betula glandulosa",
+  "BETUPAP1" = "Betula papyrifera",
+  "BETUNANA" = "Betula nana",
+  "SALICOMM" = "Salix commutata",
+  "SALIMYRT" = "Salix myrtillifolia",
+  "PICEGLA1" = "Picea glauca",
+  "ROSAASCI" = "Rosa acicularis",
+  "BETUNAN" = "Betula nana",
+  "BELNEO" = "Belangera neo-mexicana",
+  "PICESPEC" = "Picea species",
+  "MYRIGALE" = "Myrica gale",
+  "PICEGLA2" = "Picea glauca",
+  "SALINNTE" = "Salix interior",
+  "SHEPCANA" = "Shepherdia canadensis",
+  "SALBEBB" = "Salix bebbiana",
+  "SALINIPH" = "Salix niphoclada"
+)
+
+# Function to replace unique names with correct genus and species names
+convert_names <- function(x) {
+  for (key in names(name_mapping)) {
+    x <- gsub(key, name_mapping[[key]], x)
+  }
+  # Remove numbers from strings
+  x <- gsub("[0-9]", "", x)
+  # Remove extra spaces at the end of the string
+  x <- trimws(x)
+  return(x)
+}
+
+
+# Applying the conversion function to the dataframe column
+b_221_39$GENUS_SPECIES <- convert_names(b_221_39$GENUS_SPECIES)
+
+unique(b_221_39$GENUS_SPECIES)
+
+#Convert bird names 
+bird_mapping <- list(
+  "Catharus guttatus" = "Catharus guttatus",
+  "Catharus ustulatus" = "Catharus ustulatus",
+  "Dendroica caerulescens" = "Setophaga caerulescens",
+  "Catharus fuscescens" = "Catharus fuscescens",
+  "Dendroica fusca" = "Setophaga fusca",
+  "Empidonax minimus" = "Empidonax minimus",
+  "Hylocichla mustelina" = "Catharus ustulatus",
+  "Junco hyemalis" = "Junco hyemalis",
+  "Pheucticus ludovicianus" = "Pheucticus ludovicianus",
+  "Picoides pubescens" = "Picoides pubescens",
+  "Picoides villosus" = "Picoides villosus",
+  "Piranga olivacea" = "Piranga olivacea",
+  "Seiurus aurocapilla" = "Seiurus aurocapilla",
+  "Setophaga ruticilla" = "Setophaga ruticilla",
+  "Setophaga virens" = "Setophaga virens",
+  "Sitta carolinensis" = "Sitta carolinensis",
+  "Sphyrapicus varius" = "Sphyrapicus varius",
+  "Troglodytes hiemalis" = "Troglodytes hiemalis",
+  "Vireo olivaceus" = "Vireo olivaceus",
+  "Vireo philadelphicus" = "Vireo philadelphicus",
+  "Vireo spec" = "Vireo NA",
+  "Poecile atrcapillus" = "Poecile atricapillus",
+  "Yellow-throated Warbler" = "Setophaga dominica",
+  "Setophaga caerulescens" = "Setophaga caerulescens",
+  "Setophaga fusca" = "Setophaga fusca",
+  "Black-capped chickadee" = "Poecile atricapillus",
+  "Blue jay" = "Cyanocitta cristata",
+  "Brown creeper" = "Certhia americana",
+  "Dark-eyed junco" = "Junco hyemalis",
+  "Downy woodpecker" = "Dryobates pubescens",
+  "Hairy woodpecker" = "Dryobates villosus",
+  "Ovenbird" = "Seiurus aurocapilla",
+  "Red-eyed vireo" = "Vireo olivaceus",
+  "Rose-breasted grosbeak" = "Pheucticus ludovicianus",
+  "White-breasted nuthatch" = "Sitta carolinensis",
+  "Winter wren" = "Troglodytes hiemalis",
+  "Wood thrush" = "Hylocichla mustelina",
+  "Dryocopus pileatus" = "Dryocopus pileatus",
+  "Hermit Thrush" = "Catharus guttatus",
+  "Swainsons Thrush" = "Catharus ustulatus",
+  "Yellow-bellied Sapsucker" = "Sphyrapicus varius",
+  "Archilochus colubris" = "Archilochus colubris",
+  "Contopus virens" = "Contopus virens",
+  "Solitary Vireo" = "Vireo solitarius",
+  "Bonasa umbellus" = "Bonasa umbellus",
+  "Red-breasted nuthatch" = "Sitta canadensis",
+  "Dendroica coronata" = "Setophaga coronata",
+  "Certhia americana" = "Certhia americana",
+  "Cyanocitta cristata" = "Cyanocitta cristata",
+  "Carpodacus purpureus" = "Carpodacus purpureus",
+  "Turdus migratorius" = "Turdus migratorius",
+  "Mniotilta varia" = "Mniotilta varia"
+)
+
+convert_bird_names <- function(x) {
+  for (key in names(bird_mapping)) {
+    x <- gsub(key, bird_mapping[[key]], x)
+  }
+  return(x)
+}
+
+# Applying the conversion function to the vector
+b_221_39$GENUS_SPECIES <- convert_bird_names(b_221_39$GENUS_SPECIES)
+unique(b_221_39$GENUS_SPECIES)
+
+#Make new genus and species columns 
+genus_species <- strsplit(b_221_39$GENUS_SPECIES, " ")
+b_221_39$GENUS <- sapply(genus_species, `[`, 1)
+b_221_39$SPECIES <- sapply(genus_species, `[`, -1)
+unique(b_221_39$SPECIES)
 
 #add in sp per genus/plot/year
-b<-biotime.t
+b<-b_221_39
+b$UNIQUE_ID<-paste(b$STUDY_ID,b$PLOT,b$GENUS,b$YEAR,sep="~")
 b$UNIQUE_ID_SP<-paste(b$UNIQUE_ID,b$SPECIES,sep="~")
 b<-b[-which(duplicated(b$UNIQUE_ID_SP)),]
 
-data<-as.data.frame(table(b$UNIQUE_ID[-which(is.na(b$sum.allrawdata.ABUNDANCE))]))
+data<-as.data.frame(table(b$UNIQUE_ID))
 names(data)=c("UNIQUE_ID","Richness")
 
+missing_data<- missing_data %>%
+  mutate(STUDY_PLOT = str_replace_all(STUDY_PLOT, "Was_NA", "NA"))
+
 #add cols
-results.abundance$Rich.T.Gn1=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn1,results.abundance$YEAR.T,sep="~"),data$UNIQUE_ID)]
-results.abundance$Rich.T1.Gn1=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn1,results.abundance$YEAR.T1,sep="~"),data$UNIQUE_ID)]
-results.abundance$Rich.T.Gn2=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn2,results.abundance$YEAR.T,sep="~"),data$UNIQUE_ID)]
-results.abundance$Rich.T1.Gn2=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn2,results.abundance$YEAR.T1,sep="~"),data$UNIQUE_ID)]
+missing_data$Rich.T.Gn1=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn1,missing_data$YEAR.T,sep="~"),data$UNIQUE_ID)]
+missing_data$Rich.T1.Gn1=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn1,missing_data$YEAR.T1,sep="~"),data$UNIQUE_ID)]
+missing_data$Rich.T.Gn2=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn2,missing_data$YEAR.T,sep="~"),data$UNIQUE_ID)]
+missing_data$Rich.T1.Gn2=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn2,missing_data$YEAR.T1,sep="~"),data$UNIQUE_ID)]
 
 #add total sample size
-ss_abun<-as.data.frame(table(biotime.t$UNIQUE_ID[-which(is.na(biotime.t$sum.allrawdata.ABUNDANCE))]))
+ss_abun<-as.data.frame(table(b$UNIQUE_ID))
 names(ss_abun)=c("UNIQUE_ID","Sample.Size")
+missing_data$SS.T.Gn1=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn1,missing_data$YEAR.T,sep="~"),data$UNIQUE_ID)]
+missing_data$SS.T1.Gn1=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn1,missing_data$YEAR.T1,sep="~"),data$UNIQUE_ID)]
+missing_data$SS.T.Gn2=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn2,missing_data$YEAR.T,sep="~"),data$UNIQUE_ID)]
+missing_data$SS.T1.Gn2=data$Richness[match(paste(missing_data$STUDY_PLOT,missing_data$Gn2,missing_data$YEAR.T1,sep="~"),data$UNIQUE_ID)]
 
-#add cols
-results.abundance$SS.T.Gn1=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn1,results.abundance$YEAR.T,sep="~"),data$UNIQUE_ID)]
-results.abundance$SS.T1.Gn1=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn1,results.abundance$YEAR.T1,sep="~"),data$UNIQUE_ID)]
-results.abundance$SS.T.Gn2=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn2,results.abundance$YEAR.T,sep="~"),data$UNIQUE_ID)]
-results.abundance$SS.T1.Gn2=data$Richness[match(paste(results.abundance$STUDY_PLOT,results.abundance$Gn2,results.abundance$YEAR.T1,sep="~"),data$UNIQUE_ID)]
+#remove the unique ID column 
+missing_data <- missing_data %>%
+  select(-UNIQUE_ID)
+#save
+write.csv(missing_data, "~/Documents/Work and Career/LDP/Working Group/data_missing_richness_ENB_032124.csv")
 
+
+missing_data_check <- read.csv("~/Documents/Work and Career/LDP/Working Group/data_missing_richness.csv")
 
 
 #loop through all biomass 
