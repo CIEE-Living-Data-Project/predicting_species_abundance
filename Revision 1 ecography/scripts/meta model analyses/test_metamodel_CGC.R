@@ -231,13 +231,13 @@ moddat<-mutate(moddat,
 # between time series to see if our results are robust
 # note that we expect (and can see in the data) that big differences to weaken correlations and add noise, 
 # thus including them is a conservative approach
-# subset data below like 2000 indivs diff and to less than 50 sp diffs, breaks based on diff x corr plots above
+# subset data below like 1000 indivs diff and to less than 30 sp diffs, breaks based on diff x corr plots above
 
 hist(moddat$abs.total.indivsGn1mGn2)
 hist(moddat$abs.total.spGn1mGn2)
 
-moddat<-subset(moddat, abs.total.indivsGn1mGn2< 2000)
-moddat<-subset(moddat, abs.total.spGn1mGn2 < 50)
+moddat<-subset(moddat, abs.total.indivsGn1mGn2< 1000)
+moddat<-subset(moddat, abs.total.spGn1mGn2 < 30)
 unique(moddat$STUDY_ID)
 
 #save AGAIN 
