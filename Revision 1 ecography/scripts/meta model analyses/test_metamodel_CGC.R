@@ -190,10 +190,10 @@ moddat <- alldat_trim %>%
   distinct(.)
 
 #save so don't need to re-run 
-save(moddat, file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
+#save(moddat, file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
 
 #load model data ####
-load(file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
+#load(file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
 # look at some to check   
 select(moddat, cor, z, SE.timeseries)
 hist(moddat$cor)
@@ -240,10 +240,15 @@ moddat<-subset(moddat, abs.total.indivsGn1mGn2< 2000)
 moddat<-subset(moddat, abs.total.spGn1mGn2 < 50)
 unique(moddat$STUDY_ID)
 
+#save AGAIN 
+save(moddat, file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
+
 # modelling timmmmme #####
 ## set priors ####
 #priors <-c(prior(normal(0,0.33), class = Intercept), # set between -1 and 1 for z score
 #          prior(normal(0,0.33), class = sd, lb=0)) # set lower bound 0 for SE, values b/w (0,1)
+
+load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
 
 ## define models ####
 # model with z scores and total indivs SE as joint response
