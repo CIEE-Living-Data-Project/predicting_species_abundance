@@ -240,8 +240,6 @@ moddat<-subset(moddat, abs.total.indivsGn1mGn2< 2000)
 moddat<-subset(moddat, abs.total.spGn1mGn2 < 50)
 unique(moddat$STUDY_ID)
 
-save(moddat, file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
-
 # modelling timmmmme #####
 ## set priors ####
 #priors <-c(prior(normal(0,0.33), class = Intercept), # set between -1 and 1 for z score
