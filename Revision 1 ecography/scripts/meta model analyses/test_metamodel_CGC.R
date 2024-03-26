@@ -237,40 +237,53 @@ moddat<-subset(moddat, abs.total.indivsGn1mGn2< 1000)
 moddat<-subset(moddat, abs.total.spGn1mGn2 < 30)
 unique(moddat$STUDY_ID)
 
-#save AGAIN 
-save(moddat, file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
 
 # modelling timmmmme #####
 ## set priors ####
 #priors <-c(prior(normal(0,0.33), class = Intercept), # set between -1 and 1 for z score
 #          prior(normal(0,0.33), class = sd, lb=0)) # set lower bound 0 for SE, values b/w (0,1)
 
-load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
+#pull out taxa pairs with n<3 time series 
+group_by(moddat, resolved_taxa_pair)%>%summarise(sum=n())
+moddat<-subset(moddat, resolved_taxa_pair!="Magnoliopsida.Eudicots"&
+                 resolved_taxa_pair!="Pinopsida.Monocots"&
+                 resolved_taxa_pair!="Eudicots.Magnoliopsida")
+group_by(moddat, resolved_taxa_pair)%>%summarise(sum=n())
+#save AGAIN 
+save(moddat, file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
 
+moddat_small<-group_by(moddat, resolved_taxa_pair)%>%slice_sample(n=5)
+save(moddat_small, file="Revision 1 ecography/output/prep_data/model_data_small.Rdata")
+  
 ## define models ####
 # model with z scores and total indivs SE as joint response
+#load and try with small df first
+load(file="Revision 1 ecography/output/prep_data/model_data_small.Rdata")
+
+#if works then try full df
+load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
+
 MODFORM.indivs <- bf(z|resp_se(SE.total.indivs, sigma = FALSE) ~ 
                 scale.SERIES.l + treatment_yn_clean + 
-                resolved_taxa_pair + 
                 scale.abs.lat +
                 interaction_present.factor +
                 scale.elev +
-                (1|STUDY_ID))
+                (1|STUDY_ID) + (1|resolved_taxa_pair))
+
 # model with z scores and total indivs SE as joint response
 MODFORM.sp <- bf(z|resp_se(SE.total.sp, sigma = FALSE) ~ 
                        scale.SERIES.l + treatment_yn_clean + 
-                       resolved_taxa_pair + 
                        scale.abs.lat +
                        interaction_present.factor +
                        scale.elev +
-                       (1|STUDY_ID))
+                       (1|STUDY_ID) + (1|resolved_taxa_pair))
 
 ## run models ####
 
 # model 1
 start_time <- Sys.time() 
 metamod.indivs <- brm(MODFORM.indivs, moddat, cores=3, chains=3, 
-             iter=5000, family=gaussian, file="Revision 1 ecography/output/meta model/SEindivs2.rmd")
+             iter=5000, family=gaussian, file="Revision 1 ecography/output/meta model/SEindivs.rmd")
 end_time <- Sys.time()
 end_time - start_time
 #save as Rdata file 
