@@ -446,67 +446,7 @@ fig3
 # added by GLL for figure 2 (methods conceptual figure)
 # only terrestrial
 # only within
-
-dat_terr1 <- subset(x = dat, subset = REALM1=="Terrestrial" & REALM2=="Terrestrial")
-dat_terr2 <- subset(dat_terr1, Metric!="CROSS" &  Type!="Between") %>%
-  select(-c("Prop.Change.Gn1", "Prop.Change.Gn2", "YEAR.T","YEAR.T1", "SERIES.start", "SERIES.end")) %>% 
-  distinct(.)
-
-# Fix: “Oleacina” was assigned the classification of “Bivalvia”, 
-# but it’s a terrestrial snail in the Gastropoda
-dat_terr2$RESOLVED.TAXA1 [dat_terr2$Gn1 == "Oleacina" ] <- "Gastropoda"
-dat_terr2$RESOLVED.TAXA2 [dat_terr2$Gn2 == "Oleacina" ] <- "Gastropoda"
-
-
-
-dat.terr3 <- dat_terr2
-
-dat.terr3$RESOLVED.TAXA.PAIR <- paste0(dat.terr3$RESOLVED.TAXA1, ".",dat.terr3$RESOLVED.TAXA2)
-
-# fix resolved taxa names
-#Check the NA values and their corresponding organism values 
-dat_na2 <- dat.terr3 %>%
-  filter(grepl("\\.NA|NA\\.", RESOLVED.TAXA.PAIR)) 
-
-#double check that the NAs match
-unique(dat_na2$ORGANISMS1)
-unique(dat_na2$ORGANISMS2)
-#Adjust names below 
-
-# taxa 1
-dat.terr3$RESOLVED.TAXA1 <- ifelse(
-  is.na(dat.terr3$RESOLVED.TAXA1),
-  ifelse(
-    dat.terr3$ORGANISMS1 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
-    "Insecta",
-    ifelse(dat.terr3$ORGANISMS1 == "birds", "Aves", 
-           ifelse(dat.terr3$ORGANISMS1 == "rodents", "Mammalia", NA)
-    )
-  ),
-  dat.terr3$RESOLVED.TAXA1
-)
-
-
-# taxa 2
-dat.terr3$RESOLVED.TAXA2 <- ifelse(
-  is.na(dat.terr3$RESOLVED.TAXA2)==TRUE,
-  ifelse(
-    dat.terr3$ORGANISMS2 %in% c("insects", "Grasshoppers", "Acrididae (grasshoppers)"),
-    "Insecta",
-    ifelse(dat.terr3$ORGANISMS2 == "birds", "Aves", 
-           ifelse(dat.terr3$ORGANISMS2 == "rodents", "Mammalia", NA)
-    )
-  ),
-  dat.terr3$RESOLVED.TAXA2
-)
-
-sorted_words2 <- apply(dat.terr3[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
-dat.terr3$RESOLVED.TAXA.PAIR <- sorted_words2
-unique(dat.terr3$RESOLVED.TAXA.PAIR)
-table(dat.terr3$RESOLVED.TAXA.PAIR)
-
-data.frame(table(dat.terr3$RESOLVED.TAXA.PAIR))
-
+load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
 
 library(forcats)
 library(rcartocolor)
@@ -515,13 +455,13 @@ options(scipen = 999) #converts to nice numbers on axes
 # colors per taxa
 taxaCol <- rcartocolor::carto_pal(11, "Safe")
 
-ggplot(data.frame(table(dat.terr3$RESOLVED.TAXA1)), 
+ggplot(data.frame(table(moddat$RESOLVED.TAXA1)), 
        aes(x=fct_reorder(Var1, Freq, .desc=TRUE), 
            y=log(Freq), fill=Var1)) +
   #geom_bar(stat = "identity", fill="#66CC66") +
   #geom_col( fill="#3382BF") +
   geom_col() +
-  labs(x = "Taxanomic category", y = "Number of genera") +
+  labs(x = "Taxanomic category", y = "log Number of genera") +
   theme_classic(base_size = 25) + 
   theme(legend.position = "none",
         axis.text=element_text(size=25)) +
@@ -554,8 +494,7 @@ drawWorld<-function(lats) {
                    #colour = RESOLVED.TAXA1, 
                    colour = Elevation, 
                    size = SERIES.l), 
-               alpha=0.4)) #+
-  #scale_colour_manual(values=taxaCol)
+               alpha=0.4)) 
 
 
 ###### Predictions model coef plot, main hypotheses #####
