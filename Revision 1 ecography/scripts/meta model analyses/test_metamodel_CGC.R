@@ -145,15 +145,15 @@ alldat_trim <- alldat_trim %>%
 # time series length is only one of these for which all n > 3
 # note only use the estimates of total sp and individuals to estimate sample size
 # differences don't make sense as a sample size
-# takes 30 min
+# takes a few min
 # eq 3.12 in meta-analysis book 
 alldat_trim <- alldat_trim %>% 
   mutate(SE.timeseries = (1/sqrt(SERIES.l-3)), # time series length
          SE.total.indivs = (1/sqrt(total.indivs-3)), # total number of individuals
          SE.total.sp = (1/sqrt(total.sp-3)), # total number of species
-         SE.abs.total.indivsGn1mGn2 = (1/sqrt(abs.total.indivsGn1mGn2-3)), # abundance difference between genus 1 and 2
-         SE.abs.total.spGn1mGn2 = (1/sqrt(abs.total.spGn1mGn2-3)) # richness difference between genus 1 and 2
-         ) 
+         var.total.indivs = (1/(total.indivs-3)), # total number of individuals
+         var.total.sp = (1/(total.sp-3)), # total number of species
+        ) 
 
 # explore how many studies have very different numbers of sp or individuals between time series
 # include plot in supplement
@@ -219,19 +219,16 @@ moddat$scale.SERIES.l <- scale(moddat$SERIES.l)
 moddat$interaction_present.factor <- as.factor(moddat$interaction_present)
 moddat$scale.elev <- scale(moddat$Elevation)
 
-unique(moddat$treatment_yn_clean)  #fix capitals  
-moddat<-mutate(moddat, 
-               treatment_yn_clean=
-                 case_when(treatment_yn_clean=="Yes"~"yes", 
-                           treatment_yn_clean=="yes"~"yes",
-                           treatment_yn_clean=="No"~"no",
-                           TRUE~"no"))
+unique(moddat$treatment_yn_clean)  
+
+moddat$treatment_yn_clean[moddat$treatment_yn_clean=='No'|moddat$treatment_yn_clean=='no']="no"
+moddat$treatment_yn_clean[moddat$treatment_yn_clean=='Yes'|moddat$treatment_yn_clean=='yes']="yes"
 
 # run models on subset of data that doesn't have big differences between indivs or sp
 # between time series to see if our results are robust
 # note that we expect (and can see in the data) that big differences to weaken correlations and add noise, 
 # thus including them is a conservative approach
-# subset data below like 1000 indivs diff and to less than 30 sp diffs, breaks based on diff x corr plots above
+# subset data below like 1000 indivs diff and to less than 30 spp diffs, breaks based on diff x corr plots above
 
 hist(moddat$abs.total.indivsGn1mGn2)
 hist(moddat$abs.total.spGn1mGn2)
