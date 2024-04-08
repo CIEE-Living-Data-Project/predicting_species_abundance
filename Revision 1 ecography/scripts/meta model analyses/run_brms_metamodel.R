@@ -17,14 +17,14 @@ MODFORM.indivs <- bf(z|resp_se(SE.total.indivs, sigma = FALSE) ~
                        scale.SERIES.l + treatment_yn_clean + 
                        scale.abs.lat +
                        interaction_present.factor +
-                       scale.elev +
+                       #scale.elev +
                        (1|STUDY_ID) + (1|resolved_taxa_pair))
 
 MODFORM.sp <- bf(z|resp_se(SE.total.sp, sigma = FALSE) ~ 
                    scale.SERIES.l + treatment_yn_clean + 
                    scale.abs.lat +
                    interaction_present.factor +
-                   scale.elev +
+                   #scale.elev +
                    (1|STUDY_ID) + (1|resolved_taxa_pair))
 
 ## run models ####
@@ -55,16 +55,16 @@ load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
 # model 1
 start_time <- Sys.time() 
 metamod.indivs <- brm(MODFORM.indivs, moddat, cores=3, chains=3, prior=priors, 
-                      # control = list(adapt_delta=0.9, max_treedepth = 12)
-                      iter=2000, family=gaussian, file="Revision 1 ecography/output/meta model/SEindivs_2K.rmd")
+                      control = list(adapt_delta=0.9, max_treedepth = 11),
+                      iter=4000, family=gaussian, file="Revision 1 ecography/output/meta model/SEindivs_2K.rmd")
 end_time <- Sys.time()
 end_time - start_time
 
 # model 2
 start_time <- Sys.time() 
 metamod.sp <- brm(MODFORM.sp, moddat,cores=3, chains=3, prior = priors, 
-                  # control = list(adapt_delta=0.8, max_treedepth = 12), 
-                  iter=2000, family=gaussian, 
+                  control = list(adapt_delta=0.9, max_treedepth = 11), 
+                  iter=4000, family=gaussian, 
                   file="Revision 1 ecography/output/meta model/SEspecies_2K.rmd")
 end_time <- Sys.time()
 end_time - start_time

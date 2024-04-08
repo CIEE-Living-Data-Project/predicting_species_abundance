@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
+
+## define models ####
+# model with z scores and total indivs SE as joint response
+MODFORM.indivs <- bf(z|resp_se(SE.total.indivs, sigma = FALSE) ~ 
+                scale.SERIES.l + treatment_yn_clean + 
+                resolved_taxa_pair + 
+                scale.abs.lat +
+                interaction_present.factor +
+                scale.elev +
+                (1|STUDY_ID))
+# model with z scores and total indivs SE as joint response
+MODFORM.sp <- bf(z|resp_se(SE.total.sp, sigma = FALSE) ~ 
+                       scale.SERIES.l + treatment_yn_clean + 
+                       resolved_taxa_pair + 
+                       scale.abs.lat +
+                       interaction_present.factor +
+                       scale.elev +
+                       (1|STUDY_ID))
+
+
+
+```
+
+
+compute z scores
+
+transformed correlation coefficient -> person correlation of timeseries1 and 2 in each pair -> then transform that in Z score 
+
+create Standard errors values
+
+eq. 3.1.2 in the metanalisis book
+
+
+z|resp_se
+
+how to incorporate the standard error together with the z 
+
+response ratios are used for the lmer, where you have only one single variable
+
+
+So we need to calculate the log RR 
+
