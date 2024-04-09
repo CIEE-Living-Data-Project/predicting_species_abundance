@@ -31,7 +31,7 @@ install_cmdstan()
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
 #mia made changes to this model, including changiing to moddat below.
-metamod.sp <- brm(MODFORM.sp, moddat,cores=3, chains=3, backend = "cmdstanr", threads = threading(6), prior = priors, 
+metamod.sp <- brm(MODFORM.sp, moddat,cores=3, chains=3, backend = "cmdstanr", threads = threading(4), prior = priors, 
                   # control = list(adapt_delta=0.8, max_treedepth = 12), 
                   iter=10000, warmup = 5000, thin = 5, family=gaussian,
                   file="Revision 1 ecography/output/meta model/SEspecies_full5k_miathreads2.rmd")
