@@ -1,0 +1,184 @@
+---
+title: "Generating data attributes table"
+---
+
+This script produces the data attributes table, which shows the studies used in the analyses and their metadata.
+
+We will combine information from the processed data used in the analyses (number and identity of genus taxa, and presence/absence of treatment) with the Biotime metadata.
+
+
+
+```{r}
+library(ggpubr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+```
+
+
+## Load data
+
+```{r}
+# processed data used for the analyses
+
+load(file = "../../output/prep_data/model_data_final.Rdata")
+
+# Biotime metadata
+
+metadata <- read.csv(file = "../../../data/prep_biotime/BioTIMEMetadata_24_06_2021.csv")
+
+head(moddat)
+
+```
+
+
+
+Separate genus code into two columns
+
+```{r}
+moddat <- moddat %>%
+  rowwise() %>%
+  mutate(
+    G1 = strsplit(as.character(TS_ID), "~")[[1]][1],
+    G2 = strsplit(as.character(TS_ID), "~")[[1]][2]
+  ) %>%
+  ungroup()
+
+head(moddat)
+
+
+```
+
+
+Compute two new information columns for the data used in the analyses: the number ("n_genus") and names ("string_taxa") of the genus in a given study:
+
+
+```{r}
+
+# create empty columns
+
+moddat$string_taxa <- character(nrow(moddat))
+moddat$n_genus <- numeric(nrow(moddat))
+
+
+# fill in columns
+
+for (i in 1:length(unique(moddat$STUDY_ID))) {
+  
+  study_id <- unique(moddat$STUDY_ID)[i] # select a study ID
+  
+  # Compute vector of taxa names
+  
+  
+  vec_g1 = unique(moddat[moddat$STUDY_ID == study_id, "G1"])$G1
+  vec_g2 = unique(moddat[moddat$STUDY_ID == study_id, "G2"])$G2
+  
+  
+  
+  string_list_taxa =  paste(unique(c(vec_g1, vec_g2)), collapse = ", ") 
+
+  
+  moddat[which(moddat$STUDY_ID == study_id), "string_taxa"] = string_list_taxa
+  
+  
+   # Compute n taxa
+  
+  n_genus <- length(unique(c(vec_g1, vec_g2)))
+  
+  moddat[which(moddat$STUDY_ID == study_id), "n_genus"]  = n_genus
+  
+}
+
+
+
+```
+
+
+
+## Create data attributions table
+
+We use the data used for the analyses and the metadata to create the attributions table:
+
+
+```{r}
+
+# Select studies from the metadata table used for the analyses
+
+metadata_filtered <- metadata[which(metadata$STUDY_ID %in% moddat$STUDY_ID),]
+
+
+if(length(unique(moddat$STUDY_ID)) ==  length(unique(metadata_filtered$STUDY_ID))){
+  
+  print("the number of studies from the filtered metadata matches those from the analyses")
+  
+}else{
+  print("problem")
+}
+
+```
+
+
+Add string_taxa, n_genus and tratment_yn_clean to the metadata:
+
+
+```{r}
+# add variables
+
+metadata_filtered$STRING_TAXA <- character(nrow(metadata_filtered))
+metadata_filtered$DISTURBANCE <- character(nrow(metadata_filtered))
+metadata_filtered$N_GENERA <- numeric(nrow(metadata_filtered))
+
+
+# add the computed information columns
+
+for (i in 1:nrow(metadata_filtered)) {
+  
+  # string taxa
+  
+  study <- metadata_filtered$STUDY_ID[i]
+
+metadata_filtered$STRING_TAXA[i] <- as.character(moddat[which(moddat$STUDY_ID == study)[1], "string_taxa"])
+
+metadata_filtered$DISTURBANCE[i] <- as.character(moddat[which(moddat$STUDY_ID == study)[1], "treatment_yn_clean"])
+
+metadata_filtered$N_GENERA[i] <- as.numeric(moddat[which(moddat$STUDY_ID == study)[1], "n_genus"])
+
+  
+}
+
+## add an extra column indicating the number of genera pairs
+
+metadata_filtered$N_GENERA_PAIRS <- as.numeric(metadata_filtered$N_GENERA)*as.numeric(metadata_filtered$N_GENERA)
+
+
+# Select the data to show in the table
+
+attributions_table <- metadata_filtered[,
+                                                        c("STUDY_ID",
+                                                          "WEB_LINK",
+                                                          "START_YEAR",
+                                                          "END_YEAR",
+                                                          "CENT_LAT",
+                                                          "CENT_LONG",
+                                                          "ORGANISMS",
+                                                          "NUMBER_OF_SPECIES",
+                                                          "N_GENERA",
+                                                          "N_GENERA_PAIRS",
+                                                          "STRING_TAXA",
+                                                          "AREA_SQ_KM",
+                                                          "DISTURBANCE",
+                                                          "CONTACT_1",
+                                                          "CONTACT_2",
+                                                          "CONT_1_MAIL",
+                                                          "CONT_2_MAIL",
+                                                          "LICENSE",
+                                                          "DATA_SOURCE")]
+
+attributions_table
+
+# save table
+
+write.csv(attributions_table, "attributions_table2.csv")
+```
+
