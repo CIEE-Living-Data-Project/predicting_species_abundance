@@ -10,6 +10,12 @@ priors <- c(prior(normal(0,0.33),class=b),
 #Mia trying full data:
 load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
 
+#look225 <- subset(moddat, STUDY_ID == "225")
+#look39 <- subset(moddat, STUDY_ID == "39")
+#removing those two studies
+moddat <- filter(moddat, STUDY_ID != "225") 
+moddat <- filter(moddat, STUDY_ID != "39")
+unique(moddat$STUDY_ID)
 
 MODFORM.sp <- bf(z|resp_se(SE.total.sp, sigma = FALSE) ~ 
                    scale.SERIES.l + treatment_yn_clean + 
