@@ -25,13 +25,13 @@ MODFORM.sp <- bf(z|resp_se(SE.total.sp, sigma = FALSE) ~
                    (1|STUDY_ID) + (1|resolved_taxa_pair))
 
 #set up cmdstanr 
-install.packages("devtools")
+#install.packages("devtools")
 library(devtools)
 
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos"))) #this was the only way the instalation worked for me
+#install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos"))) #this was the only way the instalation worked for me
 
 library(cmdstanr)
-install_cmdstan()
+#install_cmdstan()
 # set_cmdstan_path(path = NULL) #I think this isn't needed typically, but I read that this would help solve path problems, but it ended up not helping me
 # if you run into issues here, I would recommend restarting R and reinstalling cmdstanr. After doing those two things (and a lot of other fussing, that I haven't transferred to this script), everything just worked
 cmdstanr::check_cmdstan_toolchain(fix = TRUE)
