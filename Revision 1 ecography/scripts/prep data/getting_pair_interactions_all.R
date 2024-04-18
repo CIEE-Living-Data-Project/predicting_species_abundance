@@ -1,6 +1,6 @@
 # Date created: 26 Apr 2023
 # Date updated: 26 Apr 2023 (NC)
-# Date updated: 29 Jan 2024 (ENB)
+# Date updated: 18 Apr 2024 (ENB)
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -753,11 +753,13 @@ saveRDS(log_change, "Revision 1 ecography/output/results_abundance_interactions_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
 #Add resolved taxa pairs - to class level, and corrected 
+#Done using taxize
 
 #Load the taxize package
 library(taxize)
 
 #Read in the data 
+#note - some data locations 
 log_change <- readRDS("Revision 1 ecography/output/results_abundance_interactions_022824ENB.RDS")
 
 #Get the class names for each group 
@@ -784,19 +786,20 @@ unique(log_change.taxa$resolved_taxa_pair)
 
 
 #When we do this, we see some erroneous NA names 
-#E.g. chondrichytes, acentrostomata (maybe), eucherlicerata - probablt want to investigate these 
-#We can correct these since they are labelled in BioTIME
+#E.g. chondrichytes, acentrostomata (maybe), eucherlicerata - investigate these 
+#We can correct these since they are labelled in the BioTIME metadata
+
+#Investigate Acentrosomata
 acentro <- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Acentrosomata")
 unique(acentro$Gn1)
 unique(acentro$STUDY_PLOT)
-#Replace all Acentrosomata with Insecta 
+#Replace all Acentrosomata with Insecta (from metadata)
 log_change.taxa$RESOLVED.TAXA1 <- gsub("Acentrosomata", "Insecta", log_change.taxa$RESOLVED.TAXA1)
 log_change.taxa$RESOLVED.TAXA2 <- gsub("Acentrosomata", "Insecta", log_change.taxa$RESOLVED.TAXA2)
 
 
-#Check the list of regular taxa names in biotime 
-#e.g. euchelicerata
+#Investigate euchelicerata
 euchel <- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Euchelicerata")
 unique(euchel$Gn1)
@@ -804,7 +807,7 @@ unique(euchel$STUDY_PLOT)
 #Looks like there are some erronerous names: WIWA, 
 #And a mislabelledmoth genus - Dioryctria 
 #Fix this 
-#WIWA should be aves 
+#WIWA should be aves based on study plot 
 log_change.taxa$RESOLVED.TAXA1 <- ifelse(log_change.taxa$Gn1 == "WIWA", 
        log_change.taxa$RESOLVED.TAXA1 <- gsub("Euchelicerata", "Aves", log_change.taxa$RESOLVED.TAXA1),
        log_change.taxa$RESOLVED.TAXA1)
@@ -821,7 +824,7 @@ log_change.taxa$RESOLVED.TAXA2 <- ifelse(log_change.taxa$Gn2 == "Dioryctria",
 
 
 
-
+#Investigate chondrichyes 
 chondro <- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Chondrichthyes")
 unique(chondro$Gn1)
@@ -830,16 +833,17 @@ unique(chondro$STUDY_PLOT)
 #What else is in this study? 
 study_249 <- log_change.taxa[grepl("249", log_change.taxa$STUDY_PLOT), ]
 unique(study_249$Gn1)
-#Prays - is a lepidopteran 
+#Prays - is a lepidopteran according to metadata
+#Relabel
 log_change.taxa$RESOLVED.TAXA1 <- gsub("Chondrichthyes", "Insecta", log_change.taxa$RESOLVED.TAXA1)
 log_change.taxa$RESOLVED.TAXA2 <- gsub("Chondrichthyes", "Insecta", log_change.taxa$RESOLVED.TAXA2)
 
-#Next, check Reptilia 
+#Next, double check Reptilia
 repts<- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Reptilia")
 unique(repts$Gn1)
 unique(repts$STUDY_PLOT)
-#So 319 and 316 are fine - 225 needs to be changed to Aves
+#So 319 and 316 are fine - 225 needs to be changed to Aves according to metadata
 log_change.taxa$RESOLVED.TAXA2 [grepl("225", log_change.taxa$STUDY_PLOT )] <- "Aves"
 log_change.taxa$RESOLVED.TAXA1 [grepl("225", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
@@ -850,7 +854,7 @@ teleost<- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Teleostei")
 unique(teleost$Gn1)
 unique(teleost$STUDY_PLOT)
-#Study 225 should be all birds 
+#Study 225 should be all birds according to metadata
 log_change.taxa$RESOLVED.TAXA2 [grepl("225", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA1 [grepl("225", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
@@ -860,7 +864,7 @@ gastropod<- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Gastropoda")
 unique(gastropod$Gn1)
 unique(gastropod$STUDY_PLOT)
-#Study 382 should be all mammals
+#Study 382 should be all mammals according to metadata
 log_change.taxa$RESOLVED.TAXA2 [grepl("382", log_change.taxa$STUDY_PLOT )] <- "Mammalia"
 log_change.taxa$RESOLVED.TAXA1 [grepl("382", log_change.taxa$STUDY_PLOT)] <- "Mammalia"
 
@@ -871,11 +875,12 @@ unique(gnetops$Gn1)
 unique(gnetops$STUDY_PLOT)
 #Looks ok! 
 
+#Check bryopsida 
 Bryops<- log_change.taxa %>%
   filter(RESOLVED.TAXA1 =="Bryopsida")
 unique(Bryops$Gn1)
 unique(Bryops$STUDY_PLOT)
-#This should be birds 
+#This should be birds according to metadata
 #Study 333
 log_change.taxa$RESOLVED.TAXA2 [grepl("333", log_change.taxa$STUDY_PLOT )] <- "Aves"
 log_change.taxa$RESOLVED.TAXA1 [grepl("333", log_change.taxa$STUDY_PLOT)] <- "Aves"
@@ -887,28 +892,25 @@ table(log_change.taxa$resolved_taxa_pair)
 
 
 
-#Resolve taxa names in slopes_join 
-#Now we resolve the NA values 
+#Check rows with NA for Class 
 na_classes <-  log_change.taxa[grepl("NA", log_change.taxa$resolved_taxa_pair), ]
-#Okay, now tell me the studies 
+#show for which study it is NA
 unique(na_classes$STUDY_PLOT)
 #I'm seeing study 195, 221, 240, 248, 249, 300, 308, 
 #340, 366, 375, 380, 39, 413, 414, 416, 420, 46, 471, 
 #54
-#Study 195 - should all be birds 
+
+#Study 195 - should all be birds according to metadata
 log_change.taxa$RESOLVED.TAXA2 [grepl("195", log_change.taxa$STUDY_PLOT )] <- "Aves"
 log_change.taxa$RESOLVED.TAXA1 [grepl("195", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
 #Study 221 - boreal vegetation, so we're gonna have to dive deeper
-study_221_na <- log_change.taxa %>%
-  filter(STUDY_PLOT == "221~Was_NA") %>%
-  filter(is.na(RESOLVED.TAXA1))
+#NOTE: study 221 was ultimately corrected in results.abundance code
+#As genus/species names were incorrect 
+study_221_na <- log_change %>%
+  filter(STUDY_PLOT == "221~Was_NA") 
 unique(study_221_na$Gn1)
-#Weird, what are the rows in study 221? 
-study_221 <-  log_change.taxa[grepl("221", log_change.taxa$STUDY_PLOT), ]
-#I think we will have to remove study 221 due to ambiguous tree names 
-log_change.taxa <- log_change.taxa %>%
-  filter(!STUDY_PLOT == "221~Was_NA")
+
 
 #Study 240
 #Terrestrial plants, need to investigate 
@@ -917,6 +919,7 @@ study_240_na <- log_change.taxa %>%
   filter(is.na(RESOLVED.TAXA1))
 unique(study_240_na$Gn1)
 #Should be Magnoliopsida and Monocot
+#Will manually correct
 log_change.taxa$RESOLVED.TAXA1 [grepl("Chamaesyce", log_change.taxa$Gn1)] <- "Magnoliopsida"
 log_change.taxa$RESOLVED.TAXA2 [grepl("Chamaesyce", log_change.taxa$Gn2)] <- "Magnoliopsida"
 
@@ -926,8 +929,8 @@ log_change.taxa$RESOLVED.TAXA2 [grepl("Lesquerella", log_change.taxa$Gn2)] <- "M
 log_change.taxa$RESOLVED.TAXA1 [grepl("Pleuraphis", log_change.taxa$Gn1)] <- "Monocots"
 log_change.taxa$RESOLVED.TAXA2 [grepl("Pleuraphis", log_change.taxa$Gn2)] <- "Monocots"
 
-#Study 248
-#Plants again
+#Study 248 
+#Plants again - need to investigate further
 study_248_na <- log_change.taxa %>%
   filter(grepl("248", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
@@ -941,7 +944,7 @@ study_249_na <- log_change.taxa %>%
   filter(grepl("249", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
 unique(study_249_na$Gn1)
-#Here are our moths! 
+#Lepidopterans - update to Insecta
 log_change.taxa$RESOLVED.TAXA1[grepl("249", log_change.taxa$STUDY_PLOT) & log_change.taxa$RESOLVED.TAXA1 == "NA"] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA2[grepl("249", log_change.taxa$STUDY_PLOT) & log_change.taxa$RESOLVED.TAXA2 == "NA"] <- "Insecta"
 
@@ -950,7 +953,7 @@ log_change.taxa$RESOLVED.TAXA2[grepl("249", log_change.taxa$STUDY_PLOT) & log_ch
 monocots_insecta <- log_change.taxa %>%
   filter(resolved_taxa_pair=="Monocots.Insecta")
 unique(monocots_insecta$STUDY_PLOT)
-#This also needs fixing 
+#This also needs fixing - these should all be Monocots
 unique(monocots_insecta$Gn2)
 log_change.taxa$RESOLVED.TAXA2[grepl("Scleropogon", log_change.taxa$Gn2)] <- "Monocots"
 log_change.taxa$RESOLVED.TAXA1[grepl("Scleropogon", log_change.taxa$Gn1)] <- "Monocots"
@@ -961,7 +964,7 @@ study_300_na <- log_change.taxa %>%
   filter(grepl("300", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
 unique(study_300_na$Gn1)
-#Insecta
+#These are lepidopterans - should be updated to Insecta
 log_change.taxa$RESOLVED.TAXA1[grepl("Harmonia", log_change.taxa$Gn1)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA2[grepl("Harmonia", log_change.taxa$Gn2)] <- "Insecta"
 
@@ -979,21 +982,23 @@ study_340_na <- log_change.taxa %>%
   filter(is.na(RESOLVED.TAXA1))
 #Plants 
 unique(study_340_na$Gn1)
-#Looks like we're good!
+#Looks like we're good here!
 
+#Study 366
 study_366_na <- log_change.taxa %>%
   filter(grepl("366", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#all mammals
+#Sould be updated to mammals
 log_change.taxa$RESOLVED.TAXA1[grepl("366", log_change.taxa$STUDY_PLOT)] <- "Mammalia"
 log_change.taxa$RESOLVED.TAXA2[grepl("366", log_change.taxa$STUDY_PLOT)] <- "Mammalia"
 
+#Study 375 
 study_375_na <- log_change.taxa %>%
   filter(grepl("375", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#Probably beetles, but let's check 
+#Probably beetles (Insecta), but let's check 
 unique(study_375_na$Gn1)
-#All beetles 
+#All beetles - update to Insecta 
 log_change.taxa$RESOLVED.TAXA1[grepl("Phelotrupes", log_change.taxa$Gn1)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA2[grepl("Phelotrupes", log_change.taxa$Gn2)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA1[grepl("Platydracus", log_change.taxa$Gn1)] <- "Insecta"
@@ -1003,6 +1008,7 @@ log_change.taxa$RESOLVED.TAXA2[grepl("Staphylinus", log_change.taxa$Gn2)] <- "In
 log_change.taxa$RESOLVED.TAXA1[grepl("Eusilpha", log_change.taxa$Gn1)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA2[grepl("Eusilpha", log_change.taxa$Gn2)] <- "Insecta"
 
+#Studies remaining: 
 #380, 39, 413, 414, 416, 420, 46, 471, 
 #54
 
@@ -1010,10 +1016,10 @@ log_change.taxa$RESOLVED.TAXA2[grepl("Eusilpha", log_change.taxa$Gn2)] <- "Insec
 study_380_na <- log_change.taxa %>%
   filter(grepl("380", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#Probably moths and butterflies
+#Probably moths and butterflies, will double check 
 butterflies <- unique(study_380_na$Gn1)
 butterflies <- paste(butterflies, collapse = "|")
-# Use grepl with the combined pattern
+# Use grepl with the combined pattern to update to Insecta
 log_change.taxa$RESOLVED.TAXA2[grepl(butterflies, log_change.taxa$Gn2)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA1[grepl(butterflies, log_change.taxa$Gn1)] <- "Insecta"
 
@@ -1022,12 +1028,13 @@ study_39_na <- log_change.taxa %>%
   filter(grepl("\\b39\\b", STUDY_PLOT) & is.na(RESOLVED.TAXA1))
 log_change.taxa$RESOLVED.TAXA1[grepl("\\b39\\b", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2[grepl("\\b39\\b", log_change.taxa$STUDY_PLOT)] <- "Aves"
+#NOTE: this study was corrected in new results.abundance code 
 
 #Study 413
 study_413_na <- log_change.taxa %>%
   filter(grepl("413", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#should all be birds
+#should all be birds - update to Aves
 log_change.taxa$RESOLVED.TAXA1[grepl("413", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2[grepl("413", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
@@ -1035,7 +1042,7 @@ log_change.taxa$RESOLVED.TAXA2[grepl("413", log_change.taxa$STUDY_PLOT)] <- "Ave
 study_414_na <- log_change.taxa %>%
   filter(grepl("414", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#Also all birds
+#Also all birds - update to Aves
 log_change.taxa$RESOLVED.TAXA1[grepl("414", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2[grepl("414", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
@@ -1043,7 +1050,7 @@ log_change.taxa$RESOLVED.TAXA2[grepl("414", log_change.taxa$STUDY_PLOT)] <- "Ave
 study_416_na <- log_change.taxa %>%
   filter(grepl("416", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#More birds
+#More birds - update to Aves
 log_change.taxa$RESOLVED.TAXA1[grepl("416", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2[grepl("416", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
@@ -1051,14 +1058,14 @@ log_change.taxa$RESOLVED.TAXA2[grepl("416", log_change.taxa$STUDY_PLOT)] <- "Ave
 study_420_na <- log_change.taxa %>%
   filter(grepl("420", STUDY_PLOT)) %>%
   filter(is.na(RESOLVED.TAXA1))
-#More birds! 
+#More birds - update to Aves
 log_change.taxa$RESOLVED.TAXA1[grepl("420", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2[grepl("420", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
 #46
 study_46_na <- log_change.taxa %>%
   filter(grepl("\\b46\\b", STUDY_PLOT) & is.na(RESOLVED.TAXA1))
-#More birds
+#More birds - update to Aves
 log_change.taxa$RESOLVED.TAXA1[grepl("\\b46\\b", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2[grepl("\\b46\\b", log_change.taxa$STUDY_PLOT)] <- "Aves"
 
@@ -1075,7 +1082,7 @@ unique(study_471_na$Log.prop.change.Gn2)
 study_54_na <- log_change.taxa %>%
   filter(grepl("\\b54\\b", STUDY_PLOT) & is.na(RESOLVED.TAXA1))
 unique(study_54_na$Gn1)
-#Gastropod
+#Should be Gastropod - update
 log_change.taxa$RESOLVED.TAXA1[grepl("Gaeotis", log_change.taxa$Gn1)] <- "Gastropoda"
 log_change.taxa$RESOLVED.TAXA2[grepl("Gaeotis", log_change.taxa$Gn2)] <- "Gastropoda"
 
@@ -1086,6 +1093,7 @@ log_change.taxa$RESOLVED.TAXA2[grepl("Gaeotis", log_change.taxa$Gn2)] <- "Gastro
 sorted_words <- apply(log_change.taxa[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
 log_change.taxa$resolved_taxa_pair <- sorted_words
 table(log_change.taxa$resolved_taxa_pair)
+
 #looks like we still have a few NAs, where are they? 
 na_classes <-  log_change.taxa[grepl("NA", log_change.taxa$resolved_taxa_pair), ]
 unique(na_classes$STUDY_PLOT)
@@ -1093,30 +1101,34 @@ unique(na_classes$STUDY_PLOT)
 study_54_na <- log_change.taxa %>%
   filter(grepl("\\b54\\b", STUDY_PLOT))
 unique(study_54_na$Gn2)
+#Need to update to Gastropoda
 log_change.taxa$RESOLVED.TAXA1[grepl("Nenia", log_change.taxa$Gn1)] <- "Gastropoda"
 log_change.taxa$RESOLVED.TAXA2[grepl("Nenia", log_change.taxa$Gn2)] <- "Gastropoda"
 
+#Study 249
 study_249_na <- log_change.taxa %>%
   filter(grepl("249", STUDY_PLOT))
 unique(study_249_na$Gn2)
-#More moths!
+#More moths - update to Insecta
 butterflies <- unique(study_249_na$Gn2)
 butterflies <- paste(butterflies, collapse = "|")
 # Use grepl with the combined pattern
 log_change.taxa$RESOLVED.TAXA2[grepl(butterflies, log_change.taxa$Gn2)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA1[grepl(butterflies, log_change.taxa$Gn1)] <- "Insecta"
 
+#Study 375
 study_375_na <- log_change.taxa %>%
   filter(grepl("375", STUDY_PLOT))
 unique(study_375_na$Gn2)
 #This one is tricky, because it has birds and beetles
-#So let's do the beetles first
+#So let's do the beetles first - update to Insecta
 beetles <-  c("Pterostichus", "Silpha", "Phelotrupes", "Staphylinus", "Synuchus", 
                             "Platydracus", "Coleoptera", "Eusilpha", "Drusilla", "Panelus")
 beetles <- paste(beetles, collapse = "|")
 # Use grepl with the combined pattern
 log_change.taxa$RESOLVED.TAXA2[grepl(beetles, log_change.taxa$Gn2)] <- "Insecta"
 log_change.taxa$RESOLVED.TAXA1[grepl(beetles, log_change.taxa$Gn1)] <- "Insecta"
+#Birds - update to Aves
 birds <- c("Columba", "Corvus", "Cyanocitta", "Eremophila", "Geothlypis", 
                           "Hirundo", "Melanerpes", "Melospiza", "Molothrus", "Passer", 
                           "Passerina", "Phasianus", "Quiscalus", "Spiza", "Spizella", 
@@ -1126,7 +1138,7 @@ birds <- paste(birds, collapse = "|")
 log_change.taxa$RESOLVED.TAXA2[grepl(birds, log_change.taxa$Gn2)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA1[grepl(birds, log_change.taxa$Gn1)] <- "Aves"
 
-#Just double checking aves mammalia: 
+#Double checking aves mammalia: 
 aves_mammalia <- log_change.taxa %>%
   filter(resolved_taxa_pair=="Aves.Mammalia")
 #Study 195 should all be birds
@@ -1145,7 +1157,9 @@ log_change.taxa$RESOLVED.TAXA2 [grepl("339", log_change.taxa$STUDY_PLOT )] <- "A
 log_change.taxa$RESOLVED.TAXA1 [grepl("339", log_change.taxa$STUDY_PLOT)] <- "Aves"
 log_change.taxa$RESOLVED.TAXA2 [grepl("475", log_change.taxa$STUDY_PLOT )] <- "Aves"
 log_change.taxa$RESOLVED.TAXA1 [grepl("475", log_change.taxa$STUDY_PLOT)] <- "Aves"
+#It seems we just have many large bird studies in our dataset
 
+#Correcting some erroneous Insecta.Magnoliopsida
 insecta_magno <- log_change.taxa %>%
   filter(resolved_taxa_pair=="Insecta.Magnoliopsida")
 table(insecta_magno$STUDY_PLOT)
@@ -1154,13 +1168,14 @@ unique(insecta_magno$Gn1)
 #Boerhaavia should be Eudicot 
 log_change.taxa$RESOLVED.TAXA1[grepl("Boerhaavia", log_change.taxa$Gn1)] <- "Eudicots"
 
-
+#Double checking Aves.Amphibia
 amphibia_aves <- log_change.taxa %>%
   filter(grepl("173", STUDY_PLOT))
 table(amphibia_aves$STUDY_PLOT)
 unique(amphibia_aves$Gn1)
 
-#Fixing some errors from above code: 
+#Fixing some errors from study 173
+#Some should be Reptilia
 repts <- c("Coluber", "Diadophis", "Eumeces", "Tantilla", "Cnemidophorus", "Uta", "Thamnophis")
 repts <- paste(repts, collapse = "|")
 log_change.taxa$RESOLVED.TAXA2[grepl(repts, log_change.taxa$Gn2)] <- "Reptilia"
@@ -1173,127 +1188,67 @@ log_change.taxa$resolved_taxa_pair <- sorted_words
 table(log_change.taxa$resolved_taxa_pair)
 #All fixed! 
 
-saveRDS(log_change.taxa, "Revision 1 ecography/output/results_abundance_interactions_taxa_030724ENB.RDS")
+#If running, update save location 
+#saveRDS(log_change.taxa, "Revision 1 ecography/output/results_abundance_interactions_taxa_030724ENB.RDS")
 
 
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#Positive negative neutral (hyphenated)
-
-log_change_interaction <- readRDS("data/data_processing/log.prop.change.interactions.RDS")
 
 
-pos_neg_interactions<- cased_interactions_filtered_3%>%
-  mutate(
-    interaction_benefit = case_when(
-      interaction_type %in%  c("predator_prey", "parasitism") ~ "negative",
-      interaction_type %in% c("mutualism", "dispersal") ~ "positive",
-      interaction_type %in% c("uncategorized_interaction") ~ "neutral",
-      TRUE ~ NA_character_
-    ),
-    .keep = "unused"
-  ) %>%
-  distinct()
 
-#Assign positive/negative interactions 
-dummy_data <- log_change_interaction %>%
-  sample_n(10000)
+####Fixing study 221 with new resolved names 
+#Load in log_change.taxa, and add in study 221 with new genera names 
+log_change.taxa <- readRDS("Revision 1 ecography/output/results_abundance_interactions_taxa_030724ENB.RDS")
 
-#Create vectors to store
-positive_interaction <- vector("integer", nrow(log_change_interaction))
-negative_interaction <- vector("integer", nrow(log_change_interaction))
-neutral_interaction <- vector("integer", nrow(log_change_interaction))
-
-
-# Iterate over each row in the log_prop_change_interaction dataset
-
-pb<-set.prog.bar(nrow(log_change_interaction)) #sets progress bar
-#take interaction types, and hyphenate if there are multiple
-for (i in 1:nrow(log_change_interaction)) {
-  pb$tick()
-  
-  # Get the genus pair from the current row
-  gn1 <- log_change_interaction$Gn1[i]
-  gn2 <- log_change_interaction$Gn2[i]
-  
-  # Find the corresponding row(s) in the pos_neg_interactions dataset
-  match_rows <- (pos_neg_interactions$Gn1 == gn1 & pos_neg_interactions$Gn2 == gn2) |
-    (pos_neg_interactions$Gn1 == gn2 & pos_neg_interactions$Gn2 == gn1)
-  
-  if (any(match_rows)) {
-    # If matching row(s) are found, retrieve interaction types
-    interaction_benefit <- pos_neg_interactions$interaction_benefit[match_rows]
-    
-    # Hyphenate multiple interaction types or assign "NA" if none
-    if (length(interaction_benefit) > 0) {
-      hyphenated_interaction <- paste(interaction_benefit, collapse = "-")
-    } else {
-      hyphenated_interaction <- "NA"
-    }
-    
-    # Assign the hyphenated interaction to the corresponding column
-    log_change_interaction$interaction_benefit[i] <- hyphenated_interaction
-  } else {
-    # If no matching row is found, assign "NA" to the interaction type
-    log_change_interaction$interaction_benefit[i] <- "NA"
-  }
+study_221$RESOLVED.TAXA1 <- c("Eudicots")
+study_221$RESOLVED.TAXA2 <- c("Eudicots")
+sorted_words <- apply(study_221[, c('RESOLVED.TAXA1', 'RESOLVED.TAXA2')], 1, function(x) paste(x, collapse = "."))
+study_221$resolved_taxa_pair <- sorted_words
+table(study_221$resolved_taxa_pair)
+map_genus <- function(code) {
+  ifelse(grepl("SALI", code), "Salix", ifelse(grepl("POPU", code), "Populus", code))
 }
 
+# Applying the mapping function to the 'Gn1' column
+study_221 <- study_221 %>% mutate(Gn1 = map_genus(Gn1))
+study_221 <- study_221 %>% mutate(Gn2 = map_genus(Gn2))
 
-saveRDS(log_change_interaction, "data/data_processing/log.prop.change.interactions.RDS")
+#Plot study 221 just for fun 
+#Create new column with genus pair for labelling
+sorted_words <- apply(study_221[, c('Gn1', 'Gn2')], 1, function(x) paste(x, collapse = "."))
+study_221$genus_pair <- sorted_words
 
+#Pivot 221 longer
+#And plot to check all is as expected
+study_221_longer <- study_221 %>%
+  pivot_longer(cols = c("Log.prop.change.Gn1", "Log.prop.change.Gn2"), 
+               names_to = "genera", 
+               values_to = "log_prop_change")
 
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
-
-#Write new log change interaction: 
-log_change_interaction <- readRDS("data/data_processing/log.prop.change.interactions.RDS")
-
-
-#do interaction type detailed
-pb<-set.prog.bar(nrow(log_change_interaction)) #sets progress bar
-#take interaction types, and hyphenate if there are multiple
-for (i in 1:nrow(log_change_interaction)) {
-  pb$tick()
   
-  # Get the genus pair from the current row
-  gn1 <- log_change_interaction$Gn1[i]
-  gn2 <- log_change_interaction$Gn2[i]
-  
-  # Find the corresponding row(s) in the cased_interactions_filtered_3 dataset
-  match_rows <- (cased_interactions_filtered_3$Gn1 == gn1 & cased_interactions_filtered_3$Gn2 == gn2) |
-    (cased_interactions_filtered_3$Gn1 == gn2 & cased_interactions_filtered_3$Gn2 == gn1)
-  
-  if (any(match_rows)) {
-    # If matching row(s) are found, retrieve interaction types
-    interaction_type <- cased_interactions_filtered_3$interaction_type[match_rows]
-    
-    # Hyphenate multiple interaction types or assign "NA" if none
-    if (length(interaction_type) > 0) {
-      hyphenated_interaction <- paste(interaction_type, collapse = "-")
-    } else {
-      hyphenated_interaction <- "NA"
-    }
-    
-    # Assign the hyphenated interaction to the corresponding column
-    log_change_interaction$interaction_type[i] <- hyphenated_interaction
-  } else {
-    # If no matching row is found, assign "NA" to the interaction type
-    log_change_interaction$interaction_type[i] <- "NA"
-  }
-}
-
-#checking everything worked
-unique(log_change_interaction$interaction_type)
-
-#remove the "detailed" column
-log_change_interaction$interaction_benefit <- log_change_interaction_hyphenated$interaction_benefit
-
-saveRDS(log_change_interaction, "data/data_processing/log.prop.change.interactions.RDS")
+study_221_longer %>%
+  ggplot(aes(x = YEAR.T, y = log_prop_change, group=interaction(genus_pair, genera), 
+             color = genus_pair, shape = genera)) + 
+  geom_point() + 
+  geom_jitter()+
+  geom_smooth(se=FALSE, span = 0.5, aes(linetype = genera)) +
+  facet_wrap(~genus_pair)+
+  labs(x="Year", y = "Log(Proportional change in abundance)", 
+       shape = "Genera 1 or 2", linetype = "Genera 1 or 2", 
+       color = "Genus grouping")+
+  theme_classic() 
 
 
-#non-na rows with interactions
-summarize_rows <- log_change_interaction %>%
-  filter(interaction_present==1)
-nrow(summarize_rows)/nrow(log_change_interaction)
-unique(log_change_interaction$Gn1, log_change_interaction$Gn2)
+#Add study 221 back into log_change.taxa
+
+log_change.taxa <- bind_rows(study_221, log_change.taxa) 
+#Arrange in order of increasing study 
+log_change.taxa <- log_change.taxa %>%
+  arrange(X)
+
+#Export 
+#saveRDS(log_change.taxa, "Revision 1 ecography/output/results_abundance_interactions_taxa_030724ENB_2.RDS")
+
+
+#Reassign the genera 
+
+

@@ -1,6 +1,6 @@
 # Date created: 26 Apr 2023
 # Date updated: 26 Apr 2023 (NC)
-# Date updated: 18 Mar 2024 (ENB)
+# Date updated: 18 Apr 2024 (ENB)
 
 #ONLY FOR STUDIES 221 AND 39
 
@@ -378,7 +378,7 @@ log_change <- log_change %>%
 full_log_change <- readRDS("Revision 1 ecography/output/results_abundance_interactions_taxa_030724ENB_2.RDS")
 full_log_change <- full_log_change %>%
  filter(!grepl("221", STUDY_PLOT)) %>%
-  filter(!grepl("39", STUDY_PLOT))
+  filter(!grepl("\\b39\\b", STUDY_PLOT))
 #Keep only intersecting columns from full log change
 common_cols <- intersect(names(full_log_change), names(log_change))
 log_change <- log_change[, common_cols]
@@ -389,14 +389,13 @@ study_221_rbind <- full_log_change %>%
   filter(grepl("221", STUDY_PLOT))
 study_39_rbind <- full_log_change %>%
   filter(grepl("39", STUDY_PLOT))
+study_339_rbind <- full_log_change %>%
+  filter(grepl("339", STUDY_PLOT))
+study_313_rbind <- full_log_change %>%
+  filter(grepl("313", STUDY_PLOT))
+
 #Save final dataset
-saveRDS(full_log_change, "Revision 1 ecography/output/results_abundance_interactions_taxa_031824ENB.RDS")
+#Note: save location and names should be updated if running 
+#saveRDS(full_log_change, "Revision 1 ecography/output/results_abundance_interactions_taxa_032024ENB.RDS")
 
-
-
-#Export 
-#saveRDS(log_change.taxa, "Revision 1 ecography/output/results_abundance_interactions_taxa_030724ENB_2.RDS")
-
-
-#Reassign the genera 
 
