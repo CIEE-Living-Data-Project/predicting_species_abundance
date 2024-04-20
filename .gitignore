@@ -28,3 +28,7 @@ tutorials/_README.md
 tutorials/GitHub_Tutorial_Agenda.Rmd
 scripts/homework/
 
+#large raw data files
+*.csv
+
+
