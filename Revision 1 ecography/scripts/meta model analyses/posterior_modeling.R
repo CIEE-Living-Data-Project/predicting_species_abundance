@@ -1,5 +1,6 @@
 library(tidyverse)
 library(brms)
+library(ggdist)
 
 #load model outputs and raw data 
 metamod.sp<-read_rds(file="Revision 1 ecography/output/meta model/SEspecies_full15k_miathreads2_AF.rmd.rds")
@@ -43,25 +44,6 @@ ggplot(summary_all, aes(y=Estimate, x=paramx, fill=mod, color=mod)) +
   geom_jitter()+
                        xlab("Model parameter")+
 scale_color_discrete(name="Model")+ scale_fill_discrete(name="Model")
-
-ggplot(subset(pred_estimates,diff<0.25), aes(x=value0, y=mean_pred, colour=diff))+
-  #geom_smooth(method='lm')+
-  geom_abline(slope=1, intercept=0, color="black", lty=2)+
-  geom_point(alpha=1)+
-  ylab("Predicted log change in abundance") + 
-  xlab("Observed log change in abundance")  +
-  theme_bw()+ 
-  scale_colour_gradient(
-    low = "#8DA0CB",
-    #mid = "blue",
-    high = "#Ff0000",
-    #midpoint = 0.15,
-    space = "Lab",
-    na.value = "grey50",
-    guide = "colourbar",
-    aesthetics = "colour", name="Residuals")+
-  theme(axis.title = element_text(size = 10), 
-        legend.title = element_text(size = 10))
 
 #posterior predictive modeling ----
 #run ppchecks ----
