@@ -388,7 +388,8 @@ abc <- plot_grid(a, bc, ncol=2, rel_widths = c(3, 2))
 ######  Figure 4. coef plot  #######
 
 # with posterior distribution
-fig4 <- model %>%
+# all on one plot, hard to see error in time series length bc on diff scale
+model %>%
   spread_draws(b_Intercept, b_scale.SERIES.l, b_scale.abs.lat , b_treatment_yn_cleanyes, b_interaction_present.factor1) %>%
   mutate(b_dis=b_Intercept+b_treatment_yn_cleanyes, b_int=b_Intercept+b_interaction_present.factor1) %>% 
   tidyr::pivot_longer(cols=c(5,6,9,10), names_to = "draw.name") %>% 
@@ -426,7 +427,168 @@ fig4 <- model %>%
                )) +
   guides(fill = "none") +
   scale_fill_manual(values=c("#009E73","#0072B2" ,"#CC79A7","#E69F00" ))
-fig4
+
+# sepparate
+lat.plot <- model %>%
+  spread_draws(b_Intercept, b_scale.SERIES.l, b_scale.abs.lat , b_treatment_yn_cleanyes, b_interaction_present.factor1) %>%
+  tidyr::pivot_longer(cols=c(4, 6), names_to = "draw.name") %>% 
+  ggplot(aes(y = draw.name, x = value)) +
+  #geom_vline(xintercept = 0, color = "#839496", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey")+
+  stat_halfeye(aes(fill=draw.name), 
+               .width = c(0.66, 0.95),
+               point_size=3, 
+               point_interval = "mean_qi",
+               normalize="groups",
+               interval_size_range=c(1,2)) +
+  labs(x = "", #expression("Estimate"),
+       y = "") +#"Model parameters") +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_y_discrete(
+    labels = c("b_Intercept" = "Intercept",
+      #"b_scale.SERIES.l" = "Time series length",
+      "b_scale.abs.lat" = "Latitude"
+      #"b_dis" = "Disturbance",
+      #"#b_int" = "GloBI interactions"
+      ),
+    limits = c(#"b_scale.SERIES.l", 
+               #"b_dis",
+               #"b_int",
+               "b_scale.abs.lat",
+               "b_Intercept" 
+    )) +
+  guides(fill = "none") +
+  scale_fill_manual(values=c("grey80", "#CC79A7" ))
+
+int.plot <- model %>%
+  spread_draws(b_Intercept, b_scale.SERIES.l, b_scale.abs.lat , b_treatment_yn_cleanyes, b_interaction_present.factor1) %>%
+  tidyr::pivot_longer(cols=c(8), names_to = "draw.name") %>% 
+  ggplot(aes(y = draw.name, x = value)) +
+  #geom_vline(xintercept = 0, color = "#839496", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey")+
+  stat_halfeye(aes(fill=draw.name), 
+               .width = c(0.66, 0.95),
+               point_size=3, 
+               point_interval = "mean_qi",
+               normalize="groups",
+               interval_size_range=c(1,2)) +
+  labs(x = "", #expression("Estimate"),
+       y = "") +#"Model parameters") +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_y_discrete(
+    labels = c(#"b_Intercept" = "Intercept",
+      #"b_scale.SERIES.l" = "Time series length",
+      #"b_scale.abs.lat" = "Latitude"
+      #"b_treatment_yn_cleanyes" = "Disturbance",
+      "b_interaction_present.factor1" = "GloBI \ninteractions"
+    ),
+    limits = c(#"b_scale.SERIES.l", 
+      #"b_treatment_yn_cleanyes",
+      "b_interaction_present.factor1"#,
+      #"b_scale.abs.lat"
+      #"b_Intercept" 
+    )) +
+  guides(fill = "none") +
+  scale_fill_manual(values=c("#0072B2"))
+
+dist.plot <- model %>%
+  spread_draws(b_Intercept, b_scale.SERIES.l, b_scale.abs.lat , b_treatment_yn_cleanyes, b_interaction_present.factor1) %>%
+  tidyr::pivot_longer(cols=c(7), names_to = "draw.name") %>% 
+  ggplot(aes(y = draw.name, x = value)) +
+  #geom_vline(xintercept = 0, color = "#839496", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey")+
+  stat_halfeye(aes(fill=draw.name), 
+               .width = c(0.66, 0.95),
+               point_size=3, 
+               point_interval = "mean_qi",
+               normalize="groups",
+               interval_size_range=c(1,2)) +
+  labs(x = "", #expression("Estimate"),
+       y = "") +#"Model parameters") +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_y_discrete(
+    labels = c(#"b_Intercept" = "Intercept",
+      #"b_scale.SERIES.l" = "Time series length",
+      #"b_scale.abs.lat" = "Latitude"
+      "b_treatment_yn_cleanyes" = "Disturbance"
+      #"b_interaction_present.factor1" = "GloBI \ninteractions"
+    ),
+    limits = c(#"b_scale.SERIES.l", 
+      "b_treatment_yn_cleanyes"
+      #"b_interaction_present.factor1"#,
+      #"b_scale.abs.lat"
+      #"b_Intercept" 
+    )) +
+  guides(fill = "none") +
+  scale_fill_manual(values=c("#009E73"))
+
+time.plot <- model %>%
+  spread_draws(b_Intercept, b_scale.SERIES.l, b_scale.abs.lat , b_treatment_yn_cleanyes, b_interaction_present.factor1) %>%
+  tidyr::pivot_longer(cols=c(5), names_to = "draw.name") %>% 
+  ggplot(aes(y = draw.name, x = value)) +
+  #geom_vline(xintercept = 0, color = "#839496", size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey")+
+  stat_halfeye(aes(fill=draw.name), 
+               .width = c(0.66, 0.95),
+               point_size=3, 
+               point_interval = "mean_qi",
+               normalize="groups",
+               interval_size_range=c(1,2)) +
+  labs(x = "", #expression("Estimate"),
+       y = "") +#"Model parameters") +
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_y_discrete(
+    labels = c(#"b_Intercept" = "Intercept",
+      "b_scale.SERIES.l" = "Time series \nlength"
+      #"b_scale.abs.lat" = "Latitude"
+      #"b_treatment_yn_cleanyes" = "Disturbance"
+      #"b_interaction_present.factor1" = "GloBI \ninteractions"
+    ),
+    limits = c("b_scale.SERIES.l"
+      #"b_treatment_yn_cleanyes"
+      #"b_interaction_present.factor1"#,
+      #"b_scale.abs.lat"
+      #"b_Intercept" 
+    )) +
+  guides(fill = "none") +
+  scale_fill_manual(values=c("#E69F00"))
+
+fig4 <- plot_grid(lat.plot, int.plot, dist.plot, time.plot,
+          nrow=4, align="v", rel_heights = c(1,.75,.75,.75))
+ggsave("Revision 1 ecography/output/figures/figure4.pdf", 
+       fig4, width=8, height=8, units="in")
 
 ######  Figure 6. ranef plots  #######
 # how to make this first panel prettier...?
@@ -483,7 +645,8 @@ ranef_tax <- model %>%
                "Magnoliopsida.Gnetopsida",
                "Gnetopsida.Monocots")) 
 
-plot_grid(ranef_study, ranef_tax)
+fig5 <- plot_grid(ranef_study, ranef_tax)
+ggsave("Revision 1 ecography/output/figures/figure5.pdf", fig5, width=20, height=20, units="in")
 
 ######  Figure 6. linear predictor plots  #######
 # 4x4 panel plot highlighting random effect from 
@@ -525,7 +688,7 @@ int_names <- c(
   "Pinopsida.Pinopsida"="Pinopsida.Pinopsida")
 
 
-new.predict %>% 
+fig6 <- new.predict %>% 
   mutate(SERIES.l = unscale(scale.SERIES.l, mean(moddat$SERIES.l), sd(moddat$SERIES.l))) %>% 
   ggplot() +
   geom_line(aes(SERIES.l, linepred, colour=treatment_yn_clean), 
@@ -551,6 +714,8 @@ new.predict %>%
        color = "Disturbance") +
   scale_color_manual(values=c( "#004A39", "#E69F00")) + 
   scale_fill_manual(values=c( "#004A39", "#E69F00"))   
+
+ggsave("Revision 1 ecography/output/figures/figure6.pdf", fig6, width=20, height=20, units="in")
 
 #### Table S3 ####
 model %>% 
@@ -581,6 +746,35 @@ model %>%
 
 #write.csv(tableS4, "Revision 1 ecography/output/figures/tableS4.csv")
   
+######## Plot raw correlations ####
+#plot as histogram of raw data
+hist <- moddat %>% 
+  mutate(group=ifelse(cor>=.3, "positive", 
+                      ifelse(cor<=-.3, "negative", "neutral"))) %>% 
+  ggplot(aes(x=cor, fill=group)) + 
+  geom_histogram(colour="black", bins=29) +
+  #geom_histogram(aes(y=..count..., fill=group), colour="black") + #, fill="#8DA0CB"
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  #geom_density(alpha=.2, fill="#8DA0CB") +
+  theme_bw()+
+  xlab("Correlation")+
+  ylab("Number of genus pairs")+
+  geom_vline(aes(xintercept=0),
+             color="black", linetype="dashed", size=1)+
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme +
+  scale_fill_manual(values = c("#66C2A5", "#8DA0CB","#FC8D62"))
+
+ggsave("Revision 1 ecography/output/figures/raw data histogram.pdf", hist, 
+       width=8, height=5, units="in")
+
 ### Sup mat figures ####
 ###### Barplot of genera by taxonomic category ####
 
@@ -663,49 +857,3 @@ figS1 <- ggplot(data=moddat, aes(x=abs.lat)) +
 
 ggsave("figure s1.pdf", path="Revision 1 ecography/output/figures", width=7.5, height = 8, units="cm")
 
-######## Plot raw correlations and z-scores with standard error ####
-bars<-ggplot(data=moddat, aes(y = TS_ID, x=z)) + 
-  geom_pointrange(aes(xmin=z-SE.total.sp, xmax=z+SE.total.sp), size=0.01, alpha=0.5, color='#8DA0CB')+ 
-  geom_vline(xintercept = 0, color='black', lty=2)+
-  theme_bw(base_size = 25) +
-  theme(panel.grid   = element_blank(),
-        panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
-        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
-  xlab("Fisher's z-score")+
-    theme(axis.text.y=element_blank(),  #remove y axis labels
-        axis.ticks.y=element_blank()) + 
-  ylab("Genus pairs") +
-  my.theme
-
-#plot as histogram 
-library(RColorBrewer)
-brewer.pal(n=5,"Set2")#get some hex codes 
-
-
-hist <- moddat %>% 
-  mutate(group=ifelse(cor>=.3, "positive", 
-                        ifelse(cor<=-.3, "negative", "neutral"))) %>% 
-  ggplot(aes(x=cor, fill=group)) + 
-  geom_histogram(colour="black", bins=29) +
-  #geom_histogram(aes(y=..count..., fill=group), colour="black") + #, fill="#8DA0CB"
-  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
-  #geom_density(alpha=.2, fill="#8DA0CB") +
-  theme_bw()+
-  xlab("Correlation")+
-  ylab("Number of genus pairs")+
-  geom_vline(aes(xintercept=0),
-             color="black", linetype="dashed", size=1)+
-  theme(panel.grid   = element_blank(),
-       axis.ticks.y = element_blank(),
-       axis.text.y  = element_text(hjust = 0),
-       #text = element_text(family = "Ubuntu")
-  ) +
-  theme_bw(base_size = 25) +
-  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
-        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
-  my.theme +
-  scale_fill_manual(values = c("#66C2A5", "#8DA0CB","#FC8D62"))
-  
-
-#combine 
-gridExtra::grid.arrange(hist, bars, nrow=1)
