@@ -159,6 +159,13 @@ neutral<-nrow(subset(moddat, cor<.3 & cor>-.3))/345860
 pos<-nrow(subset(moddat, cor>=.3))/345860
 neg<-nrow(subset(moddat, cor<=-.3))/345860
 
+# marginal Bayesian R2, fixef: 
+bayes_R2(model, re.form = NA) 
+# Estimate = 0.004775501, SE=0.002642517, Q25= .002392068, Q97.5=.01199905
+
+# conditional Bayesian R2, fixef + random effects
+bayes_R2(model, re.form = NULL) 
+#Estimate = 0.009515958, SE= 0.0002028352, Q25=0.009125499, Q97.5=.009905897
 
 # calculate taxonomic slopes, including baseline
 # paste0("b_", rownames(fixef(Q2mod))[6:29])
@@ -774,6 +781,34 @@ hist <- moddat %>%
 
 ggsave("Revision 1 ecography/output/figures/raw data histogram.pdf", hist, 
        width=8, height=5, units="in")
+
+
+######## Plot z-scores ####
+#plot as histogram of raw data
+moddat %>% 
+  # mutate(group=ifelse(cor>=.3, "positive", 
+  #                     ifelse(cor<=-.3, "negative", "neutral"))) %>% 
+  ggplot(aes(x=z)) + 
+  geom_histogram(colour="black", bins=29, fill="#8DA0CB") +
+  #geom_histogram(aes(y=..count..., fill=group), colour="black") + #, fill="#8DA0CB"
+  #geom_histogram(aes(y=..density..), colour="black", fill="white")+
+  #geom_density(alpha=.2, fill="#8DA0CB") +
+  theme_bw()+
+  xlab("Fisher's z-scores")+
+  ylab("Number of genus pairs")+
+  geom_vline(aes(xintercept=0),
+             color="black", linetype="dashed", size=1)+
+  theme(panel.grid   = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y  = element_text(hjust = 0),
+        #text = element_text(family = "Ubuntu")
+  ) +
+  theme_bw(base_size = 25) +
+  theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
+        panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
+  my.theme #+
+  #scale_fill_manual(values = c("#66C2A5", "#8DA0CB","#FC8D62"))
+
 
 ### Sup mat figures ####
 ###### Barplot of genera by taxonomic category ####
