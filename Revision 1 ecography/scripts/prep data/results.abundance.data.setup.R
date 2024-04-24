@@ -4,6 +4,8 @@
 # Date created: Jan 24 2024
 # Date updated: 18 April 2024
 
+# Tested and checked by NC, 24.04.2024
+
 
 
 #_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_
@@ -21,8 +23,25 @@ library(progress)
 biotime<-read.csv("~/Documents/Work and Career/LDP/Working Group/BioTIMEQuery_24_06_2021.csv")
 metadata<-read.csv("~/Documents/Work and Career/LDP/Working Group/BioTIMEMetadata_24_06_2021.csv")
 
+# # NC LOAD
+# biotime<-read.csv('~/Desktop/Code/predicting_species_abundance/data/BioTIMECitations_24_06_2021.csv')
+# metadata<-read.csv('data/BioTIMEMetadata_24_06_2021.csv')
+
+# #NC CHECKS
+# length(unique(biotime$STUDY_ID))
+# unique(metadata$REALM)
+
 #remove marine and aquatic (keep only terr)
-biotime.t<-biotime[which(biotime$STUDY_ID%in%metadata$STUDY_ID[which(metadata$REALM=="Terrestrial")]),]
+biotime.t<-biotime[which(biotime$STUDY_ID %in% 
+                           metadata$STUDY_ID[which(
+                             metadata$REALM=="Terrestrial")]),]
+
+# #NC CHECKS
+# foo <- metadata$STUDY_ID[which(metadata$REALM=="Terrestrial")]
+# length(metadata$STUDY_ID[which(metadata$REALM=="Terrestrial")])
+# nrow(biotime.t)
+# length(unique(biotime.t$STUDY_ID))
+
 
 ###### ENB addition - cleaning studies 39, 221 #######
 #Fix study 39 before cleaning, aggregation
@@ -77,7 +96,10 @@ map_genus <- function(code) {
                                                           ifelse(grepl("ROSA", code), "Rosa", 
                                                                  ifelse(grepl("RUBU", code), "Rubus", 
                                                                         ifelse(grepl("SHEP", code), "Shepherdia", 
-                                                                               ifelse(grepl("VIBU", code), "Viburnum", 
+                                                                               ifelse(grepl("VIBU", code), 
+                                                                                      
+                                                                                      #NC CHECK: should this also have 'ifelse'?
+                                                                                      "Viburnum", 
                                                                                       code))))))))))))
 }
 study_221 <- study_221 %>% mutate(GENUS= map_genus(GENUS))
@@ -96,11 +118,15 @@ biotime.t <- biotime.t %>%
 ##### Back to IE code ####
 
 #any false 0s?
-table(biotime.t$sum.allrawdata.ABUNDANCE[which(biotime.t$STUDY_ID%in%metadata$STUDY_ID[which(is.na(metadata$ABUNDANCE_TYPE))])])
+table(biotime.t$sum.allrawdata.ABUNDANCE[which(
+  biotime.t$STUDY_ID%in%
+    metadata$STUDY_ID[which(is.na(metadata$ABUNDANCE_TYPE))])])
 #table(biotime.t$sum.allrawdata.BIOMASS[which(biotime.t$STUDY_ID%in%metadata$STUDY_ID[which(is.na(metadata$BIOMASS_TYPE))])])
 
 #replace 0s with NAs if the study didnt record how they measured abudnance or biomass...
-biotime.t$sum.allrawdata.ABUNDANCE[which(biotime.t$STUDY_ID%in%metadata$STUDY_ID[which(is.na(metadata$ABUNDANCE_TYPE))])]<-NA
+biotime.t$sum.allrawdata.ABUNDANCE[which(
+  biotime.t$STUDY_ID%in%
+    metadata$STUDY_ID[which(is.na(metadata$ABUNDANCE_TYPE))])] <- NA
 #biotime.t$sum.allrawdata.BIOMASS[which(biotime.t$STUDY_ID%in%metadata$STUDY_ID[which(is.na(metadata$BIOMASS_TYPE))])]<-NA
 
 #many plots are NAs which wont work during the aggregation step, lets make them a non-NA character
@@ -108,14 +134,22 @@ biotime.t$PLOT[which(is.na(biotime.t$PLOT))]<-"Was_NA"
 
 #now we can aggregate to annual measures of abundance by averaging across plots in a study for each genera
 biotime.t$UNIQUE_ID<-paste(biotime.t$STUDY_ID,biotime.t$PLOT,biotime.t$GENUS,biotime.t$YEAR,sep="~")
-biotime.agg.abundance<-aggregate(cbind(sum.allrawdata.ABUNDANCE) ~ UNIQUE_ID, data = biotime.t[-which(is.na(biotime.t$sum.allrawdata.ABUNDANCE)),], mean)
+biotime.agg.abundance<-
+  
+  #NC CHECK: why using cbind here? and why not using the built-in 'na.action' for aggregate?
+  aggregate(cbind(sum.allrawdata.ABUNDANCE) ~ UNIQUE_ID, 
+            data = biotime.t[-which(is.na(biotime.t$sum.allrawdata.ABUNDANCE)),], mean)
 #biotime.agg.biomass<-aggregate(cbind(sum.allrawdata.BIOMASS) ~ UNIQUE_ID, data = biotime.t[-which(is.na(biotime.t$sum.allrawdata.BIOMASS)),], mean)
 
-#add back in some cols
-biotime.agg.abundance$STUDY_ID<-biotime.t$STUDY_ID[match(biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
-biotime.agg.abundance$PLOT<-biotime.t$PLOT[match(biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
-biotime.agg.abundance$GENUS<-biotime.t$GENUS[match(biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
-biotime.agg.abundance$YEAR<-biotime.t$YEAR[match(biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
+#add back in identifiying cols
+biotime.agg.abundance$STUDY_ID<-biotime.t$STUDY_ID[match(
+  biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
+biotime.agg.abundance$PLOT<-biotime.t$PLOT[match(
+  biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
+biotime.agg.abundance$GENUS<-biotime.t$GENUS[match(
+  biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
+biotime.agg.abundance$YEAR<-biotime.t$YEAR[match(
+  biotime.agg.abundance$UNIQUE_ID,biotime.t$UNIQUE_ID)]
 
 # biotime.agg.biomass$STUDY_ID<-biotime.t$STUDY_ID[match(biotime.agg.biomass$UNIQUE_ID,biotime.t$UNIQUE_ID)]
 # biotime.agg.biomass$PLOT<-biotime.t$PLOT[match(biotime.agg.biomass$UNIQUE_ID,biotime.t$UNIQUE_ID)]
@@ -141,7 +175,7 @@ which(biotime.agg.abundance$sum.allrawdata.ABUNDANCE==0) #none
 biotime.agg.abundance$STUDY_PLOT<-paste(biotime.agg.abundance$STUDY_ID,biotime.agg.abundance$PLOT,sep="~")
 #biotime.agg.biomass$STUDY_PLOT<-paste(biotime.agg.biomass$STUDY_ID,biotime.agg.biomass$PLOT,sep="~")
 
-
+#NC CHECK: need to formally test this function if not already done so
 #find genera-genera pairs (within studies) that overlap for 10 years
 find.genera.pairs.overlap.abundance<-function(study_plot){
   
@@ -170,7 +204,8 @@ find.genera.pairs.overlap.abundance<-function(study_plot){
     years1=cropped$YEAR[which(cropped$GENUS==gen1)]
     years2=cropped$YEAR[which(cropped$GENUS==gen2)]
     
-    cont.overlapping<-split(years1[which(years1%in%years2)], cumsum(c(1, diff(years1[which(years1%in%years2)]) != 1)))
+    cont.overlapping<-split(years1[which(years1%in%years2)], 
+                            cumsum(c(1, diff(years1[which(years1%in%years2)]) != 1)))
     
     dat<-data.frame("Period"=NA,"value"=NA)
     for (y in 1:length(cont.overlapping)){
