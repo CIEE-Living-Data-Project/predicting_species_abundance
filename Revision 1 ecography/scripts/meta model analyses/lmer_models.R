@@ -9,6 +9,11 @@ summary(lmermod)
 MuMIn::r.squaredGLMM(lmermod)
 save(lmermod, file="Revision 1 ecography/output/lmer_model_final.Rdata")
 
+#model k fold cross validation 
+library(cv)
+kfoldcv<-cv(lmermod, k=10, )
+kfoldcv_study<-cv(lmermod, clusterVariables="STUDY_ID")
+
 #add total species # back in 
 
 load(file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
