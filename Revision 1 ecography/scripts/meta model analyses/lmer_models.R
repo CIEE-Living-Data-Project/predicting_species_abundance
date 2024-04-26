@@ -1,10 +1,13 @@
 
 library(tidyverse)
 library(lmerTest)
+load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
+
 lmermod<-lmerTest::lmer(z~scale.SERIES.l+ treatment_yn_clean + scale.abs.lat + interaction_present.factor + (1|STUDY_ID) +
                  (1| resolved_taxa_pair),  dat=moddat)
 summary(lmermod)
 MuMIn::r.squaredGLMM(lmermod)
+save(lmermod, file="Revision 1 ecography/output/lmer_model_final.Rdata")
 
 #add total species # back in 
 
