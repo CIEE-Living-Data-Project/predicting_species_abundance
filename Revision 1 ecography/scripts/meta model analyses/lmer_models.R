@@ -1,6 +1,8 @@
 library(tidyverse)
 library(lmerTest)
 load(file="Revision 1 ecography/output/prep_data/model_data_final.Rdata")
+moddat <- filter(moddat, STUDY_ID != "225") 
+moddat <- filter(moddat, STUDY_ID != "39")
 
 lmermod<-lmerTest::lmer(z~scale.SERIES.l+ treatment_yn_clean + scale.abs.lat + interaction_present.factor + (1|STUDY_ID) +
                  (1| resolved_taxa_pair),  dat=moddat)
@@ -8,6 +10,7 @@ save(lmermod, file="Revision 1 ecography/output/lmer_model_final.Rdata")
 #model summary and R2 
 summary(lmermod)
 MuMIn::r.squaredGLMM(lmermod)
+performance::r2(lmermod)
 
 #model k fold cross validation 
 load(file="Revision 1 ecography/output/lmer_model_final.Rdata")
