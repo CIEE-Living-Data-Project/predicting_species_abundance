@@ -18,11 +18,22 @@ model <- lmermod
 # Calculate numbers for results ####
 ### raw correlations ####
 # calculate
-# use cuttoffs of .15 bc greater than this is a positive correlation as defined by the model
-sum(moddat$cor >= 0.15) #positive = 129018
-nrow(subset(moddat, cor > -0.15 & cor < .15)) #neutral = 132531
-sum(moddat$cor <= -0.15) #negative = 84311
+# use cuttoffs of .167 bc greater than this is a positive correlation as defined by the model
+# back transform mu = .167 (mean estimated z-score) from model into pearson correlation
+# z = 0.5*log((1+cor)/(1-cor))) #eq 3.11 in met
+z=.167
+r = (exp(2*z)-1)/(exp(2*z)+1) # pearson correlation is 0.1654646
+r_upr <- (exp(2*(z+2*0.0523336911))-1)/(exp(2*(z+2*0.0523336911))+1)
+r_lwr <- (exp(2*(z-2*0.0523336911))-1)/(exp(2*(z-2*0.0523336911))+1)
 
+# what % of data falls within estimated 95% CI?
+nrow(subset(moddat, cor >= r_lwr & cor <= r_upr)) # 88,543 within 95% CI
+88543/nrow(moddat)
+
+# Or how many correlations are weaker than model estimated mean, how many stronger (either negative or positive)
+nrow(subset(moddat, cor >= r | cor <= -r)) # 200,861 as strong or stronger
+sum(moddat$cor >= r)/nrow(moddat) # strong positive
+sum(moddat$cor <= -r)/nrow(moddat) # strong negative
 
 # Main text figures ####
 ## set custom theme ####
@@ -117,14 +128,15 @@ drawWorld<-function(lats) {
 ##  Figure 3. coef plot  #######
 # histogram of pearson cor
 hist <- moddat %>% 
-  mutate(group=ifelse(cor>=.15, "positive", 
-                      ifelse(cor<=-.15, "negative", "neutral"))) %>% 
+  mutate(group=ifelse(cor>=r_lwr & cor<=r_upr, "in \n in", "out \n out")) %>% 
+  # mutate(group=ifelse(cor>=r, "Strong \npositive", 
+  #                      ifelse(cor<=-r, " Strong \nnegative", "Neutral"))) %>% 
   ggplot(aes(x=cor, fill=group)) + 
   geom_histogram(colour="black", bins=29) +
   theme_bw()+
   xlab("Correlation")+
   ylab("Number of genus pairs")+
-  geom_vline(aes(xintercept=0),
+  geom_vline(aes(xintercept=r),
              color="black", linetype="dashed", size=1)+
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
@@ -229,7 +241,7 @@ total2 <- total +
 
 fig3 <- plot_grid(hist, total2, rel_widths = c(1,2))
 
-ggsave("Revision 1 ecography/output/figures/figure3.pdf", 
+ggsave("Revision 1 ecography/output/figures/figure3_CI.pdf", 
        fig3, width=20, height=8, units="in")
 
 ##  Figure 4. ranef plots  #######
