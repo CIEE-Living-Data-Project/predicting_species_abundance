@@ -35,12 +35,19 @@ nrow(subset(moddat, cor >= r | cor <= -r)) # 200,861 as strong or stronger
 sum(moddat$cor >= r)/nrow(moddat) # strong positive
 sum(moddat$cor <= -r)/nrow(moddat) # strong negative
 
+# how many weak correlations?
+# 42%
+# how many weak neg?
+sum(moddat$cor > -r & moddat$cor <0)/nrow(moddat) # weak negative
+# how many weak pos?
+sum(moddat$cor < r & moddat$cor >=0)/nrow(moddat) # weak pos 
+
 # Main text figures ####
 ## set custom theme ####
-my.theme <- theme(axis.text=element_text(size=20),
-                axis.title = element_text(size = 25),
-                legend.text=element_text(size=20),
-                legend.title = element_text(size=25),
+my.theme <- theme(axis.text=element_text(size=22),
+                axis.title = element_text(size = 27),
+                legend.text=element_text(size=22),
+                legend.title = element_text(size=27),
                 plot.title = element_text(face="bold",size=14,margin=margin(0,0,20,0),hjust = 0.5),
                 axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)),
                 axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 0, l = 0)))
@@ -126,18 +133,19 @@ drawWorld<-function(lats) {
 
 
 ##  Figure 3. coef plot  #######
+
 # histogram of pearson cor
 hist <- moddat %>% 
-  mutate(group=ifelse(cor>=r_lwr & cor<=r_upr, "in \n in", "out \n out")) %>% 
-  # mutate(group=ifelse(cor>=r, "Strong \npositive", 
-  #                      ifelse(cor<=-r, " Strong \nnegative", "Neutral"))) %>% 
+  #mutate(group=ifelse(cor>=r_lwr & cor<=r_upr, "in \n in", "out \n out")) %>% 
+  mutate(group=ifelse(cor>=r, "Strong \npositive", 
+                      ifelse(cor<=-r, " Strong \nnegative", "Weak \n       "))) %>% 
   ggplot(aes(x=cor, fill=group)) + 
   geom_histogram(colour="black", bins=29) +
   theme_bw()+
   xlab("Correlation")+
   ylab("Number of genus pairs")+
-  geom_vline(aes(xintercept=r),
-             color="black", linetype="dashed", size=1)+
+  # geom_vline(aes(xintercept=r),
+  #            color="black", linetype="dashed", size=1)+
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y  = element_text(hjust = 0)) +
@@ -145,9 +153,10 @@ hist <- moddat %>%
   theme(panel.grid.major.x = element_blank(),  # Hide major x-axis grid lines
         panel.grid.minor.x = element_blank()) +   # Hide minor x-axis grid lines
   my.theme +
-  scale_fill_manual(values = c("#66C2A5", "#8DA0CB","#FC8D62")) +
+  scale_fill_manual(values = c("#9C9C47","#EFDF91", "#9F9FAC")) +  #"#661100" F9E377
   theme(legend.position="top",
-        legend.spacing.x = unit(1, 'cm'))+
+        legend.spacing.x = unit(1, 'cm'),
+        legend.title=element_blank())+
   guides(fill = guide_legend(label.position = "top", title="Group"))
 
 # time series and interactions error so small can't see, make insets
@@ -241,11 +250,11 @@ total2 <- total +
 
 fig3 <- plot_grid(hist, total2, rel_widths = c(1,2))
 
-ggsave("Revision 1 ecography/output/figures/figure3_CI.pdf", 
+ggsave("Revision 1 ecography/output/figures/figure3_bounds.pdf", 
        fig3, width=20, height=8, units="in")
 
 ##  Figure 4. ranef plots  #######
-str(dd <- as.data.frame(ranef(model)))
+str(dd <- as.data.frame(lme4::ranef(model)))
 ranef_study <- dd %>% 
   filter(grpvar=="STUDY_ID") %>% 
   ggplot(aes(condval+0.1671776, grp,
@@ -254,7 +263,7 @@ ranef_study <- dd %>%
   geom_pointrange(linewidth=2, size=1.2) +
   #geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey")+
   geom_vline(xintercept = 0.1671776, linetype = "dashed", color = "#8DA0CB", size=2)+
-  geom_pointinterval() +
+  ggdist::geom_pointinterval() +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y  = element_text(hjust = 0)
@@ -275,7 +284,7 @@ ranef_taxa <- dd %>%
   geom_pointrange(linewidth=2, size=1.2) +
   #geom_vline(xintercept = 0, linetype = "dashed", color = "darkgrey")+
   geom_vline(xintercept = 0.1671776, linetype = "dashed", color = "#8DA0CB", size=2)+
-  geom_pointinterval() +
+  ggdist::geom_pointinterval() +
   theme(panel.grid   = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.y  = element_text(hjust = 0)
