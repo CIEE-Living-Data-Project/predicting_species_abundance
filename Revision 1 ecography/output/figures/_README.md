@@ -8,4 +8,4 @@
 
 **Updated by:** GLL
 
-This directory contains the prelim and final figures used in our manuscript
+This directory contains the final figures and tables used in our manuscript that are a direct output of our scripts (thus it does not contain figures 1 and 2).
