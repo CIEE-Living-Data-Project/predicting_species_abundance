@@ -85,35 +85,7 @@ func.pvalShuffle.acrossPlots <- function(resp.dat, times) {
 # all singular fits due to lack of stdev across taxonomic pair
 # 2.485368 hrs
 start.time <- Sys.time()
-null.out.acrossPlots <- func.pvalShuffle.acrossPlots(moddat$z, 1000)
+null.out.acrossPlots <- func.pvalShuffle.acrossPlots(moddat$z, 10000)
 end.time <- Sys.time()
 end.time - start.time
-# 
-# # shuffle response within plot, largely consistent with shuffle across plots
-# func.pvalShuffle.withinPlots <- function(resp.dat, times) {
-#   mod.real<-lmerTest::lmer(z~scale.SERIES.l+ treatment_yn_clean + scale.abs.lat + interaction_present.factor + (1|STUDY_ID) +
-#                              (1| resolved_taxa_pair), dat=moddat)
-#   
-#   core.function<-function(x){
-#     shuffle.z <- moddat %>% 
-#       group_by(STUDY_PLOT) %>% 
-#       mutate(n.ord = sample(1:length(z))) %>%  # this works, checked
-#       select(STUDY_PLOT, z, n.ord) %>% 
-#       group_by(STUDY_PLOT) %>% 
-#       arrange(-desc(n.ord), .by_group = TRUE)
-#     
-#     mod.rand<-lmerTest::lmer(shuffle.z$z~scale.SERIES.l+ treatment_yn_clean + scale.abs.lat + interaction_present.factor + (1|STUDY_ID) +
-#                                (1| resolved_taxa_pair), dat=moddat)
-#     drop1(mod.rand, test="F")[ ,5]
-#   }
-#   null <- sapply(1:times, core.function) # output each row is a term in model, each column is iteration
-#   
-#   Fobs <- drop1(mod.real, test='F')[,5]
-#   p <- apply(null>Fobs, 1, sum)/times # count how many times null F is greater than obs and divide by iterations, columns are terms in model
-#   data.frame(Frand=apply(null, 1, mean), Fobs, p)
-#   
-# }
-# 
-# # ~40 warnings about singular fits
-# null.out.withinPlots <- func.pvalShuffle.withinPlots(moddat, 1000)
 
