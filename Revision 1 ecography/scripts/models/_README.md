@@ -8,4 +8,6 @@
 
 **Updated by:** GLL
 
-This directory folder contains the script that runs our primary model, calculates the cross-validation, and runs the null model to verify our model results. 
+1. `setup_model data` - This file collates all the intermediate data files from the data pre-processing and converts it into the form to fit the model (adds metadata, calculates pearson correlations and z-scores etc)  
+
+2. `lmer_models` - This file script that runs our primary model, calculates the cross-validation, and runs the null model to verify our model results. 

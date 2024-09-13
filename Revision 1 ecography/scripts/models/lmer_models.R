@@ -43,7 +43,7 @@ load(file="Revision 1 ecography/output/lmer_model_final.Rdata")
 library(cv)
 #fold 10 times with n/10 dataset each time 
 kfoldcv<-cv(lmermod, k=10) 
-save(kfoldcv, file="Revision 1 ecography/output/lmer_model_kfoldstudy.Rdata")
+save(kfoldcv, file="Revision 1 ecography/output/lmer_model_kfold.Rdata")
 
 #fold n times (63 study IDs) leaving out 1 study each time 
 kfoldcv_study<-cv(lmermod, clusterVariables="STUDY_ID") 
