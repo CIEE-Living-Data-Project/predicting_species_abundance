@@ -188,11 +188,8 @@ moddat <- alldat_trim %>%
          #-abs.total.indivsGn1mGn2, -abs.total.spGn1mGn2, -SE.abs.total.indivsGn1mGn2, -SE.abs.total.spGn1mGn2
   distinct(.)
 
-#save so don't need to re-run 
-#save(moddat, file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
 
 #load model data ####
-#load(file="Revision 1 ecography/output/prep_data/all_model_data.Rdata")
 # look at some to check   
 select(moddat, cor, z, SE.timeseries)
 hist(moddat$cor)
