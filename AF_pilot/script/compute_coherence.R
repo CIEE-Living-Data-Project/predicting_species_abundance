@@ -3,16 +3,18 @@
 library(reshape2)
 library(ggplot2)
 library(tidyverse)
-
-data <- load(here::here("Revision 1 ecography/output/prep_data/model_data_final.Rdata"))
-
-####################################################
-# LOOP TO CREATE CORRELATION MATRICES AND DISTRIBUTIONS FOR EACH STUDY
-
-
+library(RColorBrewer)
 library(ggplot2)
 library(reshape2)
 library(ggpubr)
+
+data <- load(here::here("Revision 1 ecography/output/prep_data/model_data_final.Rdata"))
+
+#################################################### FILTER DATA
+
+
+
+
 
 
 # Create unique study ID column if not already present
@@ -25,7 +27,7 @@ study_ids <- unique(moddat$study_id)
 
 # Group by STUDY_ID and count the number of unique species (from Gn1 and Gn2)
 species_counts <- moddat %>%
-  group_by(STUDY_ID) %>%
+  group_by(study_id) %>%
   summarise(
     species_count = length(unique(c(Gn1, Gn2)))  # Ensure we are counting unique species from both columns
   )
@@ -34,13 +36,16 @@ species_counts <- moddat %>%
 # Filter out studies with fewer than 15 species
 filtered_studies <- species_counts %>%
   filter(species_count >= 8) %>%
-  pull(STUDY_ID)
+  pull(study_id)
 
 # Filter the main dataset to include only the studies with at least 15 species
 filtered_data <- moddat %>%
-  filter(STUDY_ID %in% filtered_studies & !is.na(cor))
+  filter(study_id %in% filtered_studies & !is.na(cor))
 
 
+
+###########################################################
+# LOOP TO CREATE CORRELATION MATRICES AND DISTRIBUTIONS FOR EACH STUDY
 
 # Initialize lists to store the plots
 cor_matrix_plots <- list()
@@ -323,6 +328,75 @@ ridgeline_plot <- ggplot(combined_data, aes(x = cor, y = LATITUDE, group = STUDY
 print(ridgeline_plot)
 
 
+######################## MEAN AND SD COHERENCE - community size
+
+# Step 1: Calculate the mean of the correlation values for each study along with the corrected community size
+mean_data <- filtered_data %>%
+  dplyr::filter(!is.na(cor)) %>%
+  dplyr::group_by(STUDY_ID) %>%
+  dplyr::summarize(
+    mean_cor = mean(cor, na.rm = TRUE),
+    # Calculate community size as the number of unique genus from both Gn1 and Gn2
+    community_size = n_distinct(c(Gn1, Gn2))  
+  )
+
+# Step 2: Plot the mean correlation vs community size
+mean_community_size_plot <- ggplot(mean_data, aes(x = community_size, y = mean_cor)) +
+  geom_point(size = 3, color = "black", alpha = 0.5) +
+  labs(x = "Community Size", y = "Mean Correlation", title = "Mean of Correlation Distribution vs Community Size") +
+  theme_classic() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black")
+
+# Display the plot
+print(mean_community_size_plot)
+
+
+
+# Step 1: Calculate the SD of the correlation values for each study along with the corrected community size
+sd_data <- filtered_data %>%
+  dplyr::filter(!is.na(cor)) %>%
+  dplyr::group_by(STUDY_ID) %>%
+  dplyr::summarize(
+    sd_cor = sd(cor, na.rm = TRUE),
+    # Calculate community size as the number of unique genus from both Gn1 and Gn2
+    community_size = n_distinct(c(Gn1, Gn2))  
+  )
+
+# Step 2: Plot the SD of the correlation vs community size
+sd_community_size_plot <- ggplot(sd_data, aes(x = community_size, y = sd_cor)) +
+  geom_point(size = 3, color = "black", alpha = 0.5) +
+  labs(x = "Community Size", y = "SD of Correlation", title = "SD of Correlation Distribution vs Community Size") +
+  theme_classic()
+
+# Display the plot
+print(sd_community_size_plot)
+
+
+
+
+######################## SD COHERENCE and treatmenr
+
+# Step 1: Calculate the SD of correlation values for each study along with the treatment status
+sd_treatment_data <- filtered_data %>%
+  dplyr::filter(!is.na(cor)) %>%
+  dplyr::group_by(STUDY_ID, treatment_yn_clean) %>%
+  dplyr::summarize(
+    sd_cor = sd(cor, na.rm = TRUE),
+    .groups = 'drop'  # Ensure proper ungrouping
+  )
+
+# Step 2: Create a boxplot to visualize the relationship between treatment and SD of correlation
+sd_treatment_boxplot <- ggplot(sd_treatment_data, aes(x = treatment_yn_clean, y = sd_cor, fill = treatment_yn_clean)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("yes" = "red", "no" = "blue")) +  # Custom colors for treatment yes/no
+  labs(x = "Treatment Status", y = "SD of Correlation", title = "SD of Correlation vs Treatment Status") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the plot title
+
+# Display the boxplot
+print(sd_treatment_boxplot)
+
+
 ######################## MEAN AND SD COHERENCE - latitude
 
 # Step 1: Calculate the mean of the correlation values for each study along with the latitude
@@ -336,8 +410,7 @@ mean_data <- filtered_data %>%
 
 # Step 2: Plot the mean correlation vs latitude
 mean_latitude_plot <- ggplot(mean_data, aes(x = LATITUDE, y = mean_cor)) +
-  geom_point(size = 3, color = "blue") +
-  geom_smooth(method = "lm", color = "darkblue", se = FALSE) +  # Optional: add a trendline
+  geom_point(size = 3, color = "black", alpha = 0.5) +
   labs(x = "Latitude", y = "Mean Correlation", title = "Mean of Correlation Distribution vs Latitude") +
   theme_classic()+
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")
@@ -356,13 +429,73 @@ sd_data <- filtered_data %>%
 
 # Step 2: Plot the SD of the correlation vs latitude
 sd_latitude_plot <- ggplot(sd_data, aes(x = LATITUDE, y = sd_cor)) +
-  geom_point(size = 3, color = "red") +
-  geom_smooth(method = "lm", color = "darkred", se = FALSE) +  # Optional: add a trendline
+  geom_point(size = 3,color = "black", alpha = 0.5) +
   labs(x = "Latitude", y = "SD of Correlation", title = "SD of Correlation Distribution vs Latitude") +
   theme_classic()
 
 # Display the plot
 print(sd_latitude_plot)
+
+
+
+########################################### (SIMULATED DATA - GUILDS) AND COHERENCE
+
+combined_data <- filtered_data %>%
+  dplyr::filter(!is.na(cor)) %>%
+  dplyr::select(study_id, cor)
+
+combined_data <- combined_data %>%
+  dplyr::mutate(trophic_guild = sample(c("plant", "herbivore", "predator"), 
+                                       size = n(), 
+                                       replace = TRUE, 
+                                       prob = c(0.3, 0.6, 0.1)))
+
+# Step 1: Simulate trophic guild data (assign randomly to the studies)
+set.seed(123)  # For reproducibility
+# Ensure the trophic_guild column is a factor to correctly group by categories
+unique(combined_data$trophic_guild)
+
+combined_data$trophic_guild <- factor(combined_data$trophic_guild)
+
+table(combined_data$trophic_guild)
+
+summary_stats_guild <- combined_data %>%
+  group_by(trophic_guild) %>%
+  summarize(
+    trophic_guild = first(trophic_guild),  # Ensure the column is retained
+    mean_cor = mean(cor, na.rm = TRUE),
+    sd_cor = sd(cor, na.rm = TRUE),
+    .groups = 'drop'  # Ensure proper ungrouping
+  )
+
+
+
+# Step 3: Plot density curves for each guild, colored by trophic group
+density_plot_guild <- ggplot(combined_data, aes(x = cor, color = trophic_guild, fill = trophic_guild)) +
+  geom_density(alpha = 0.3, size = 1) +  # Use alpha for transparency and size for line thickness
+  scale_color_manual(values = c("plant" = "green", "herbivore" = "orange", "predator" = "purple")) +  # Custom colors for guilds
+  scale_fill_manual(values = c("plant" = "green", "herbivore" = "orange", "predator" = "purple")) +   # Fill colors match line colors
+  labs(x = "Interacting species co-response", y = "Density", title = "Density of Correlations by Trophic Guild") +
+  theme_classic() +
+  
+  # Add vertical dashed black line at x = 0
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
+  
+  # Add vertical solid lines for the mean of each guild
+  geom_vline(data = summary_stats_guild, aes(xintercept = mean_cor, color = trophic_guild), linetype = "solid", size = 1.2) +
+  
+  # Add dashed lines for mean ± SD of each guild
+  geom_vline(data = summary_stats_guild, aes(xintercept = mean_cor - sd_cor, color = trophic_guild), linetype = "dashed", size = 1) +
+  geom_vline(data = summary_stats_guild, aes(xintercept = mean_cor + sd_cor, color = trophic_guild), linetype = "dashed", size = 1) +
+  
+  theme(
+    legend.position = "right",  # Show legend to distinguish guilds
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Display the plot
+print(density_plot_guild)
+
 
 
 ########################################### TAXA CONTRIBUTIONS TO COHERENCE
@@ -476,8 +609,6 @@ for (i in 1:nrow(subset_data)) {
   cor_matrix[g2, g1] <- cor_value
 }
 
-# Replace diagonal with NA to exclude self-correlations
-diag(cor_matrix) <- NA
 
 # Step 1: Add 1 to all correlations to ensure they are positive
 cor_matrix <- cor_matrix + 1
@@ -517,3 +648,237 @@ genus_modularity <- data.frame(
   Community = V(graph)$community
 )
 print(genus_modularity)
+
+
+
+
+########################### COHERENT MODULES
+
+pak::pak("evolqg")
+library(evolqg)
+library(igraph)
+
+
+
+# Step 1: Subset the data for a given study (for example, study "18~1")
+study_plot_of_interest <- "18~1"
+subset_data <- filtered_data[filtered_data$STUDY_PLOT == study_plot_of_interest, ]
+
+# Get the list of unique genus (Gn1 + Gn2)
+unique_genus <- unique(c(subset_data$Gn1, subset_data$Gn2))
+
+# Initialize an empty correlation matrix
+cor_matrix <- matrix(NA, nrow = length(unique_genus), ncol = length(unique_genus))
+rownames(cor_matrix) <- unique_genus
+colnames(cor_matrix) <- unique_genus
+
+# Fill the correlation matrix
+for (i in 1:nrow(subset_data)) {
+  g1 <- subset_data$Gn1[i]
+  g2 <- subset_data$Gn2[i]
+  cor_value <- subset_data$cor[i]
+  
+  cor_matrix[g1, g2] <- cor_value
+  cor_matrix[g2, g1] <- cor_value
+}
+
+
+# Step 1: Add 1 to all correlations to ensure they are positive
+cor_matrix <- cor_matrix + 1
+
+
+# Function to compute and visualize community detection for coherence/incoherence
+compute_community_modularity <- function(cor_matrix, coherence = TRUE) {
+  
+  if (coherence) {
+    # Coherence: Keep only positive correlations, set negative to NA
+    cor_matrix[cor_matrix < 0] <- NA
+  } else {
+    # Incoherence: Keep only negative correlations, set positive to NA, and make negative values positive
+    cor_matrix[cor_matrix > 0] <- NA
+    cor_matrix <- abs(cor_matrix)
+    
+    # Check if all values have become NA
+    if (all(is.na(cor_matrix))) {
+      stop("All values in the matrix are NA. Unable to compute incoherent modules.")
+    }
+  }
+  
+  # Step 2: Create a network graph from the modified correlation matrix
+  edge_list <- melt(cor_matrix, na.rm = TRUE)
+  colnames(edge_list) <- c("from", "to", "weight")
+  
+  # Create the graph object
+  graph <- graph_from_data_frame(edge_list, directed = FALSE)
+  
+  # Check if the graph is connected
+  if (!is.connected(graph)) {
+    cat("Warning: The graph is disconnected. Adding small weights to ensure connectivity.\n")
+    # Add a small value to edges to ensure connectivity (can use different strategies based on need)
+    E(graph)$weight <- E(graph)$weight + 0.001
+  }
+  
+  # Perform community detection using the Louvain method
+  community <- cluster_louvain(graph, weights = E(graph)$weight)
+  
+  # Calculate modularity
+  modularity_score <- modularity(community)
+  cat("Modularity score:", modularity_score, "\n")
+  
+  # Set node colors based on community membership
+  V(graph)$community <- membership(community)
+  plot_colors <- rainbow(length(unique(V(graph)$community)))[V(graph)$community]
+  
+  # Plot the network with nodes colored by their community
+  plot(graph, vertex.color = plot_colors, vertex.label = V(graph)$name,
+       main = ifelse(coherence, "Coherent Modules", "Incoherent Modules"),
+       vertex.size = 15, edge.width = E(graph)$weight * 5)
+  
+  # Return modularity score and community data
+  return(list(modularity_score = modularity_score, community = membership(community)))
+}
+
+
+# Replace diagonal with NA to exclude self-correlations
+diag(cor_matrix) <- NA
+
+# Step 3: Compute and visualize coherent modules (positive correlations only)
+coherent_results <- compute_community_modularity(cor_matrix, coherence = TRUE)
+
+# Step 4: Compute and visualize incoherent modules (negative correlations only, converted to positive)
+incoherent_results <- compute_community_modularity(cor_matrix, coherence = FALSE)
+
+
+
+# Function to plot the modules on the correlation matrix
+plot_modularity_matrix <- function(cor_matrix, community) {
+  
+  # Melt the correlation matrix into long format for ggplot
+  data_matrix <- melt(cor_matrix, na.rm = TRUE)
+  colnames(data_matrix) <- c("x", "y", "value")
+  
+  # Reorder rows and columns by community membership
+  ordered_genus <- names(sort(community))
+  data_matrix$x <- factor(data_matrix$x, levels = ordered_genus)
+  data_matrix$y <- factor(data_matrix$y, levels = ordered_genus)
+  
+  # Plot the heatmap with genus names and module color borders
+  plot_matrix <- ggplot(data_matrix, aes(x = x, y = y, fill = value)) +
+    geom_tile(color = "white") +
+    scale_fill_gradientn(colors = rev(brewer.pal(n = 11, name = "RdBu")), limits = c(-0.8, 0.8)) +
+    labs(x = "Genus", y = "Genus", title = "Correlation Matrix with Modules") +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+      axis.text.y = element_text(size = 10),
+      legend.position = "right"
+    )
+  
+  # Display the plot
+  print(plot_matrix)
+}
+
+# Example usage:
+# Assuming `community_structure` is the output from the community detection (Louvain) step
+community_structure <- coherent_results$community  # or incoherent_results$community
+
+# Plot the correlation matrix with the modules
+plot_modularity_matrix(cor_matrix, community_structure)
+
+
+
+
+################################ TEST COHERENCE - TROPHIC GUILD
+
+
+
+  # Coherence: Keep only positive correlations, set negative to NA
+  cor_matrix[cor_matrix < 0] <- NA
+
+
+# Step 2: Create a network graph from the modified correlation matrix
+edge_list <- melt(cor_matrix, na.rm = TRUE)
+colnames(edge_list) <- c("from", "to", "weight")
+
+# Create the graph object
+graph <- graph_from_data_frame(edge_list, directed = FALSE)
+
+
+
+# Assuming 'cor_matrix' is your correlation matrix and 'trophic_guilds' is the vector of guilds
+
+# Step 3: Simulate the assignment of trophic guilds
+# Randomly assign each genus to one of the three guilds: plant, herbivore, predator
+set.seed(123)  # Set seed for reproducibility
+trophic_guilds <- sample(c("plant", "herbivore", "predator"), size = length(unique(c(edge_list$from, edge_list$to))), replace = TRUE)
+names(trophic_guilds) <- unique(c(edge_list$from, edge_list$to))  # Ensure the names match the genus names
+
+# Step 4: Add trophic guilds as a vertex attribute to the graph
+V(graph)$guild <- trophic_guilds[V(graph)$name]
+
+# Step 5: Compute observed modularity based on trophic guilds
+observed_modularity <- modularity(graph, as.factor(V(graph)$guild))
+cat("Observed Modularity:", observed_modularity, "\n")
+
+# Step 6: Perform a Permutation Test
+set.seed(123)  # For reproducibility
+num_permutations <- 1000
+null_modularities <- numeric(num_permutations)
+
+for (i in 1:num_permutations) {
+  # Shuffle trophic guild assignments
+  shuffled_guilds <- sample(V(graph)$guild)
+  
+  # Compute modularity for shuffled guilds
+  null_modularities[i] <- modularity(graph, as.factor(shuffled_guilds))
+}
+
+# Step 7: Calculate the p-value
+p_value <- mean(null_modularities >= observed_modularity)
+cat("P-value:", p_value, "\n")
+
+# Step 8: Plot the distribution of null modularities with observed modularity
+hist(null_modularities, breaks = 30, main = "Null Distribution of Modularity", xlab = "Modularity")
+abline(v = observed_modularity, col = "red", lwd = 2)
+
+
+
+
+####### RDA
+
+
+library(vegan)
+
+# Step 1: Prepare the correlation matrix
+# Keep only positive correlations for the RDA (or use your full matrix with imputed NAs)
+cor_matrix[is.na(cor_matrix)] <- 0  # Optionally replace NAs with 0 or another method
+
+# Step 2: Simulate the assignment of trophic guilds
+# Randomly assign each genus to one of the three guilds: plant, herbivore, predator
+set.seed(123)  # Set seed for reproducibility
+genus_names <- rownames(cor_matrix)  # Get the genus names from the correlation matrix
+trophic_guilds <- sample(c("plant", "herbivore", "predator"), size = length(genus_names), replace = TRUE)
+trophic_guilds <- as.factor(trophic_guilds)
+
+# Step 3: Perform Redundancy Analysis (RDA)
+# Convert correlation matrix to a distance matrix (e.g., Euclidean)
+#rda_result <- rda(cor_matrix ~ trophic_guilds)
+
+# Step 3: Perform Distance-based Redundancy Analysis (db-RDA)
+dist_matrix <- as.dist(1 - cor_matrix)
+db_rda_result <- capscale(dist_matrix ~ trophic_guilds)
+
+# Step 4: Summary of the db-RDA results
+summary(db_rda_result)
+
+# Step 5: Plot the db-RDA results to visualize genus and guilds
+plot(db_rda_result, scaling = 2, main = "db-RDA of Genus Correlation Matrix and Trophic Guilds")
+
+# Step 6: Perform ANOVA to test significance of the db-RDA
+anova_db_rda <- anova(db_rda_result, permutations = 999)
+cat("ANOVA Results:\n")
+print(anova_db_rda)
+
+# Step 7: Extract R-squared value to check explained variance
+r_squared <- RsquareAdj(db_rda_result)$r.squared
+cat("R-squared:", r_squared, "\n")
