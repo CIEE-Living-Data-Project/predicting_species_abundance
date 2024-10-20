@@ -78,7 +78,7 @@ for (study_id in study_ids) {
   diag(cor_matrix) <- NA
   
   # Replace any other NA values with 0 (if correlations are missing)
-  cor_matrix[is.na(cor_matrix)] <- 0
+ # cor_matrix[is.na(cor_matrix)] <- 0
   
   cor_matrix <- abs(cor_matrix)
   
@@ -114,3 +114,6 @@ boxplot_meanCorrelation <- ggplot(genus_means_all_studies, aes(x = StudyID, y = 
 
 # Display the plot
 print(boxplot_meanCorrelation)
+
+
+ggsave(here::here("AF_pilot/output/boxplot_contribution_coherence.png"), height = 6, width = 8)

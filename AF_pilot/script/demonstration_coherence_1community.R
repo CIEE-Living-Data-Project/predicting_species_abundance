@@ -56,11 +56,11 @@ palette <- RColorBrewer::brewer.pal(n = 11, name = "RdBu")
 
 plot_matrix_c <- ggplot(data_matrix, aes(x = x, y = y, fill = value)) +
   geom_raster() +
-  scale_fill_gradientn(colors = palette, limits = c(-1, 1)) +
+  scale_fill_gradientn(colors = rev(palette), limits = c(-1, 1)) +
   labs(x = NULL, y = NULL, title = expression("Co-response matrix"~italic("C"))) +
   theme_classic() +
   theme(
-    legend.position = "none",
+    legend.position = "right",
     axis.text = element_blank(),
     axis.title = element_blank(),
     axis.ticks = element_blank(),  

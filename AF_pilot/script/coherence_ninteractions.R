@@ -167,26 +167,29 @@ interaction_plot <- ggplot(interaction_data, aes(x = NumInteractions, y = MeanCo
 # Display the plot
 print(interaction_plot)
 
-interaction_plot <- ggplot(interaction_data, aes(x = log(NumInteractions), y = MeanCorrelation, color = StudyID)) +
-  geom_point(size = 3, alpha = 0.3) +
-  geom_smooth(aes(group = StudyID), method = "gam", se = FALSE) +  # Group by StudyID for separate GAM lines
-  labs(x = "Number of Interactions (log scale)", y = "Mean Absolute Correlation", 
-       title = "Genus Interactions vs Mean Correlation in Study") +
-  theme_classic() +
-  theme(legend.position = "right", plot.title = element_text(hjust = 0.5))
+#ggsave(here::here("AF_pilot/output/ninteractions_plot.png"), height = 6, width = 6)
 
-# Display the plot
-print(interaction_plot)
+
+# interaction_plot <- ggplot(interaction_data, aes(x = log(NumInteractions), y = MeanCorrelation, color = StudyID)) +
+#   geom_point(size = 3, alpha = 0.3) +
+#   geom_smooth(aes(group = StudyID), method = "gam", se = FALSE) +  # Group by StudyID for separate GAM lines
+#   labs(x = "Number of Interactions (log scale)", y = "Mean Absolute Correlation", 
+#        title = "Genus Interactions vs Mean Correlation in Study") +
+#   theme_classic() +
+#   theme(legend.position = "right", plot.title = element_text(hjust = 0.5))
+# 
+# # Display the plot
+# print(interaction_plot)
 
 
 # Optional: Check if the GLOBI interaction data can also be used for analysis
-globi_plot <- ggplot(interaction_data, aes(x = GLOBI_Interactions, y = MeanCorrelation)) +
-  geom_point(aes(color = CommunitySize), size = 3, alpha = 0.7) +
-  scale_color_distiller(palette = "RdBu", direction = -1) +  # Color by community size
-  labs(x = "GLOBI Interactions", y = "Mean Absolute Correlation", 
-       title = "GLOBI Interactions vs Mean Correlation (Colored by Community Size)") +
-  theme_classic() +
-  theme(legend.position = "right", plot.title = element_text(hjust = 0.5))
-
-# Display the GLOBI plot
-print(globi_plot)
+# globi_plot <- ggplot(interaction_data, aes(x = GLOBI_Interactions, y = MeanCorrelation)) +
+#   geom_point(aes(color = CommunitySize), size = 3, alpha = 0.7) +
+#   scale_color_distiller(palette = "RdBu", direction = -1) +  # Color by community size
+#   labs(x = "GLOBI Interactions", y = "Mean Absolute Correlation", 
+#        title = "GLOBI Interactions vs Mean Correlation (Colored by Community Size)") +
+#   theme_classic() +
+#   theme(legend.position = "right", plot.title = element_text(hjust = 0.5))
+# 
+# # Display the GLOBI plot
+# print(globi_plot)

@@ -143,7 +143,7 @@ module_results_df <- do.call(rbind, lapply(module_results, as.data.frame))
 plot_modules <- ggplot(module_results_df, aes(x = reorder(study_id, -community_size))) +
   geom_point(aes(y = coherent_modules, color = "Coherent Modules"), size = 3) +
   geom_point(aes(y = incoherent_modules, color = "Incoherent Modules"), size = 3) +
-  labs(x = "Study ID (Ordered by Community Size)", y = "Number of Modules", title = "Number of Coherent and Incoherent Modules per Study") +
+  labs(x = "Study ID (Ordered by Community Size)", y = "Number of Modules") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_color_manual(
@@ -159,7 +159,7 @@ print(plot_modules)
 plot_sizes <- ggplot(module_results_df, aes(x = reorder(study_id, -community_size))) +
   geom_point(aes(y = coherent_sizes, color = "Coherent Module Size"), size = 3) +
   geom_point(aes(y = incoherent_sizes, color = "Incoherent Module Size"), size = 3) +
-  labs(x = "Study ID (Ordered by Community Size)", y = "Average Module Size", title = "Average Module Size for Coherent and Incoherent Modules") +
+  labs(x = "Study ID (Ordered by Community Size)", y = "Average Module Size") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_color_manual(
@@ -169,6 +169,16 @@ plot_sizes <- ggplot(module_results_df, aes(x = reorder(study_id, -community_siz
 
 # Display the plot for module sizes
 print(plot_sizes)
+
+
+ggarrange(plot_modules,
+          plot_sizes,
+          common.legend = TRUE,
+          ncol = 2, 
+          nrow = 1)
+
+ggsave(here::here("AF_pilot/output/modules.png"), height = 6, width = 9)
+
 
 ################################################## PLOT BY COMMUNITY SIZE
 

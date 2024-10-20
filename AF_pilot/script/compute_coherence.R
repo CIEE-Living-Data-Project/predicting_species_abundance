@@ -95,13 +95,15 @@ for (study_id in filtered_studies) {  # Use filtered_studies here
   
   # Plot the matrix
   palette <- RColorBrewer::brewer.pal(n = 11, name = "RdBu")
+  
   plot_matrix_c <- ggplot(data_matrix, aes(x = x, y = y, fill = value)) +
     geom_raster() +
-    scale_fill_gradientn(colors = palette, limits = c(-1, 1)) +
-    labs(x = NULL, y = NULL, title = paste("Co-response matrix - Study", study_id)) +
+    scale_fill_gradientn(colors = rev(palette), limits = c(-1, 1), 
+                         name = "Correlation") +  # Add the name for the color scale
+    labs(x = NULL, y = NULL, title = paste(study_id)) +
     theme_classic() +
     theme(
-      legend.position = "none",
+      legend.position = "right",
       axis.text = element_blank(),
       axis.title = element_blank(),
       axis.ticks = element_blank(),  
@@ -139,13 +141,14 @@ for (study_id in filtered_studies) {  # Use filtered_studies here
   # Plot the distribution of correlation values
   plot_distrib_resp <- ggplot(data_new, aes(x = cor_bin, y = frequency, fill = cor_bin_mid)) +
     geom_bar(stat = "identity") +  
-    scale_fill_distiller(palette = "RdBu", limits = c(-0.8, 0.8)) +  
-    labs(x = "Co-response", y = "Frequency", title = paste("Distribution - Study", study_id)) +
+    scale_fill_distiller(palette = "RdBu", limits = c(-0.8, 0.8), direction = -1,
+                         name = "Correlation") +  
+    labs(x = "Co-response", y = "Frequency", title = study_id) +
     theme_classic() +
     scale_y_continuous(breaks = c(0, 1)) +
     scale_x_discrete(labels = c(seq(-0.8, 0.8, by = 0.1), "0.8")) +  
     theme(
-      legend.position = "none",
+      legend.position = "top",
       plot.title = element_text(hjust = 0.5),
       axis.text.x = element_text(angle = 45, hjust = 1)
     )
@@ -157,26 +160,18 @@ for (study_id in filtered_studies) {  # Use filtered_studies here
 # Now, arrange the plots using ggarrange (from the ggpubr package)
 
 # Arrange the correlation matrices in a 5x3 grid
-cormatrix_plots <- ggarrange(plotlist = cor_matrix_plots, ncol = 3, nrow = 5)
-
-cormatrix_plots[[1]]
-ggsave(here::here("AF_pilot/output/cormatrix_plots1.png"), height = 10, width = 9)
-cormatrix_plots[[2]]
-ggsave(here::here("AF_pilot/output/cormatrix_plots2.png"), height = 10, width = 9)
-cormatrix_plots[[3]]
-ggsave(here::here("AF_pilot/output/cormatrix_plots3.png"), height = 10, width = 9)
-
+ggarrange(plotlist = cor_matrix_plots, ncol = 4, nrow = 6,
+                             common.legend = TRUE)
+#ggsave(here::here("AF_pilot/output/cormatrix_plots.png"), height = 17, width = 12)
 
 
 # Arrange the distribution plots in a 5x3 grid
-corditr_plots <- ggarrange(plotlist = distribution_plots, ncol = 3, nrow = 5)
+ggarrange(plotlist = distribution_plots, ncol = 4, nrow = 6,
+          common.legend = TRUE)
+#ggsave(here::here("AF_pilot/output/cordistr_plots.png"), height = 17, width = 12)
 
-corditr_plots[[1]]
-ggsave(here::here("AF_pilot/output/cordistr_plots1.png"), height = 10, width = 9)
-corditr_plots[[2]]
-ggsave(here::here("AF_pilot/output/cordistr_plots2.png"), height = 10, width = 9)
-corditr_plots[[3]]
-ggsave(here::here("AF_pilot/output/cordistr_plots3.png"), height = 10, width = 9)
+
+
 
 
 
@@ -223,6 +218,7 @@ density_plot <- ggplot(combined_data, aes(x = cor, color = STUDY_ID, fill = STUD
 # Display the plot
 print(density_plot)
 
+#ggsave(here::here("AF_pilot/output/overall_coherence.png"), height = 8, width = 10)
 
 
 ######################## PLOT OVERALL COHERENCE - TREATMENT YES/NO
@@ -280,7 +276,7 @@ density_plot <- ggplot(combined_data, aes(x = cor, color = Family, fill = Family
   geom_density(alpha = 0.3, size = 1) +  # Use alpha for transparency and size for line thickness
   scale_color_manual(values = rainbow(length(unique(combined_data$Family)))) +  # Different colors for each family
   scale_fill_manual(values = rainbow(length(unique(combined_data$Family)))) +  # Matching fill colors
-  labs(x = "Interacting species co-response", y = "Density", title = "Ecological Coherence across Families") +
+  labs(x = "species co-response", y = "Density", title = "Ecological Coherence across Families") +
   theme_classic() +
   
   # Add vertical dashed black line at x = 0
@@ -316,8 +312,8 @@ max_cor <- max(combined_data$cor)
 # Plot the ridgeline density plot
 ridgeline_plot <- ggplot(combined_data, aes(x = cor, y = LATITUDE, group = STUDY_ID, fill = ..x..)) +
   geom_density_ridges_gradient(scale = 1.5, rel_min_height = 0.01) +  # Adjust the scale and height as needed
-  scale_fill_distiller(palette = "RdBu") +  
-  labs(x = "Interacting species co-response (correlation)", y = "Latitude", 
+  scale_fill_distiller(palette = "RdBu", name = "correlation") +  
+  labs(x = "species co-response (correlation)", y = "Latitude", 
        title = "Densities of Correlations across Latitudes") +
   theme_classic() +
   theme(legend.position = "right", plot.title = element_text(hjust = 0.5)) +
@@ -327,6 +323,7 @@ ridgeline_plot <- ggplot(combined_data, aes(x = cor, y = LATITUDE, group = STUDY
 # Display the plot
 print(ridgeline_plot)
 
+#ggsave(here::here("AF_pilot/output/coherence_latitude.png"), height = 13, width = 8)
 
 ######################## MEAN AND SD COHERENCE - community size
 
@@ -343,7 +340,7 @@ mean_data <- filtered_data %>%
 # Step 2: Plot the mean correlation vs community size
 mean_community_size_plot <- ggplot(mean_data, aes(x = community_size, y = mean_cor)) +
   geom_point(size = 3, color = "black", alpha = 0.5) +
-  labs(x = "Community Size", y = "Mean Correlation", title = "Mean of Correlation Distribution vs Community Size") +
+  labs(x = "Community Size", y = "Mean Correlation") +
   theme_classic() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black")
 
@@ -357,19 +354,28 @@ sd_data <- filtered_data %>%
   dplyr::filter(!is.na(cor)) %>%
   dplyr::group_by(STUDY_ID) %>%
   dplyr::summarize(
-    sd_cor = sd(cor, na.rm = TRUE),
+    sd_cor = var(cor, na.rm = TRUE),
     # Calculate community size as the number of unique genus from both Gn1 and Gn2
     community_size = n_distinct(c(Gn1, Gn2))  
   )
 
 # Step 2: Plot the SD of the correlation vs community size
-sd_community_size_plot <- ggplot(sd_data, aes(x = community_size, y = sd_cor)) +
+var_community_size_plot <- ggplot(sd_data, aes(x = community_size, y = sd_cor)) +
   geom_point(size = 3, color = "black", alpha = 0.5) +
-  labs(x = "Community Size", y = "SD of Correlation", title = "SD of Correlation Distribution vs Community Size") +
+  labs(x = "Community Size", y = "Variance of Correlation") +
   theme_classic()
 
 # Display the plot
-print(sd_community_size_plot)
+print(var_community_size_plot)
+
+ggarrange(mean_community_size_plot,
+          var_community_size_plot,
+          ncol = 2,
+          nrow = 1)
+
+
+#ggsave(here::here("AF_pilot/output/mean_variance_size.png"), height = 6, width = 9)
+
 
 
 
