@@ -28,7 +28,7 @@ rm(list=ls())
 
 
 #read in the full dataset used for Q1 and Q2 analysis
-log.prop.change.with.meta <-read.csv("~/Documents/Work and Career/LDP/Working Group/within.study.updated.data.050224.csv")
+log.prop.change.with.meta <-read.csv("Revision 1 ecography/output/prep_data/results.abundance.csv")
 log_change <- log.prop.change.with.meta
 
 head(log.prop.change.with.meta)
