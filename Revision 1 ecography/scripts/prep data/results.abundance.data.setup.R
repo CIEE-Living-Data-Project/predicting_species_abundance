@@ -314,11 +314,6 @@ for (i in 1:nrow(final.pairs.abundance)){
   
 } #get prop change for every genera pair
 
-#Note: save locations should be updated if running code on own device 
-#write.csv(results.abundance,"~/Documents/Work and Career/LDP/Working Group/results.abundance.csv")
-#results.abundance=read.csv("~/Documents/Work and Career/LDP/Working Group/results.abundance.csv")
-
-
 ##### IE CODE - adding metadata into results.abundance #####
 #add in metadata
 results.abundance$STUDY_ID<-gsub("\\~.*","",results.abundance$STUDY_PLOT)
@@ -336,10 +331,9 @@ dim(results.abundance)
 length(unique(results.abundance$TS_ID)) #527874
 length(unique(results.abundance$STUDY_ID)) #69
 
-#save results.abundance with updated 
-#write.csv(results.abundance,"~/Documents/Work and Career/LDP/Working Group/results.abundance_221_39.csv")
-#results<-read.csv("/Users/isaaceckert/Desktop/within.study.updated.data.csv")
-
+#Note: save locations should be updated if running code on own device 
+#save results.abundance 
+#write.csv(results.abundance,"data/Revision 1 ecography/output/prep_data/results.abundance.csv")
 
 table(results.abundance$METRIC)
 
