@@ -333,7 +333,7 @@ length(unique(results.abundance$STUDY_ID)) #69
 
 #Note: save locations should be updated if running code on own device 
 #save results.abundance 
-#write.csv(results.abundance,"data/Revision 1 ecography/output/prep_data/results.abundance.csv")
+#write.csv(results.abundance,"Revision 1 ecography/output/prep_data/results.abundance.csv")
 
 table(results.abundance$METRIC)
 
