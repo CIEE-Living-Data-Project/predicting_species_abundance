@@ -650,10 +650,6 @@ distinct_pairs <- cased_interactions_filtered_3 %>%
   select(Gn1, Gn2) %>%
   distinct()
 
-#Read in abundance pairs from BioTime data
-log_change <- read.csv("~/Documents/Work and Career/LDP/Working Group/results.abundance.csv", 
-)
-head(log_change)
 
 # Create a new column in log_change called "interaction" and initialize all values to 0
 log_change$interaction_present <- 0
