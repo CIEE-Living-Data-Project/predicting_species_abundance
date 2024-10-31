@@ -1119,7 +1119,7 @@ table(log_change.taxa$resolved_taxa_pair)
 #All fixed! (Minus study 221, which was removed from analysis)
 
 #Export 
-saveRDS(log_change.taxa, "Revision 1 ecography/output/results_abundance_interactions_taxa_032024ENB.RDS")
+saveRDS(log_change.taxa, "Revision 1 ecography/output/prep_data/results_abundance_interactions_taxa_032024ENB.RDS")
 
 
 
